@@ -28,9 +28,12 @@ class ReloadCommand(_Command):
     even if something else is wrong in this file.
     '''
     def handle(self, message):
-        message.replyto("Trying to reload commands...")
-        commandhandler.reload_commands()
-        message.replyto("Done. Hope there were no errors or we're gonna come crashing down. YEEHAAW!")
+        if message.sender != "otus":
+            message.replyto("NOT U")
+        else:
+            message.replyto("Trying to reload commands...")
+            commandhandler.reload_commands()
+            message.replyto("Done. Hope there were no errors or we're gonna come crashing down. YEEHAAW!")
 
 
 class FlipCommand(_Command):
@@ -46,6 +49,7 @@ class FlipCommand(_Command):
 
 
 PUBLIC_CMDS = {'flip': FlipCommand,
-               'flippaa': FlipCommand}
+               'flippaa': FlipCommand,
+               'reload': ReloadCommand}
 
-PRIVATE_CMDS = {'reload': ReloadCommand}
+PRIVATE_CMDS = {}
