@@ -1,3 +1,4 @@
+# coding=utf-8
 '''
 Created on Jul 7, 2012
 
@@ -7,6 +8,14 @@ Created on Jul 7, 2012
 import logging
 import random
 import commandhandler
+import sys
+
+def user_has_permission(message):
+    if message.sender != "otus":
+        message.replyto("NOT U")
+        return False
+    else:
+        return True
 
 class _Command(object):
     USAGE_ERROR = "Virheelliset parametrit."
@@ -28,12 +37,18 @@ class ReloadCommand(_Command):
     even if something else is wrong in this file.
     '''
     def handle(self, message):
-        if message.sender != "otus":
-            message.replyto("NOT U")
-        else:
+        if user_has_permission(message):
             message.replyto("Trying to reload commands...")
             commandhandler.reload_commands()
             message.replyto("Done. Hope there were no errors or we're gonna come crashing down. YEEHAAW!")
+
+
+#TODO: Better implementation
+class QuitCommand(_Command):
+    def handle(self, message):
+        if user_has_permission(message):
+            message.replyto("Bye")
+            sys.exit()
 
 
 class FlipCommand(_Command):
@@ -50,6 +65,7 @@ class FlipCommand(_Command):
 
 PUBLIC_CMDS = {'flip': FlipCommand,
                'flippaa': FlipCommand,
-               'reload': ReloadCommand}
+               'reload': ReloadCommand,
+               'quit': QuitCommand}
 
 PRIVATE_CMDS = {}
