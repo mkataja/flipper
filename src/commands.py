@@ -9,6 +9,7 @@ import logging
 import random
 import sys
 
+#TODO: Better implementation
 def user_has_permission(message):
     if message.sender != "otus":
         message.replyto("NOT U")
