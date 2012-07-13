@@ -6,15 +6,10 @@ Created on Jul 7, 2012
 
 from oyoyo.cmdhandler import DefaultCommandHandler
 from oyoyo import helpers
-
 import commands
 
 import logging
 import re
-import imp
-
-def reload_commands():
-    imp.reload(commands)
 
 class CommandHandler(DefaultCommandHandler):
     
