@@ -48,7 +48,7 @@ class QuitCommand(_Command):
 
 
 class FlipCommand(_Command):
-    helpstr = "Käyttö: anna flippausvaihtoehdot (1...n) kauttaviivoilla erotettuna!"
+    helpstr = "Käyttö: anna flippausvaihtoehdot (1...n) kauttaviivoilla erotettuna"
     
     def handle(self, message):
         flips = message.params.split("/")
