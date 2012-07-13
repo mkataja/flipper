@@ -5,6 +5,8 @@ Created on Jul 7, 2012
 @author: Matias
 '''
 
+from oyoyo import helpers
+
 import logging
 import random
 import sys
@@ -16,6 +18,7 @@ def user_has_permission(message):
         return False
     else:
         return True
+
 
 class _Command(object):
     USAGE_ERROR = "Virheelliset parametrit."
@@ -60,6 +63,16 @@ class FlipCommand(_Command):
             message.replyto(random.choice(flips))
 
 
+class SayCommand(_Command):
+    helpstr = "Käyttö: anna ensimmäisenä parametrinä kohde, sitten viesti"
+    
+    def handle(self, message):
+        params = message.params.split(" ", 1)
+        target = params[0]
+        msg = params[1]
+        helpers.msg(message.client, target, msg)
+
+
 class WeatherCommand(_Command):
     def handle(self, message):
         weathers = ["Aurinko paistaa ja kaikilla on kivaa :)))",
@@ -72,4 +85,4 @@ PUBLIC_CMDS = {'flip': FlipCommand,
                'quit': QuitCommand,
                'sää': WeatherCommand}
 
-PRIVATE_CMDS = {}
+PRIVATE_CMDS = {'say': SayCommand}
