@@ -76,8 +76,10 @@ class SayCommand(_Command):
 class WeatherCommand(_Command):
     def handle(self, message):
         weathers = ["Aurinko paistaa ja kaikilla on kivaa :)))",
-                    "Lunta sataa ja kaikkia vituttaa"]
+                    "Lunta sataa ja kaikkia vituttaa.",
+                    "Sää jatkuu sateisena koko maassa."]
         message.replyto(random.choice(weathers))
+
 
 PUBLIC_CMDS = {'flip': FlipCommand,
                'flippaa': FlipCommand,
