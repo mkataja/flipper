@@ -17,8 +17,6 @@ def reload_commandlist():
     imp.reload(commandlist)
 
 class CommandHandler(DefaultCommandHandler):
-    channels_to_join = None
-    
     def create_message(self, sender, source, content, is_private_message):
         return message.Message(self.client, sender, source, content, is_private_message)
     
@@ -42,4 +40,4 @@ class CommandHandler(DefaultCommandHandler):
         
         logging.debug("handling privmsg: {}".format(message))
         
-        message.parse_and_run_command()
+        message.run_command()

@@ -59,7 +59,7 @@ class TestFlip(PublicTestCommand):
 class TestFlipOneOption(TestFlip):
     def runTest(self):
         self.message.content = "!flip tset"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         assert (self.message.client.reply == "otus: Jaa" 
                 or self.message.client.reply == "otus: Ei")
         self.assertEqual(self.message.client.target, "#test")
@@ -67,7 +67,7 @@ class TestFlipOneOption(TestFlip):
 class TestFlipTwoOptions(TestFlip):
     def runTest(self):
         self.message.content = "!flip test/tset"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         assert (self.message.client.reply == "otus: test" 
                 or self.message.client.reply == "otus: tset")
         self.assertEqual(self.message.client.target, "#test")
@@ -75,7 +75,7 @@ class TestFlipTwoOptions(TestFlip):
 class TestFlipExtraDashes(TestFlip):
     def runTest(self):
         self.message.content = "!flip ///////test//////tset///////// /////"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         assert (self.message.client.reply == "otus: test" 
                 or self.message.client.reply == "otus: tset")
         self.assertEqual(self.message.client.target, "#test")
@@ -83,7 +83,7 @@ class TestFlipExtraDashes(TestFlip):
 class TestFlipNoOptions(TestFlip):
     def runTest(self):
         self.message.content = "!flip               "
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, 
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
         self.assertEqual(self.message.client.target, "#test")
@@ -91,7 +91,7 @@ class TestFlipNoOptions(TestFlip):
 class TestFlipNoOptionsDashes(TestFlip):
     def runTest(self):
         self.message.content = "!flip ///////  /////////   / "
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, 
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
         self.assertEqual(self.message.client.target, "#test")
@@ -103,14 +103,14 @@ class TestSay(PrivateTestCommand):
 class TestSayToNick(TestSay):
     def runTest(self):
         self.message.content = "!say otus jotain juttuja"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, "jotain juttuja")
         self.assertEqual(self.message.client.target, "otus")
 
 class TestSayToChannel(TestSay):
     def runTest(self):
         self.message.content = "!say #jea jotain juttuja"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, "jotain juttuja")
         self.assertEqual(self.message.client.target, "#jea")
 
@@ -118,7 +118,7 @@ class TestSayToChannelUnauthorized(TestSay):
     def runTest(self):
         self.message.sender_user = "not-otus"
         self.message.content = "!say #jea jotain juttuja"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         assert(self.message.client.reply == "OH BEHAVE, otus"
                or self.message.client.reply == "Oletpa tuhma poika, otus"
                or self.message.client.reply == "Sinulla ei ole OIKEUTTA, otus")
@@ -131,13 +131,13 @@ class TestHelp(PublicTestCommand):
 class TestHelpOnSay(TestHelp):
     def runTest(self):
         self.message.content = "!help say"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, "otus: Käyttö: anna ensimmäisenä parametrinä kohde, sitten viesti")
 
 class TestHelpOnReload(TestHelp):
     def runTest(self):
         self.message.content = "!help reload"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, "otus: Tämän komennon käyttöön ei ole ohjeita.")
 
 
@@ -147,13 +147,13 @@ class TestWeather(PublicTestCommand):
 class TestWeatherDefault(TestWeather):
     def runTest(self):
         self.message.content = "!sää"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply[:21], "otus: Sää Espoo (FI):")
         
 class TestWeatherFail(TestWeather):
     def runTest(self):
         self.message.content = "!sää Uasfkjasfdljfsdl"
-        self.message.parse_and_run_command()
+        self.message.run_command()
         self.assertEqual(self.message.client.reply, "otus: Paikkakunnalla Uasfkjasfdljfsdl ei ole säätä")
 
 
