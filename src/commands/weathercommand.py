@@ -129,16 +129,26 @@ class WeatherCommand(Command):
             temp_max = locale.format(
                 "%.1f", data.get('main').get('temp_max') + self.KELVINTOCELSIUS)
         
+        # TODO Auringonnousu- ja lasku väärin muilla kuin Suomen aikavyöhykkeillä
+        sunrise = None
+        if data.get('sys').get('sunrise'):
+            sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M')
+        
+        sunset = None
+        if data.get('sys').get('sunset'):
+            sunset = datetime.datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M')
+        
         weather_conditions = []
         for w in data.get('weather'):
             condition = self.weather_condition_strings.get(w.get('id'))
             weather_conditions.append(condition)
         
-        weather_string = "Sää {} ({}): {}. Lämpötila {} °C{}, \
-Kosteus {}%, Ilmanpaine {} hPa, \
-{} {} m/s, Pilvisyys: {}.".format(
-            data['name'],
-            data['sys']['country'],
+        weather_string = "Sää {} {}. {}. Lämpötila {} °C{}, \
+Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
+            "{} ({})".format(data['name'], data['sys']['country'])
+                if data['name']
+                else data['sys']['country'],
+            datetime.datetime.fromtimestamp(data['dt']).strftime('%d.%m.%Y %H:%M'),
             self.get_weather_conditions(weather_conditions),
             locale.format("%.1f", data.get('main').get('temp') + self.KELVINTOCELSIUS),
             " ({}-{} °C)".format(temp_min, temp_max)
@@ -148,7 +158,9 @@ Kosteus {}%, Ilmanpaine {} hPa, \
             locale.format("%.0f", data.get('main').get('pressure')),
             self.get_wind_word(wind_dir=data.get('wind').get('deg')),
             locale.format("%.1f", data.get('wind').get('speed')),
-            self.get_clouds_eights(clouds_percentage=data.get('clouds').get('all'))
+            self.get_clouds_eights(clouds_percentage=data.get('clouds').get('all')),
+            " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
+                if (sunrise and sunset)
+                else ""
         )
         message.reply_to(weather_string)
-        # TODO auringonnousu/lasku
