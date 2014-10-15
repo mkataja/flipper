@@ -141,6 +141,22 @@ class TestHelpOnReload(TestHelp):
         self.assertEqual(self.message.client.reply, "otus: Tämän komennon käyttöön ei ole ohjeita.")
 
 
+class TestWeather(PublicTestCommand):
+    commandToRun = "sää"
+
+class TestWeatherDefault(TestWeather):
+    def runTest(self):
+        self.message.content = "!sää"
+        self.message.parse_and_run_command()
+        self.assertEqual(self.message.client.reply[:21], "otus: Sää Espoo (FI):")
+        
+class TestWeatherFail(TestWeather):
+    def runTest(self):
+        self.message.content = "!sää Uasfkjasfdljfsdl"
+        self.message.parse_and_run_command()
+        self.assertEqual(self.message.client.reply, "otus: Paikkakunnalla Uasfkjasfdljfsdl ei ole säätä")
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

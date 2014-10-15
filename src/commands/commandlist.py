@@ -14,6 +14,7 @@ PUBLIC_CMDS = {
                'flippaa': builtincommands.FlipCommand,
                'reload': builtincommands.ReloadCommand,
                'quit': builtincommands.QuitCommand,
+               'sää': weathercommand.WeatherCommand,
                'todellinensää': builtincommands.RealWeatherCommand,
                }
 

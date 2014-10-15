@@ -39,6 +39,8 @@ class ReloadCommand(Command):
     def handle(self, message):
         message.reply_to("Päivitetään komennot...")
         # TODO tee kunnolla:
+        import commands.weathercommand
+        imp.reload(commands.weathercommand)
         import commandhandler
         commandhandler.reload_commandlist()
         message.reply_to("Tehty!")
