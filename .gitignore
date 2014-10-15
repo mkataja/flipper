@@ -1,4 +1,10 @@
-*.pyc
+# Eclipse project files
 .settings
-*.conf
+.project
+.pydevproject
 
+# Compiled python files
+*.pyc
+
+# Configuration file
+*.conf
