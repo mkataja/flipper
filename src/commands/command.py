@@ -12,7 +12,7 @@ def admin_required(fn):
     Decorator used to restrict running certain commands to admins only
     """
     def decorated_handle(self, message):
-        #TODO: Better authentication
+        # TODO: Better authentication
         if message.sender != "otus" or message.sender_user != "otus":
             taunts = ["OH BEHAVE",
                       "Oletpa tuhma poika",
