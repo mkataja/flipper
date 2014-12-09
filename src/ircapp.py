@@ -27,10 +27,14 @@ class IRCBot(IRCApp):
         
         client.command_handler.channels_to_join = self.conf.CHANNELS
         
-        self.addClient(client, autoreconnect=True)
+        self.addClient(client, autoreconnect=False)
 
+
+def start_bot():
+    logging.basicConfig(level=logging.DEBUG)
+    while True:
+        botinstance = IRCBot()
+        botinstance.run()
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    botinstance = IRCBot()
-    botinstance.run()
+    start_bot()
