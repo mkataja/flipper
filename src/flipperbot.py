@@ -4,17 +4,12 @@ Created on 9.12.2014
 @author: Matias
 '''
 
-import imp
 import logging
 
 from irc import bot
 
-from commands import commandlist
 from message import Message
 
-
-def reload_commandlist():
-    imp.reload(commandlist)
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self, conf):

@@ -4,11 +4,16 @@ Created on 14.10.2013
 @author: Matias
 '''
 
+import imp
 import logging
 import re
 
 from commands import commandlist
 from commands.accesscontrol import has_admin_access
+
+
+def reload_commandlist():
+    imp.reload(commandlist)
 
 
 class Message(object):

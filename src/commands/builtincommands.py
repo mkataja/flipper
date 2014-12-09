@@ -41,14 +41,18 @@ class ListCommand(Command):
 
 class ReloadCommand(Command):
     @admin_required
-    def handle(self, message):
-        message.reply_to("Päivitetään komennot...")
+    def handle(self, msg):
+        msg.reply_to("Päivitetään komennot...")
+        
         # TODO tee kunnolla:
         import commands.weathercommand
         imp.reload(commands.weathercommand)
-        import flipperbot
-        flipperbot.reload_commandlist()
-        message.reply_to("Tehty!")
+        import commands.builtincommands
+        imp.reload(commands.builtincommands)
+        import message
+        message.reload_commandlist()
+        
+        msg.reply_to("Tehty!")
 
 
 class QuitCommand(Command):
