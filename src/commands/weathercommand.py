@@ -102,7 +102,7 @@ class WeatherCommand(Command):
         962: "hirmumyrskyä",
     }
     
-    def get_wind_word(self, wind_dir):
+    def _get_wind_word(self, wind_dir):
         return [ "Pohjois",
                  "Koillis",
                  "Itä",
@@ -113,7 +113,7 @@ class WeatherCommand(Command):
                  "Luoteis"
                  ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
     
-    def get_clouds_eights(self, clouds_percentage):
+    def _get_clouds_eights(self, clouds_percentage):
         if (datetime.datetime.now().hour == 4 or (datetime.datetime.now().hour == 16)
             and (datetime.datetime.now().minute == 20)):
             return "ERITTÄIN pilvistä"
@@ -123,7 +123,7 @@ class WeatherCommand(Command):
                 clouds = 7
             return "{}/8".format(clouds)
     
-    def get_weather_conditions(self, weather_conditions):
+    def _get_weather_conditions(self, weather_conditions):
         if weather_conditions != []:
             conditions_string = ', '.join(weather_conditions)
             conditions_string = conditions_string[:1].upper() + conditions_string[1:]
@@ -183,16 +183,16 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
                 if data['name']
                 else data['sys']['country'],
             datetime.datetime.fromtimestamp(data['dt']).strftime('%d.%m.%Y %H:%M'),
-            self.get_weather_conditions(weather_conditions),
+            self._get_weather_conditions(weather_conditions),
             locale.format("%.1f", data.get('main').get('temp') + self.KELVINTOCELSIUS),
             " ({}-{} °C)".format(temp_min, temp_max)
                 if (temp_min and temp_max and temp_min != temp_max)
                 else "",
             data.get('main').get('humidity'),
             locale.format("%.0f", data.get('main').get('pressure')),
-            self.get_wind_word(wind_dir=data.get('wind').get('deg')),
+            self._get_wind_word(wind_dir=data.get('wind').get('deg')),
             locale.format("%.1f", data.get('wind').get('speed')),
-            self.get_clouds_eights(clouds_percentage=data.get('clouds').get('all')),
+            self._get_clouds_eights(clouds_percentage=data.get('clouds').get('all')),
             " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
                 if (sunrise and sunset)
                 else ""

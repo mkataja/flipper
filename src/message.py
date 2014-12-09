@@ -33,17 +33,8 @@ class Message(object):
                                   self.content) + \
                (" (private message)" if self.is_private_message else "")
         return desc
-    
-    def reply_to(self, replytext):
-        if self.is_private_message:
-            target = self.sender
-        else:
-            target = self.source
-            replytext = self.sender + ": " + replytext
         
-        self._connection.privmsg(target, replytext)
-        
-    def get_allowed_commands(self):
+    def _get_allowed_commands(self):
         allowed_commands = commandlist.PUBLIC_CMDS.copy()
         
         sender = self._event.source
@@ -52,7 +43,7 @@ class Message(object):
         
         return allowed_commands
     
-    def parse_command(self):
+    def _parse_command(self):
         if self.is_private_message:
             cmd_prefix_regex = self.CMD_PREFIX + "?"
         else:
@@ -75,8 +66,8 @@ class Message(object):
             return False
     
     def run_command(self):
-        if self.parse_command():
-            allowed_commands = self.get_allowed_commands()
+        if self._parse_command():
+            allowed_commands = self._get_allowed_commands()
             
             if self.commandword in allowed_commands:
                 command = allowed_commands[self.commandword]
@@ -86,3 +77,12 @@ class Message(object):
             else:
                 logging.debug("unrecognized/unallowed command: {}".
                               format(self.commandword))
+    
+    def reply_to(self, replytext):
+        if self.is_private_message:
+            target = self.sender
+        else:
+            target = self.source
+            replytext = self.sender + ": " + replytext
+        
+        self._connection.privmsg(target, replytext)
