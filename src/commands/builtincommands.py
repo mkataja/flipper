@@ -4,21 +4,25 @@ Created on 14.10.2014
 @author: Matias
 '''
 
-from commands.command import Command, admin_required
-
-from oyoyo import helpers
+import imp
 import random
 import re
-import imp
+
+from commands.command import Command, admin_required
 
 
 class HelpCommand(Command):
+    helpstr = "Käyttö: anna parametrinä komento josta haluat lisätietoja"
+    
     def handle(self, message):
         if not message.params:
             self.replytoinvalidparams(message)
+            return
+        
         from commands.commandlist import PRIVATE_CMDS, PUBLIC_CMDS
         allcommands = PUBLIC_CMDS.copy()
         allcommands.update(PRIVATE_CMDS)
+        
         if message.params in allcommands:
             command = allcommands[message.params]
             message.reply_to(command.helpstr)
@@ -31,6 +35,7 @@ class ListCommand(Command):
         from commands.commandlist import PRIVATE_CMDS, PUBLIC_CMDS
         allcommands = PUBLIC_CMDS.copy()
         allcommands.update(PRIVATE_CMDS)
+        
         message.reply_to("Komennot: {}".format(', '.join(sorted(allcommands.keys()))))
         
 
@@ -41,25 +46,25 @@ class ReloadCommand(Command):
         # TODO tee kunnolla:
         import commands.weathercommand
         imp.reload(commands.weathercommand)
-        import commandhandler
-        commandhandler.reload_commandlist()
+        import flipperbot
+        flipperbot.reload_commandlist()
         message.reply_to("Tehty!")
 
 
 class QuitCommand(Command):
     @admin_required
     def handle(self, message):
-        helpers.quit(message.client, "kthxbye")
+        message._connection.quit("kthxbye")
 
 
 class JoinCommand(Command):
     @admin_required
     def handle(self, message):
-        if re.match("(#|!)\w+", message.params):
-            helpers.join(message.client, message.params) #@UndefinedVariable IGNORE:E1101
-        else:
+        if not re.match("(#|!)\w+", message.params):
             self.replytoinvalidparams(message)
-
+            return
+        
+        message._connection.join(message.params)
 
 class PartCommand(Command):
     @admin_required
@@ -73,7 +78,8 @@ class PartCommand(Command):
         else:
             self.replytoinvalidparams(message)
             return
-        helpers.part(message.client, channel_to_part) #@UndefinedVariable IGNORE:E1101
+        
+        message._connection.part(channel_to_part)
 
 
 class FlipCommand(Command):
@@ -82,6 +88,7 @@ class FlipCommand(Command):
     def handle(self, message):
         flips = message.params.split("/")
         flips = [x.strip() for x in flips if x.strip() != ""]
+        
         if not flips:
             self.replytoinvalidparams(message)
         else:
@@ -100,8 +107,8 @@ class SayCommand(Command):
             self.replytoinvalidparams(message)
         else:
             target = params[0]
-            msg = params[1]
-            helpers.msg(message.client, target, msg)
+            text = params[1]
+            message._connection.privmsg(target, text)
 
 
 class RealWeatherCommand(Command):

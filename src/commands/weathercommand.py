@@ -4,13 +4,14 @@ Created on 18.10.2013
 @author: Matias
 '''
 
+import datetime
+import json
+import locale
+import math
+import urllib.request, urllib.error
+
 from commands.command import Command
 
-import json
-import urllib.request, urllib.error
-import math
-import datetime
-import locale
 
 locale.setlocale(locale.LC_ALL, '')
 

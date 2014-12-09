@@ -6,11 +6,18 @@ Created on 15.10.2014
 
 import yaml
 
+
 class Configuration(object):
+    def _value_or_default(self, prop_name, default):
+        value = self._conf_yaml[prop_name]
+        return value if value != None else default
+    
     def load(self, conf_filename):
         with open(conf_filename, "r") as conf_file:
-            conf_yaml = yaml.load(conf_file)
-            self.SERVER = conf_yaml["server"]
-            self.PORT = conf_yaml["port"]
-            self.NICK = conf_yaml["nick"]
-            self.CHANNELS = conf_yaml["channels"]
+            self._conf_yaml = yaml.load(conf_file)
+            
+            self.server = self._conf_yaml["server"]
+            self.port = self._conf_yaml["port"]
+            self.nick = self._conf_yaml["nick"]
+            self.realname = self._value_or_default("server", self.nick)
+            self.channels = self._conf_yaml["channels"]

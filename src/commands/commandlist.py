@@ -7,6 +7,7 @@ Created on Jul 7, 2012
 
 from commands import builtincommands, weathercommand
 
+
 PUBLIC_CMDS = {
                'help': builtincommands.HelpCommand,
                'list': builtincommands.ListCommand,

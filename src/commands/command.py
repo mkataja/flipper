@@ -7,13 +7,16 @@ Created on 18.10.2013
 import logging
 import random
 
+from commands.accesscontrol import has_admin_access
+
+
 def admin_required(fn):
     """
     Decorator used to restrict running certain commands to admins only
     """
     def decorated_handle(self, message):
-        # TODO: Better authentication
-        if message.sender != "otus" or message.sender_user != "otus":
+        sender = message._event.source
+        if not has_admin_access(sender):
             taunts = ["OH BEHAVE",
                       "Oletpa tuhma poika",
                       "Sinulla ei ole OIKEUTTA",
