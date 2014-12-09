@@ -31,7 +31,8 @@ class IRCBot(IRCApp):
 
 
 def start_bot():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG,
+                        format="%(asctime)s %(levelname)s: %(message)s")
     while True:
         botinstance = IRCBot()
         botinstance.run()
