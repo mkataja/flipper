@@ -17,7 +17,7 @@ def reload_commandlist():
 
 
 class Message(object):
-    CMD_PREFIX = "!"  # TODO lataa konfiguraatiosta
+    CMD_PREFIX = "!"
     
     commandword = None
     params = None

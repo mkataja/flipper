@@ -163,7 +163,6 @@ class WeatherCommand(Command):
             temp_max = locale.format(
                 "%.1f", data.get('main').get('temp_max') + self.KELVINTOCELSIUS)
         
-        # TODO Auringonnousu- ja lasku väärin muilla kuin Suomen aikavyöhykkeillä
         sunrise = None
         if data.get('sys').get('sunrise'):
             sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M')
