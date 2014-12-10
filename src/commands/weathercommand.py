@@ -9,15 +9,17 @@ import json
 import locale
 import math
 import urllib.request, urllib.error
+from time import sleep
 
 from commands.command import Command
 
 
 locale.setlocale(locale.LC_ALL, '')
 
+KELVINTOCELSIUS = -273.15
+RETRIES = 3
+
 class WeatherCommand(Command):
-    KELVINTOCELSIUS = -273.15
-    
     weather_condition_strings = {
         200: "ukkosta ja heikkoa sadetta",
         201: "ukkosta ja sadetta",
@@ -131,38 +133,31 @@ class WeatherCommand(Command):
         else:
             return "Ei tietoa sääilmiöistä"
     
-    def handle(self, message):
-        requested_place = None
-        if not message.params:
-            requested_place = "Espoo"
+    def _get_temp_diff(self, data):
+        temp = data.get('main').get('temp')
+        temp_min = data.get('main').get('temp_min')
+        temp_max = data.get('main').get('temp_max')
+        
+        if temp and temp_min and temp_max and temp_min != temp_max:
+            diff_to_min = temp - temp_min
+            diff_to_max = temp_max - temp
+            temp_diff = locale.format("%.1f", max(diff_to_min, diff_to_max))
+            temp_diff_string = " (±{} °C)".format(temp_diff)
         else:
-            requested_place = message.params
+            temp_diff_string = ""
+            
+        return temp_diff_string
+    
+    def _get_weather_data(self, requested_place):
         try:
             reply = urllib.request.urlopen('http://openweathermap.org/data/2.5/weather?q={}'
                                            .format(requested_place)
                                            ).read().decode('utf8')
+            return json.loads(reply)
         except(urllib.error.HTTPError):
-            message.reply_to("Sääpalvelua ei löytynyt :(")
-            return
-        data = json.loads(reply)
-        
-        if data.get('cod') == "404":
-            message.reply_to("Paikkakunnalla {} ei ole säätä".format(requested_place))
-            return
-        elif 'message' in data:
-            message.reply_to("Virhe: ".format(data.get('message')))
-            return
-        
-        temp_min = None
-        if data.get('main').get('temp_min'):
-            temp_min = locale.format(
-                "%.1f", data.get('main').get('temp_min') + self.KELVINTOCELSIUS)
-        
-        temp_max = None
-        if data.get('main').get('temp_max'):
-            temp_max = locale.format(
-                "%.1f", data.get('main').get('temp_max') + self.KELVINTOCELSIUS)
-        
+            return None
+    
+    def _get_weather_string(self, data):
         sunrise = None
         if data.get('sys').get('sunrise'):
             sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M')
@@ -183,10 +178,8 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
                 else data['sys']['country'],
             datetime.datetime.fromtimestamp(data['dt']).strftime('%d.%m.%Y %H:%M'),
             self._get_weather_conditions(weather_conditions),
-            locale.format("%.1f", data.get('main').get('temp') + self.KELVINTOCELSIUS),
-            " ({}-{} °C)".format(temp_min, temp_max)
-                if (temp_min and temp_max and temp_min != temp_max)
-                else "",
+            locale.format("%.1f", data.get('main').get('temp') + KELVINTOCELSIUS),
+            self._get_temp_diff(data),
             data.get('main').get('humidity'),
             locale.format("%.0f", data.get('main').get('pressure')),
             self._get_wind_word(wind_dir=data.get('wind').get('deg')),
@@ -196,4 +189,31 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
                 if (sunrise and sunset)
                 else ""
         )
+        
+        return weather_string
+    
+    def handle(self, message):
+        if not message.params:
+            requested_place = "Espoo"
+        else:
+            requested_place = message.params
+        
+        for attempt in range(RETRIES):  # @UnusedVariable
+            data = self._get_weather_data(requested_place)
+            if data != None:
+                break
+            sleep(0.1)
+        
+        if data == None:
+            message.reply_to("Sääpalvelua ei löytynyt :(")
+            return
+        
+        if data.get('cod') == "404":
+            message.reply_to("Paikkakunnalla {} ei ole säätä".format(requested_place))
+            return
+        elif 'message' in data:
+            message.reply_to("Virhe: ".format(data.get('message')))
+            return
+        
+        weather_string = self._get_weather_string(data)
         message.reply_to(weather_string)
