@@ -1,11 +1,12 @@
 import logging
 import threading
 
-import irc
 from irc import bot
+import irc
 
 import config
 from message import Message
+import modules.modulelist
 
 
 class FlipperBot(bot.SingleServerIRCBot):
@@ -17,6 +18,16 @@ class FlipperBot(bot.SingleServerIRCBot):
                                         config.RECONNECTION_INTERVAL)
         
         irc.client.ServerConnection.buffer_class = irc.buffer.LenientDecodingLineBuffer
+    
+    def _dispatcher(self, connection, event):
+        super()._dispatcher(connection, event)
+        
+        for module in modules.modulelist.MODULES:
+            method = getattr(module, "on_" + event.type, None)
+            if method != None:
+                threading.Thread(target=method, 
+                                 args=(connection, event)).start()
+        
     
     def on_nicknameinuse(self, connection, event):
         connection.nick(connection.get_nickname() + "_")
