@@ -1,9 +1,3 @@
-'''
-Created on 14.10.2013
-
-@author: Matias
-'''
-
 import imp
 import logging
 import re

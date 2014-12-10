@@ -1,9 +1,3 @@
-'''
-Created on 18.10.2013
-
-@author: Matias
-'''
-
 import logging
 import random
 

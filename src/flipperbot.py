@@ -1,9 +1,3 @@
-'''
-Created on 9.12.2014
-
-@author: Matias
-'''
-
 import logging
 
 from irc import bot

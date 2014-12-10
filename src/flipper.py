@@ -1,9 +1,3 @@
-'''
-Created on Jul 4, 2012
-
-@author: Matias
-'''
-
 import logging
 
 import flipperbot

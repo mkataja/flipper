@@ -1,9 +1,4 @@
 # coding=utf-8
-'''
-Created on Jul 7, 2012
-
-@author: Matias
-'''
 
 from commands import builtincommands, weathercommand
 

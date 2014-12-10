@@ -1,9 +1,3 @@
-'''
-Created on Jul 8, 2012
-
-@author: Matias
-'''
-
 import unittest
 
 from commands import commandlist
