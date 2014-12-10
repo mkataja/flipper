@@ -1,5 +1,6 @@
 import logging
 
+import irc
 from irc import bot
 
 import config
@@ -13,6 +14,8 @@ class FlipperBot(bot.SingleServerIRCBot):
                                         config.NICK, 
                                         config.REALNAME,
                                         config.RECONNECTION_INTERVAL)
+        
+        irc.client.ServerConnection.buffer_class = irc.buffer.LenientDecodingLineBuffer
     
     def on_nicknameinuse(self, connection, event):
         connection.nick(connection.get_nickname() + "_")
