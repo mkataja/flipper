@@ -65,15 +65,15 @@ class Message(object):
     
     def run_command(self):
         if self._parse_command():
-            allowed_commands = self._get_allowed_commands()
+            all_commands = commandlist.ALL_CMDS
             
-            if self.commandword in allowed_commands:
-                command = allowed_commands[self.commandword]
+            if self.commandword in all_commands:
+                command = all_commands[self.commandword]
                 command().handle(self)
                 logging.debug("ran command: '{}' (with params: '{}')".
                               format(self.commandword, self.params))
             else:
-                logging.debug("unrecognized/unallowed command: {}".
+                logging.debug("unrecognized command: {}".
                               format(self.commandword))
     
     def reply_to(self, replytext):

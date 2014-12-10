@@ -19,3 +19,6 @@ PRIVATE_CMDS = {
                 'join': builtincommands.JoinCommand,
                 'part': builtincommands.PartCommand,
                 }
+
+ALL_CMDS = PUBLIC_CMDS.copy()
+ALL_CMDS.update(PRIVATE_CMDS)
