@@ -51,7 +51,13 @@ class ReloadCommand(Command):
 class QuitCommand(Command):
     @admin_required
     def handle(self, message):
-        message._connection.quit("kthxbye")
+        quit_message = "kthxbye"
+        if message.params:
+            quit_message = message.params
+        
+        message._connection.quit(quit_message)
+        
+        raise SystemExit(0)
 
 
 class JoinCommand(Command):
