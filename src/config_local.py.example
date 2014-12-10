@@ -10,3 +10,6 @@ NICK = "flipper"
 REALNAME = NICK
 
 CHANNELS = [ "#flippertest" ]
+
+SUPERUSER_NAME = "developer"
+SUPERUSER_NICK = "developer"

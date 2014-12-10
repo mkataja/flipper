@@ -3,6 +3,7 @@ import unittest
 from irc.client import NickMask
 
 from commands import commandlist
+import config
 import message
 
 
@@ -39,6 +40,10 @@ class _TestCommand(unittest.TestCase):
     source = None
     
     def setUp(self):
+        nickmask = "{}!{}@cloak-A066884E.dhcp.inet.fi".format(
+                                                              config.SUPERUSER_NICK, 
+                                                              config.SUPERUSER_NAME)
+        
         source = self.source
         content = ""
         is_privmsg = self.is_privmsg
@@ -46,7 +51,7 @@ class _TestCommand(unittest.TestCase):
         connection = FakeConnection()
         
         event = FakeEvent()
-        event.source = NickMask("otus!otus@cloak-A066884E.dhcp.inet.fi")
+        event.source = NickMask(nickmask)
         event.target = source
         event.arguments = [ content ]
         

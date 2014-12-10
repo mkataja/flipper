@@ -16,6 +16,9 @@ CHANNELS = []
 
 CMD_PREFIX = "!"
 
+SUPERUSER_NAME = ""
+SUPERUSER_NICK = ""
+
 
 # Import config_local.py
 try:
