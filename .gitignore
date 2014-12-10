@@ -6,5 +6,5 @@
 # Compiled python files
 *.pyc
 
-# Configuration file
-*.conf
+# Local configuration file
+src/config_local.py

@@ -8,22 +8,23 @@ import logging
 
 from irc import bot
 
+import config
 from message import Message
 
 
 class FlipperBot(bot.SingleServerIRCBot):
-    def __init__(self, conf):
+    def __init__(self):
         bot.SingleServerIRCBot.__init__(self, 
-                                        [(conf.server, conf.port)], 
-                                        conf.nick, 
-                                        conf.nick)
-        self.channels_to_join = conf.channels
+                                        [(config.SERVER, config.PORT)], 
+                                        config.NICK, 
+                                        config.REALNAME,
+                                        config.RECONNECTION_INTERVAL)
     
     def on_nicknameinuse(self, connection, event):
         connection.nick(connection.get_nickname() + "_")
     
     def on_welcome(self, connection, event):
-        for channel in self.channels_to_join:
+        for channel in config.CHANNELS:
             connection.join(channel)
         
     def on_privmsg(self, connection, event):

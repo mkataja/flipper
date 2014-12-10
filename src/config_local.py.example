@@ -1,0 +1,12 @@
+'''
+To create your own local configuration, copy this file as
+config_local.py and make any changes required. The settings
+from config_local.py will be loaded automatically.
+'''
+
+SERVER = "irc.ircnet.org"
+
+NICK = "flipper"
+REALNAME = NICK
+
+CHANNELS = [ "#flippertest" ]

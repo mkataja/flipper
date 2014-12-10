@@ -1,4 +1,3 @@
-#!/usr/bin/python
 '''
 Created on Jul 4, 2012
 
@@ -7,7 +6,6 @@ Created on Jul 4, 2012
 
 import logging
 
-import configuration
 import flipperbot
 
 
@@ -15,10 +13,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG,
                         format="%(asctime)s %(levelname)s: %(message)s")
     
-    conf = configuration.Configuration()
-    conf.load("../config/flipper.conf")
-    
-    bot = flipperbot.FlipperBot(conf)
+    bot = flipperbot.FlipperBot()
     bot.start()
 
 if __name__ == '__main__':

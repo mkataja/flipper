@@ -8,6 +8,7 @@ import imp
 import logging
 import re
 
+import config
 from commands import commandlist
 from commands.accesscontrol import has_admin_access
 
@@ -17,8 +18,6 @@ def reload_commandlist():
 
 
 class Message(object):
-    CMD_PREFIX = "!"
-    
     commandword = None
     params = None
     
@@ -50,9 +49,9 @@ class Message(object):
     
     def _parse_command(self):
         if self.is_private_message:
-            cmd_prefix_regex = self.CMD_PREFIX + "?"
+            cmd_prefix_regex = re.escape(config.CMD_PREFIX) + "?"
         else:
-            cmd_prefix_regex = self.CMD_PREFIX
+            cmd_prefix_regex = re.escape(config.CMD_PREFIX)
         
         regex = re.compile("^({}[:,\s]+|{})"
                            .format(
