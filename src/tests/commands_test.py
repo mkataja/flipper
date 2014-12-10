@@ -1,5 +1,7 @@
 import unittest
 
+from irc.client import NickMask
+
 from commands import commandlist
 import message
 
@@ -8,14 +10,23 @@ ALL_COMMANDS = dict(list(commandlist.PRIVATE_CMDS.items()) +
                     list(commandlist.PUBLIC_CMDS.items()))
 
 
-class FakeClient(object):
-    nick = "flipper"
+class FakeConnection(object):
     reply = None
     target = None
+    nick = "flipper"
     
-    def send(self, cli, user, msg):
-        self.reply = msg[1:]
-        self.target = user
+    def get_nickname(self):
+        return self.nick
+    
+    def privmsg(self, target, text):
+        self.reply = text
+        self.target = target
+
+
+class FakeEvent(object):
+    source = None
+    target = None
+    arguments = []
 
 
 class FakeMessage(message.Message):
@@ -28,11 +39,18 @@ class _TestCommand(unittest.TestCase):
     source = None
     
     def setUp(self):
-        nickstring = "otus!otus@cloak-A066884E.dhcp.inet.fi"
         source = self.source
         content = ""
         is_privmsg = self.is_privmsg
-        self.message = FakeMessage(FakeClient(), nickstring, source, content, is_privmsg)
+        
+        connection = FakeConnection()
+        
+        event = FakeEvent()
+        event.source = NickMask("otus!otus@cloak-A066884E.dhcp.inet.fi")
+        event.target = source
+        event.arguments = [ content ]
+        
+        self.message = FakeMessage(connection, event, is_privmsg)
         self.command = ALL_COMMANDS[self.commandToRun]
 
 
@@ -54,41 +72,41 @@ class TestFlipOneOption(TestFlip):
     def runTest(self):
         self.message.content = "!flip tset"
         self.message.run_command()
-        assert (self.message.client.reply == "otus: Jaa" 
-                or self.message.client.reply == "otus: Ei")
-        self.assertEqual(self.message.client.target, "#test")
+        assert (self.message._connection.reply == "otus: Jaa" 
+                or self.message._connection.reply == "otus: Ei")
+        self.assertEqual(self.message._connection.target, "#test")
 
 class TestFlipTwoOptions(TestFlip):
     def runTest(self):
         self.message.content = "!flip test/tset"
         self.message.run_command()
-        assert (self.message.client.reply == "otus: test" 
-                or self.message.client.reply == "otus: tset")
-        self.assertEqual(self.message.client.target, "#test")
+        assert (self.message._connection.reply == "otus: test" 
+                or self.message._connection.reply == "otus: tset")
+        self.assertEqual(self.message._connection.target, "#test")
 
 class TestFlipExtraDashes(TestFlip):
     def runTest(self):
         self.message.content = "!flip ///////test//////tset///////// /////"
         self.message.run_command()
-        assert (self.message.client.reply == "otus: test" 
-                or self.message.client.reply == "otus: tset")
-        self.assertEqual(self.message.client.target, "#test")
+        assert (self.message._connection.reply == "otus: test" 
+                or self.message._connection.reply == "otus: tset")
+        self.assertEqual(self.message._connection.target, "#test")
 
 class TestFlipNoOptions(TestFlip):
     def runTest(self):
         self.message.content = "!flip               "
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, 
+        self.assertEqual(self.message._connection.reply, 
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
-        self.assertEqual(self.message.client.target, "#test")
+        self.assertEqual(self.message._connection.target, "#test")
         
 class TestFlipNoOptionsDashes(TestFlip):
     def runTest(self):
         self.message.content = "!flip ///////  /////////   / "
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, 
+        self.assertEqual(self.message._connection.reply, 
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
-        self.assertEqual(self.message.client.target, "#test")
+        self.assertEqual(self.message._connection.target, "#test")
 
 
 class TestSay(PrivateTestCommand):
@@ -98,25 +116,25 @@ class TestSayToNick(TestSay):
     def runTest(self):
         self.message.content = "!say otus jotain juttuja"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, "jotain juttuja")
-        self.assertEqual(self.message.client.target, "otus")
+        self.assertEqual(self.message._connection.reply, "jotain juttuja")
+        self.assertEqual(self.message._connection.target, "otus")
 
 class TestSayToChannel(TestSay):
     def runTest(self):
         self.message.content = "!say #jea jotain juttuja"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, "jotain juttuja")
-        self.assertEqual(self.message.client.target, "#jea")
+        self.assertEqual(self.message._connection.reply, "jotain juttuja")
+        self.assertEqual(self.message._connection.target, "#jea")
 
 class TestSayToChannelUnauthorized(TestSay):
     def runTest(self):
-        self.message.sender_user = "not-otus"
+        self.message._event.source = NickMask("otus!not-otus@cloak-A066884E.dhcp.inet.fi")
         self.message.content = "!say #jea jotain juttuja"
         self.message.run_command()
-        assert(self.message.client.reply == "OH BEHAVE, otus"
-               or self.message.client.reply == "Oletpa tuhma poika, otus"
-               or self.message.client.reply == "Sinulla ei ole OIKEUTTA, otus")
-        self.assertEqual(self.message.client.target, self.message.sender)
+        assert(self.message._connection.reply == "OH BEHAVE, otus"
+               or self.message._connection.reply == "Oletpa tuhma poika, otus"
+               or self.message._connection.reply == "Sinulla ei ole OIKEUTTA, otus")
+        self.assertEqual(self.message._connection.target, self.message.sender)
 
 
 class TestHelp(PublicTestCommand):
@@ -126,13 +144,13 @@ class TestHelpOnSay(TestHelp):
     def runTest(self):
         self.message.content = "!help say"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, "otus: Käyttö: anna ensimmäisenä parametrinä kohde, sitten viesti")
+        self.assertEqual(self.message._connection.reply, "otus: Käyttö: anna ensimmäisenä parametrinä kohde, sitten viesti")
 
 class TestHelpOnReload(TestHelp):
     def runTest(self):
         self.message.content = "!help reload"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, "otus: Tämän komennon käyttöön ei ole ohjeita.")
+        self.assertEqual(self.message._connection.reply, "otus: Tämän komennon käyttöön ei ole ohjeita.")
 
 
 class TestWeather(PublicTestCommand):
@@ -142,13 +160,13 @@ class TestWeatherDefault(TestWeather):
     def runTest(self):
         self.message.content = "!sää"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply[:21], "otus: Sää Espoo (FI):")
+        self.assertEqual(self.message._connection.reply[:21], "otus: Sää Espoo (FI) ")
         
 class TestWeatherFail(TestWeather):
     def runTest(self):
         self.message.content = "!sää Uasfkjasfdljfsdl"
         self.message.run_command()
-        self.assertEqual(self.message.client.reply, "otus: Paikkakunnalla Uasfkjasfdljfsdl ei ole säätä")
+        self.assertEqual(self.message._connection.reply, "otus: Paikkakunnalla Uasfkjasfdljfsdl ei ole säätä")
 
 
 if __name__ == "__main__":
