@@ -1,4 +1,5 @@
 import logging
+import threading
 
 import irc
 from irc import bot
@@ -35,4 +36,4 @@ class FlipperBot(bot.SingleServerIRCBot):
         
         logging.debug("handling privmsg: {}".format(message))
         
-        message.run_command()
+        threading.Thread(target=message.run_command).start()
