@@ -19,6 +19,8 @@ CMD_PREFIX = "!"
 SUPERUSER_NAME = ""
 SUPERUSER_NICK = ""
 
+GOOGLE_API_KEY = ""
+
 
 # Import config_local.py
 try:
