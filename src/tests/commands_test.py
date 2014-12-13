@@ -4,34 +4,11 @@ from irc.client import NickMask
 
 from commands import commandlist
 import config
-import message
+from tests.test_utility import FakeConnection, FakeEvent, FakeMessage
 
 
 ALL_COMMANDS = dict(list(commandlist.PRIVATE_CMDS.items()) + 
                     list(commandlist.PUBLIC_CMDS.items()))
-
-
-class FakeConnection(object):
-    reply = None
-    target = None
-    nick = "flipper"
-    
-    def get_nickname(self):
-        return self.nick
-    
-    def privmsg(self, target, text):
-        self.reply = text
-        self.target = target
-
-
-class FakeEvent(object):
-    source = None
-    target = None
-    arguments = []
-
-
-class FakeMessage(message.Message):
-    pass
 
 
 class _TestCommand(unittest.TestCase):
@@ -41,19 +18,16 @@ class _TestCommand(unittest.TestCase):
     
     def setUp(self):
         nickmask = "{}!{}@cloak-A066884E.dhcp.inet.fi".format(
-                                                              config.SUPERUSER_NICK, 
-                                                              config.SUPERUSER_NAME)
+            config.SUPERUSER_NICK, config.SUPERUSER_NAME)
         
-        source = self.source
-        content = ""
         is_privmsg = self.is_privmsg
         
         connection = FakeConnection()
         
-        event = FakeEvent()
-        event.source = NickMask(nickmask)
-        event.target = source
-        event.arguments = [ content ]
+        source = NickMask(nickmask)
+        target = self.source
+        arguments = [ "" ]
+        event = FakeEvent(source, target, arguments)
         
         self.message = FakeMessage(connection, event, is_privmsg)
         self.command = ALL_COMMANDS[self.commandToRun]
@@ -67,7 +41,6 @@ class PublicTestCommand(_TestCommand):
 class PrivateTestCommand(_TestCommand):
     is_privmsg = True
     source = "otus"
-    
 
 
 class TestFlip(PublicTestCommand):
@@ -101,7 +74,7 @@ class TestFlipNoOptions(TestFlip):
     def runTest(self):
         self.message.content = "!flip               "
         self.message.run_command()
-        self.assertEqual(self.message._connection.reply, 
+        self.assertEqual(self.message._connection.reply,
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
         self.assertEqual(self.message._connection.target, "#test")
         
@@ -109,7 +82,7 @@ class TestFlipNoOptionsDashes(TestFlip):
     def runTest(self):
         self.message.content = "!flip ///////  /////////   / "
         self.message.run_command()
-        self.assertEqual(self.message._connection.reply, 
+        self.assertEqual(self.message._connection.reply,
                          "otus: Virheelliset parametrit. Käyttö: anna vaihtoehdot (1...n) kauttaviivoilla erotettuna")
         self.assertEqual(self.message._connection.target, "#test")
 
@@ -175,5 +148,5 @@ class TestWeatherFail(TestWeather):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
