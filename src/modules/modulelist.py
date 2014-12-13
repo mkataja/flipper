@@ -1,4 +1,4 @@
-from modules import urlactions
+from modules import url
 
 
-MODULES = [ urlactions.UrlActions() ]
+MODULES = [ url.UrlModule() ]
