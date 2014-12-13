@@ -9,7 +9,7 @@ SERVER = "irc.ircnet.org"
 NICK = "flipper"
 REALNAME = NICK
 
-CHANNELS = [ "#flippertest" ]
+CHANNELS = [ "#flipperdev" ]
 
 SUPERUSER_NAME = "developer"
 SUPERUSER_NICK = "developer"
