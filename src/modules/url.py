@@ -1,6 +1,8 @@
 import json
+import logging
 from multiprocessing.pool import ThreadPool
 import re
+import threading
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
 
@@ -22,11 +24,14 @@ class UrlModule(object):
         def process_urls(self):
             message = self._event.arguments[0]
             
-            url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-            urls = re.findall(url_regex, message)
+            url_regex = '(?:(?:https?:\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+)(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">)])?'
+            urls = re.findall(url_regex, message, re.IGNORECASE)
             
             for url in urls:
-                self._process_url(url)
+                if not url.startswith("http"):
+                    url = "http://" + url
+                logging.debug("found url: {}".format(url))
+                threading.Thread(target=self._process_url, args=(url,)).start()
             
         def _process_url(self, url):
             pool = ThreadPool()
@@ -36,12 +41,17 @@ class UrlModule(object):
             title = title_async.get()
             short = short_async.get()
             
-            self._connection.privmsg(self._event.target, 
-                                     "{}-> {}"
-                                     .format(short, title)) 
+            message = short if short != None else ""
+            if title != None:
+                message += "-> {}".format(title)
+            
+            if message != "":
+                self._connection.privmsg(self._event.target, message) 
         
         def _get_title(self, url):
             webpage = BeautifulSoup(urlopen(url, timeout=3))
+            if webpage == None or webpage.title == None:
+                return None;
             return webpage.title.string
         
         def _get_short_url_text(self, url):
