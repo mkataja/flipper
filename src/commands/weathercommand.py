@@ -194,11 +194,11 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
         
         for attempt in range(RETRIES):  # @UnusedVariable
             data = self._get_weather_data(requested_place)
-            if data != None:
+            if data is not None:
                 break
             sleep(0.1)
         
-        if data == None:
+        if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")
             return
         

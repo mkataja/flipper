@@ -24,7 +24,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         
         for module in modules.modulelist.MODULES:
             method = getattr(module, "on_" + event.type, None)
-            if method != None:
+            if method is not None:
                 threading.Thread(target=method, 
                                  args=(connection, event)).start()
         

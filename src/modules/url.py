@@ -41,8 +41,8 @@ class UrlModule(object):
             title = title_async.get()
             short = short_async.get()
             
-            message = short if short != None else ""
-            if title != None:
+            message = short if short is not None else ""
+            if title is not None:
                 message += "-> {}".format(title)
             
             if message != "":
@@ -50,7 +50,7 @@ class UrlModule(object):
         
         def _get_title(self, url):
             webpage = BeautifulSoup(urlopen(url, timeout=3))
-            if webpage == None or webpage.title == None:
+            if webpage is None or webpage.title is None:
                 return None;
             return webpage.title.string
         
@@ -58,11 +58,11 @@ class UrlModule(object):
             short = None
             if len(url) > 42:
                 short = self._get_short_url(url)
-            return short + " " if short != None else ""
+            return short + " " if short is not None else ""
         
         def _get_short_url(self, url):
-            request_url = "https://www.googleapis.com/urlshortener/v1/url" + \
-                "?key=" + config.GOOGLE_API_KEY
+            request_url = ("https://www.googleapis.com/urlshortener/v1/url" +
+                "?key=" + config.GOOGLE_API_KEY)
             request_data = json.dumps({
                 'longUrl': url,
             }).encode()
@@ -76,7 +76,7 @@ class UrlModule(object):
                 return None
             
             data = json.loads(response.read().decode())
-            if data == None:
+            if data is None:
                 return None
             
             return data.get('id')
