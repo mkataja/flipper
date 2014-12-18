@@ -13,6 +13,7 @@ import modules.modulelist
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
         self.last_pong = None
+        self.nick_tail = ""
         
         bot.SingleServerIRCBot.__init__(self, 
                                         [(config.SERVER, config.PORT)], 
@@ -30,14 +31,12 @@ class FlipperBot(bot.SingleServerIRCBot):
             if method is not None:
                 threading.Thread(target=method, 
                                  args=(connection, event)).start()
-        
-    
-    def on_nicknameinuse(self, connection, event):
-        connection.nick(connection.get_nickname() + "_")
     
     def on_welcome(self, connection, event):
         self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY, 
                                    self._keep_alive, ())
+        self.reactor.execute_every(60, self._keep_nick, ())
+        
         for channel in config.CHANNELS:
             connection.join(channel)
         
@@ -52,9 +51,20 @@ class FlipperBot(bot.SingleServerIRCBot):
             self.last_pong = None
             self.jump_server("Timeout")
     
+    def _keep_nick(self):
+        if self.nick_tail != "":
+            self.nick_tail = ""
+            logging.debug("Trying to change nick from {} to {}".format(
+                self.connection.get_nickname(), config.NICK))
+            self.connection.nick(config.NICK)
+        
     def on_pong(self, connection, event):
         self.last_pong = time.time()
     
+    def on_nicknameinuse(self, connection, event):
+        self.nick_tail = self.nick_tail + "_"
+        connection.nick(config.NICK + self.nick_tail)
+        
     def on_privmsg(self, connection, event):
         self._handle_command(connection, event, True)
         
