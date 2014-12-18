@@ -18,6 +18,7 @@ PRIVATE_CMDS = {
                 'say': builtincommands.SayCommand,
                 'join': builtincommands.JoinCommand,
                 'part': builtincommands.PartCommand,
+                'hop': builtincommands.HopCommand,
                 }
 
 ALL_CMDS = PUBLIC_CMDS.copy()

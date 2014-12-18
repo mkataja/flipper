@@ -62,7 +62,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         self._handle_command(connection, event, False)
     
     def _handle_command(self, connection, event, is_private_message):
-        message = Message(connection, event, is_private_message)
+        message = Message(self, connection, event, is_private_message)
         
         logging.debug("handling privmsg: {}".format(message))
         

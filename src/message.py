@@ -15,9 +15,10 @@ class Message(object):
     commandword = None
     params = None
     
-    def __init__(self, connection, event, is_private_message):
+    def __init__(self, bot, connection, event, is_private_message):
         self._connection = connection
         self._event = event
+        self.bot = bot
         
         self.sender = event.source.nick
         self.sender_user = event.source.user

@@ -62,6 +62,12 @@ class QuitCommand(Command):
         raise SystemExit(0)
 
 
+class HopCommand(Command):
+    @admin_required
+    def handle(self, message):
+        message.bot.jump_server()
+
+
 class JoinCommand(Command):
     @admin_required
     def handle(self, message):
