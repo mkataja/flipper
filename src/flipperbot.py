@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 
 from irc import bot
 import irc
@@ -11,6 +12,8 @@ import modules.modulelist
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
+        self.last_pong = None
+        
         bot.SingleServerIRCBot.__init__(self, 
                                         [(config.SERVER, config.PORT)], 
                                         config.NICK, 
@@ -33,9 +36,25 @@ class FlipperBot(bot.SingleServerIRCBot):
         connection.nick(connection.get_nickname() + "_")
     
     def on_welcome(self, connection, event):
+        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY, 
+                                   self._keep_alive, ())
         for channel in config.CHANNELS:
             connection.join(channel)
         
+    def _keep_alive(self):
+        self.connection.ping("keep-alive")
+        
+        current_time = time.time()
+        logging.debug("Last pong at {}, current time {}".format(self.last_pong,
+                                                                current_time))
+        if (self.last_pong is not None and 
+                current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
+            self.last_pong = None
+            self.jump_server("Timeout")
+    
+    def on_pong(self, connection, event):
+        self.last_pong = time.time()
+    
     def on_privmsg(self, connection, event):
         self._handle_command(connection, event, True)
         
