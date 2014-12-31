@@ -1,3 +1,4 @@
+import datetime
 import logging
 import threading
 import time
@@ -37,6 +38,8 @@ class FlipperBot(bot.SingleServerIRCBot):
                                    self._keep_alive, ())
         self.reactor.execute_every(60, self._keep_nick, ())
         
+        self._setup_timed_messages()
+        
         for channel in config.CHANNELS:
             connection.join(channel)
         
@@ -57,6 +60,19 @@ class FlipperBot(bot.SingleServerIRCBot):
             logging.debug("Trying to change nick from {} to {}".format(
                 self.connection.get_nickname(), config.NICK))
             self.connection.nick(config.NICK)
+    
+    def _setup_timed_messages(self):
+        self._setup_first_new_year()
+    
+    def _setup_first_new_year(self):
+        next_year = datetime.datetime.now().year + 1
+        new_year_first = datetime.datetime(next_year, 1, 1, 0, 0, 1)
+        self.reactor.execute_at(new_year_first, self._message_first_new_year, ())
+    
+    def _message_first_new_year(self):
+        for channel in self.channels.keys():
+            self.connection.privmsg(channel, "EKA")
+        self._setup_first_new_year()
         
     def on_pong(self, connection, event):
         self.last_pong = time.time()
