@@ -12,6 +12,7 @@ PUBLIC_CMDS = {
                'quit': builtincommands.QuitCommand,
                'sää': weathercommand.WeatherCommand,
                'todellinensää': builtincommands.RealWeatherCommand,
+               'roll': builtincommands.RollCommand,
                }
 
 PRIVATE_CMDS = {
