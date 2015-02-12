@@ -142,8 +142,10 @@ class RollCommand(Command):
             return
         
         RollCommand.rolling = True
-        self.roll(message)
-        RollCommand.rolling = False
+        try:
+            self.roll(message)
+        finally:
+            RollCommand.rolling = False
     
     def roll(self, message):
         matches = re.match("([1-9][0-9]*)d([1-9][0-9]*)", message.params.strip())
