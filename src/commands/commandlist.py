@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from commands import builtincommands, weathercommand
+from commands import builtincommands, weathercommand, rollcommand
 
 
 PUBLIC_CMDS = {
@@ -12,7 +12,7 @@ PUBLIC_CMDS = {
                'quit': builtincommands.QuitCommand,
                'sää': weathercommand.WeatherCommand,
                'todellinensää': builtincommands.RealWeatherCommand,
-               'roll': builtincommands.RollCommand,
+               'roll': rollcommand.RollCommand,
                }
 
 PRIVATE_CMDS = {
