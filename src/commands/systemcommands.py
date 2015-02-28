@@ -38,8 +38,8 @@ class ReloadCommand(Command):
     def handle(self, msg):
         msg.reply_to("Päivitetään komennot...")
         
-        import commands.builtincommands
-        imp.reload(commands.builtincommands)
+        import commands.systemcommands
+        imp.reload(commands.systemcommands)
         
         import commands.weathercommand
         imp.reload(commands.weathercommand)

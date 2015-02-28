@@ -1,25 +1,25 @@
 # coding=utf-8
 
-from commands import builtincommands, weathercommand, rollcommand
+from commands import systemcommands, weathercommand, rollcommand
 
 
 PUBLIC_CMDS = {
-               'help': builtincommands.HelpCommand,
-               'list': builtincommands.ListCommand,
-               'flip': builtincommands.FlipCommand,
-               'flippaa': builtincommands.FlipCommand,
-               'reload': builtincommands.ReloadCommand,
-               'quit': builtincommands.QuitCommand,
+               'help': systemcommands.HelpCommand,
+               'list': systemcommands.ListCommand,
+               'flip': systemcommands.FlipCommand,
+               'flippaa': systemcommands.FlipCommand,
+               'reload': systemcommands.ReloadCommand,
+               'quit': systemcommands.QuitCommand,
                'sää': weathercommand.WeatherCommand,
-               'todellinensää': builtincommands.RealWeatherCommand,
+               'todellinensää': systemcommands.RealWeatherCommand,
                'roll': rollcommand.RollCommand,
                }
 
 PRIVATE_CMDS = {
-                'say': builtincommands.SayCommand,
-                'join': builtincommands.JoinCommand,
-                'part': builtincommands.PartCommand,
-                'hop': builtincommands.HopCommand,
+                'say': systemcommands.SayCommand,
+                'join': systemcommands.JoinCommand,
+                'part': systemcommands.PartCommand,
+                'hop': systemcommands.HopCommand,
                 }
 
 ALL_CMDS = PUBLIC_CMDS.copy()
