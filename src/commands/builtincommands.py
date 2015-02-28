@@ -165,7 +165,7 @@ class RollCommand(Command):
             message.reply_to("Nigga please, {}...".format(num_faces))
             return
         
-        rolls = [random.randint(1, num_faces) for i in range(num_dice)]
+        rolls = [random.randint(1, num_faces) for _ in range(num_dice)]
         
         if num_dice > 4:
             message.reply_to("Heitit: {}. Heittojen summa: {}"
