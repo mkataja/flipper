@@ -49,7 +49,11 @@ class UrlModule(object):
                 self._connection.privmsg(self._event.target, message) 
         
         def _get_title(self, url):
-            webpage = BeautifulSoup(urlopen(url, timeout=3))
+            try:
+                webpage = BeautifulSoup(urlopen(url, timeout=3))
+            except:
+                # Doesn't really matter what went wrong, abort in any case
+                return None
             if webpage is None or webpage.title is None:
                 return None;
             title = webpage.title.string
@@ -59,7 +63,7 @@ class UrlModule(object):
             short = None
             if len(url) > 42:
                 short = self._get_short_url(url)
-            return short + " " if short is not None else ""
+            return short + " " if short is not None else None
         
         def _get_short_url(self, url):
             request_url = ("https://www.googleapis.com/urlshortener/v1/url" +
