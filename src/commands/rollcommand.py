@@ -1,5 +1,6 @@
 import random
 import re
+import threading
 import time
 
 from commands.command import Command
@@ -8,18 +9,18 @@ from commands.command import Command
 class RollCommand(Command):
     helpstr = "Käyttö: speksaa heitettävä noppa muodossa AdX (esim 2d6)"
     
-    rolling = False
+    rolling = threading.Lock()
     
     def handle(self, message):
-        if RollCommand.rolling:
+        acquired = RollCommand.rolling.acquire(False)
+        if not acquired:
             message.reply_to("Yksi heitto kerrallaan")
             return
         
-        RollCommand.rolling = True
         try:
             self.roll(message)
         finally:
-            RollCommand.rolling = False
+            RollCommand.rolling.release()
     
     def roll(self, message):
         matches = re.match("([1-9][0-9]*)d([1-9][0-9]*)", message.params.strip())
