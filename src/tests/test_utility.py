@@ -1,6 +1,10 @@
 import message
 
 
+class FakeBot(object):
+    pass
+
+
 class FakeConnection(object):
     reply = None
     target = None

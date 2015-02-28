@@ -4,7 +4,7 @@ from irc.client import NickMask
 
 from commands import commandlist
 import config
-from tests.test_utility import FakeConnection, FakeEvent, FakeMessage
+from tests.test_utility import FakeBot, FakeConnection, FakeEvent, FakeMessage
 
 
 ALL_COMMANDS = dict(list(commandlist.PRIVATE_CMDS.items()) + 
@@ -22,6 +22,8 @@ class _TestCommand(unittest.TestCase):
         
         is_privmsg = self.is_privmsg
         
+        bot = FakeBot()
+        
         connection = FakeConnection()
         
         source = NickMask(nickmask)
@@ -29,7 +31,7 @@ class _TestCommand(unittest.TestCase):
         arguments = [ "" ]
         event = FakeEvent(source, target, arguments)
         
-        self.message = FakeMessage(connection, event, is_privmsg)
+        self.message = FakeMessage(bot, connection, event, is_privmsg)
         self.command = ALL_COMMANDS[self.commandToRun]
 
 
