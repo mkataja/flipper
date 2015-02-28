@@ -16,7 +16,7 @@ class UrlModule(object):
         UrlModule.UrlActions(connection, event).process_urls()
     
     
-    class UrlActions:
+    class UrlActions(object):
         def __init__(self, connection, event):
             self._connection = connection
             self._event = event
@@ -52,7 +52,8 @@ class UrlModule(object):
             webpage = BeautifulSoup(urlopen(url, timeout=3))
             if webpage is None or webpage.title is None:
                 return None;
-            return webpage.title.string
+            title = webpage.title.string
+            return re.sub(r"(\r?\n)+", " ", title).strip()
         
         def _get_short_url_text(self, url):
             short = None
