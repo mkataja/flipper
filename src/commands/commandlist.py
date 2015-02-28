@@ -1,25 +1,28 @@
 # coding=utf-8
 
-from commands import systemcommands, weathercommand, rollcommand
+from commands import (systemcommands, 
+                      weathercommand, 
+                      rollcommand, 
+                      realweathercommand, flipcommand, irccommands)
 
 
 PUBLIC_CMDS = {
                'help': systemcommands.HelpCommand,
                'list': systemcommands.ListCommand,
-               'flip': systemcommands.FlipCommand,
-               'flippaa': systemcommands.FlipCommand,
+               'flip': flipcommand.FlipCommand,
+               'flippaa': flipcommand.FlipCommand,
                'reload': systemcommands.ReloadCommand,
-               'quit': systemcommands.QuitCommand,
+               'quit': irccommands.QuitCommand,
                'sää': weathercommand.WeatherCommand,
-               'todellinensää': systemcommands.RealWeatherCommand,
+               'todellinensää': realweathercommand.RealWeatherCommand,
                'roll': rollcommand.RollCommand,
                }
 
 PRIVATE_CMDS = {
-                'say': systemcommands.SayCommand,
-                'join': systemcommands.JoinCommand,
-                'part': systemcommands.PartCommand,
-                'hop': systemcommands.HopCommand,
+                'say': irccommands.SayCommand,
+                'join': irccommands.JoinCommand,
+                'part': irccommands.PartCommand,
+                'hop': irccommands.HopCommand,
                 }
 
 ALL_CMDS = PUBLIC_CMDS.copy()
