@@ -11,8 +11,6 @@ class QuitCommand(Command):
             quit_message = message.params
         
         message._connection.quit(quit_message)
-        
-        raise SystemExit(0)
 
 
 class HopCommand(Command):
