@@ -14,7 +14,7 @@ class FirstShoutModule(Module):
         tomorrow_first_second = datetime.datetime.combine(tomorrow, 
                                                           datetime.time(0, 0, 1))
         
-        logging.debug("Setting new day EKA shout at {}".format(tomorrow_first_second))
+        logging.info("Setting new day EKA shout at {}".format(tomorrow_first_second))
         self._bot.reactor.execute_at(tomorrow_first_second, self._message_first_g6, ())
     
     def _message_first_g6(self):
@@ -27,7 +27,7 @@ class FirstShoutModule(Module):
     def _setup_first_new_year(self):
         next_year = datetime.datetime.now().year + 1
         new_year_first = datetime.datetime(next_year, 1, 1, 0, 0, 1)
-        logging.debug("Setting new year EKA shout at {}".format(new_year_first))
+        logging.info("Setting new year EKA shout at {}".format(new_year_first))
         self._bot.reactor.execute_at(new_year_first, self._message_first_new_year, ())
     
     def _message_first_new_year(self):

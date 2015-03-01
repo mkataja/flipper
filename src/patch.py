@@ -8,7 +8,7 @@ def patch_irclib():
     Patch the irc library to fix the situation where it tries to use a closed 
     socket and crashes.
     """
-    logging.debug("Patching irc library...")
+    logging.info("Patching irc library...")
     
     sockets_orig = irc.client.Reactor.sockets
     @property

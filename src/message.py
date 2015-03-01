@@ -71,10 +71,10 @@ class Message(object):
             if self.commandword in all_commands:
                 command = all_commands[self.commandword]
                 command().handle(self)
-                logging.debug("ran command: '{}' (with params: '{}')".
+                logging.info("ran command: '{}' (with params: '{}')".
                               format(self.commandword, self.params))
             else:
-                logging.debug("unrecognized command: {}".
+                logging.warn("unrecognized command: {}".
                               format(self.commandword))
     
     def reply_to(self, replytext):

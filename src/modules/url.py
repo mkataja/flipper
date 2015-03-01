@@ -54,6 +54,7 @@ class UrlModule(Module):
                 webpage = BeautifulSoup(urlopen(url, timeout=3))
             except Exception:
                 # Doesn't really matter what went wrong, abort in any case
+                logging.warn("Getting url title failed for {}".format(url))
                 return None
             if webpage is None or webpage.title is None:
                 return None
@@ -79,6 +80,7 @@ class UrlModule(Module):
             try:
                 response = urlopen(request)
             except HTTPError:
+                logging.warn("Getting short url failed for {}".format(url))
                 return None
             
             data = json.loads(response.read().decode())

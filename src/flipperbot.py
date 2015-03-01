@@ -54,7 +54,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         self.connection.ping("keep-alive")
         
         current_time = time.time()
-        logging.debug("Last pong at {}, current time {}".format(self.last_pong,
+        logging.info("Last pong at {}, current time {}".format(self.last_pong,
                                                                 current_time))
         if (self.last_pong is not None and 
                 current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
@@ -68,12 +68,12 @@ class FlipperBot(bot.SingleServerIRCBot):
         
         if self.nick_tail != "":
             self.nick_tail = ""
-            logging.debug("Trying to change nick from {} to {}".format(
+            logging.info("Trying to change nick from {} to {}".format(
                 self.connection.get_nickname(), config.NICK))
             self.connection.nick(config.NICK)
     
     def on_disconnect(self, connection, event):
-        logging.debug("Disconnected: unloading delayed commands")
+        logging.info("Disconnected: unloading delayed commands")
         with self.reactor.mutex:
             self.reactor.delayed_commands = []
     
@@ -100,12 +100,12 @@ class FlipperBot(bot.SingleServerIRCBot):
     
     def _handle_command(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
-        logging.debug("handling privmsg: {}".format(message))
+        logging.info("handling privmsg: {}".format(message))
         threading.Thread(target=message.run_command).start()
     
     def safe_privmsg(self, target, message):
         if not self.connection.is_connected():
-            logging.debug("Tried to send privmsg while disconnected: aborting")
+            logging.error("Tried to send privmsg while disconnected: aborting")
             return
         text = re.sub(r"(\r?\n|\t)+", " ", message)
         self.connection.privmsg(target, text)
