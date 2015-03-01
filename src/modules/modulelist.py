@@ -1,4 +1,7 @@
-from modules import url
+from modules import url, firstshout
 
 
-MODULES = [ url.UrlModule() ]
+MODULES = [ 
+           url.UrlModule,
+           firstshout.FirstShoutModule,
+           ]

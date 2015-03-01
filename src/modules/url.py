@@ -9,9 +9,10 @@ from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 
 import config
+from modules.module import Module
 
 
-class UrlModule(object):
+class UrlModule(Module):
     def on_pubmsg(self, connection, event):
         UrlModule.UrlActions(connection, event).process_urls()
     
