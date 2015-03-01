@@ -9,10 +9,13 @@ import irc
 import config
 from message import Message
 import modules.modulelist
+import patch
 
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
+        patch.patch_irclib()
+        
         self.last_pong = None
         self.nick_tail = ""
         
