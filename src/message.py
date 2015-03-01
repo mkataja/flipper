@@ -78,7 +78,7 @@ class Message(object):
                               format(self.commandword))
     
     def reply_to(self, replytext):
-        replytext = re.sub(r"\r?\n", " ", replytext)
+        replytext = re.sub(r"(\r?\n|\t)+", " ", replytext)
         
         if self.is_private_message:
             target = self.sender

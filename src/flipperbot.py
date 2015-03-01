@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import time
 
@@ -85,3 +86,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         message = Message(self, connection, event, is_private_message)
         logging.debug("handling privmsg: {}".format(message))
         threading.Thread(target=message.run_command).start()
+    
+    def safe_privmsg(self, target, message):
+        if not self.connection.is_connected():
+            logging.debug("Tried to send privmsg while disconnected: aborting")
+            return
+        text = re.sub(r"(\r?\n|\t)+", " ", message)
+        self.connection.privmsg(target, text)

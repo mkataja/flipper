@@ -14,12 +14,12 @@ from modules.module import Module
 
 class UrlModule(Module):
     def on_pubmsg(self, connection, event):
-        UrlModule.UrlActions(connection, event).process_urls()
+        UrlModule.UrlActions(self._bot, event).process_urls()
     
     
     class UrlActions(object):
-        def __init__(self, connection, event):
-            self._connection = connection
+        def __init__(self, bot, event):
+            self._bot = bot
             self._event = event
         
         def process_urls(self):
@@ -36,7 +36,7 @@ class UrlModule(Module):
             
         def _process_url(self, url):
             pool = ThreadPool()
-            title_async = pool.apply_async(self._get_title, (url,))
+            title_async = pool.apply_async(self._get_title_text, (url,))
             short_async = pool.apply_async(self._get_short_url_text, (url,))
             
             title = title_async.get()
@@ -47,18 +47,18 @@ class UrlModule(Module):
                 message += "-> {}".format(title)
             
             if message != "":
-                self._connection.privmsg(self._event.target, message) 
+                self._bot.safe_privmsg(self._event.target, message) 
         
-        def _get_title(self, url):
+        def _get_title_text(self, url):
             try:
                 webpage = BeautifulSoup(urlopen(url, timeout=3))
             except:
                 # Doesn't really matter what went wrong, abort in any case
                 return None
             if webpage is None or webpage.title is None:
-                return None;
-            title = webpage.title.string
-            return re.sub(r"(\r?\n)+", " ", title).strip()
+                return None
+            title = webpage.title.string.strip()
+            return re.sub(r"\s{2,}", " ", title)
         
         def _get_short_url_text(self, url):
             short = None
