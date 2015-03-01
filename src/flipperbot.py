@@ -16,9 +16,9 @@ class FlipperBot(bot.SingleServerIRCBot):
         self.last_pong = None
         self.nick_tail = ""
         
-        bot.SingleServerIRCBot.__init__(self, 
-                                        [(config.SERVER, config.PORT)], 
-                                        config.NICK, 
+        bot.SingleServerIRCBot.__init__(self,
+                                        [(config.SERVER, config.PORT)],
+                                        config.NICK,
                                         config.REALNAME,
                                         config.RECONNECTION_INTERVAL)
         
@@ -32,7 +32,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         for module in self._registered_modules:
             method = getattr(module, "on_" + event.type, None)
             if method is not None:
-                threading.Thread(target=method, 
+                threading.Thread(target=method,
                                  args=(connection, event)).start()
         
     def _keep_alive(self):
@@ -61,8 +61,13 @@ class FlipperBot(bot.SingleServerIRCBot):
                 self.connection.get_nickname(), config.NICK))
             self.connection.nick(config.NICK)
     
+    def on_disconnect(self, connection, event):
+        logging.debug("Disconnected: unloading delayed commands")
+        with self.reactor.mutex:
+            self.reactor.delayed_commands = []
+    
     def on_welcome(self, connection, event):
-        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY, 
+        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY,
                                    self._keep_alive, ())
         self.reactor.execute_every(60, self._keep_nick, ())
         
