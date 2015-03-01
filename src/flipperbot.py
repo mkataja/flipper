@@ -1,5 +1,7 @@
 import logging
 import re
+import signal
+import sys
 import threading
 import time
 
@@ -16,6 +18,8 @@ class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
         patch.patch_irclib()
         
+        signal.signal(signal.SIGINT, self._sigint_handler)
+        
         self.last_pong = None
         self.nick_tail = ""
         
@@ -29,6 +33,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         
         self._registered_modules = [m(self) for m in modules.modulelist.MODULES]
     
+    def _sigint_handler(self, signal, frame):
+        self.connection.quit("Quitting")
+        sys.exit()
+        
     def _dispatcher(self, connection, event):
         super()._dispatcher(connection, event)
         
