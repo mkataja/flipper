@@ -1,9 +1,12 @@
 # coding=utf-8
 
-from commands import (systemcommands, 
-                      weathercommand, 
-                      rollcommand, 
-                      realweathercommand, flipcommand, irccommands)
+from commands import (systemcommands,
+                      weathercommand,
+                      rollcommand,
+                      realweathercommand,
+                      flipcommand,
+                      irccommands,
+                      mooncommand)
 
 
 PUBLIC_CMDS = {
@@ -16,6 +19,8 @@ PUBLIC_CMDS = {
                'sää': weathercommand.WeatherCommand,
                'todellinensää': realweathercommand.RealWeatherCommand,
                'roll': rollcommand.RollCommand,
+               'moon': mooncommand.MoonCommand,
+               'kuu': mooncommand.MoonCommand,
                }
 
 PRIVATE_CMDS = {
