@@ -148,7 +148,7 @@ class WeatherCommand(Command):
                                            .format(requested_place)
                                            ).read().decode()
             return json.loads(reply)
-        except(urllib.error.HTTPError):
+        except urllib.error.HTTPError:
             return None
     
     def _get_weather_string(self, data):

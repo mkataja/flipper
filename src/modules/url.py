@@ -52,7 +52,7 @@ class UrlModule(Module):
         def _get_title_text(self, url):
             try:
                 webpage = BeautifulSoup(urlopen(url, timeout=3))
-            except:
+            except Exception:
                 # Doesn't really matter what went wrong, abort in any case
                 return None
             if webpage is None or webpage.title is None:
@@ -78,7 +78,7 @@ class UrlModule(Module):
             
             try:
                 response = urlopen(request)
-            except(HTTPError):
+            except HTTPError:
                 return None
             
             data = json.loads(response.read().decode())
