@@ -33,16 +33,12 @@ class FlipperBot(bot.SingleServerIRCBot):
             if method is not None:
                 threading.Thread(target=method, 
                                  args=(connection, event)).start()
-    
-    def on_welcome(self, connection, event):
-        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY, 
-                                   self._keep_alive, ())
-        self.reactor.execute_every(60, self._keep_nick, ())
-        
-        for channel in config.CHANNELS:
-            connection.join(channel)
         
     def _keep_alive(self):
+        if not self.connection.is_connected():
+            self.last_pong = None
+            return
+        
         self.connection.ping("keep-alive")
         
         current_time = time.time()
@@ -54,11 +50,23 @@ class FlipperBot(bot.SingleServerIRCBot):
             self.jump_server("Timeout")
     
     def _keep_nick(self):
+        if not self.connection.is_connected():
+            self.nick_tail = ""
+            return
+        
         if self.nick_tail != "":
             self.nick_tail = ""
             logging.debug("Trying to change nick from {} to {}".format(
                 self.connection.get_nickname(), config.NICK))
             self.connection.nick(config.NICK)
+    
+    def on_welcome(self, connection, event):
+        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY, 
+                                   self._keep_alive, ())
+        self.reactor.execute_every(60, self._keep_nick, ())
+        
+        for channel in config.CHANNELS:
+            connection.join(channel)
         
     def on_pong(self, connection, event):
         self.last_pong = time.time()
