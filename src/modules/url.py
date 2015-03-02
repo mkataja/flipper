@@ -47,7 +47,7 @@ class UrlModule(Module):
                 message += "-> {}".format(title)
             
             if message != "":
-                self._bot.safe_privmsg(self._event.target, message) 
+                self._bot.safe_privmsg(self._event.target, message)
         
         def _get_title_text(self, url):
             try:
@@ -68,7 +68,7 @@ class UrlModule(Module):
             return short + " " if short is not None else None
         
         def _get_short_url(self, url):
-            request_url = ("https://www.googleapis.com/urlshortener/v1/url" +
+            request_url = ("https://www.googleapis.com/urlshortener/v1/url" + 
                 "?key=" + config.GOOGLE_API_KEY)
             request_data = json.dumps({
                 'longUrl': url,
