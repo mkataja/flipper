@@ -1,4 +1,8 @@
-from modules import url, firstshout, repeat
+from modules import (
+                     url,
+                     firstshout,
+                     repeat
+                     )
 
 
 MODULES = [ 

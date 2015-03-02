@@ -1,12 +1,14 @@
 # coding=utf-8
 
-from commands import (systemcommands,
+from commands import (
+                      systemcommands,
                       weathercommand,
                       rollcommand,
                       realweathercommand,
                       flipcommand,
                       irccommands,
-                      mooncommand)
+                      mooncommand,
+                      )
 
 
 PUBLIC_CMDS = {
