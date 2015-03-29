@@ -34,7 +34,8 @@ class FlipperBot(bot.SingleServerIRCBot):
         self._registered_modules = [m(self) for m in modules.modulelist.MODULES]
     
     def _sigint_handler(self, signal, frame):
-        self.connection.quit("Quitting")
+        if self.connection.is_connected():
+            self.connection.quit("Quitting")
         sys.exit()
         
     def _dispatcher(self, connection, event):
