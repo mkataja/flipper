@@ -5,11 +5,16 @@ import irc
 
 def patch_irclib():
     """
-    Patch the irc library to fix the situation where it tries to use a closed 
-    socket and crashes.
+    Patch the irc library to fix various bugs
     """
     logging.info("Patching irc library...")
+    patch_client_reactor_sockets()
     
+def patch_client_reactor_sockets():
+    """
+    Fix the situation where it tries to use a closed socket and crashes
+    """
+    logging.info("  Patching client.Reactor.sockets()")
     sockets_orig = irc.client.Reactor.sockets
     @property
     def sockets_new(self):

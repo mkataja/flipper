@@ -11,13 +11,10 @@ import irc
 import config
 from message import Message
 import modules.modulelist
-import patch
 
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
-        patch.patch_irclib()
-        
         signal.signal(signal.SIGINT, self._sigint_handler)
         
         self.last_pong = None
