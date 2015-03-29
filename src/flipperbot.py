@@ -49,15 +49,16 @@ class FlipperBot(bot.SingleServerIRCBot):
             self.last_pong = None
             return
         
-        self.connection.ping("keep-alive")
-        
         current_time = time.time()
-        logging.info("Last pong at {}, current time {}".format(self.last_pong,
-                                                                current_time))
+        logging.info("Last pong at {}, current time {}"
+                     .format(self.last_pong, current_time))
         if (self.last_pong is not None and 
                 current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
             self.last_pong = None
             self.jump_server("Timeout")
+            return
+        
+        self.connection.ping("keep-alive")
     
     def _keep_nick(self):
         if not self.connection.is_connected():
