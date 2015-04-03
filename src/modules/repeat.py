@@ -1,5 +1,6 @@
 import threading
 
+import config
 from modules.module import Module
 
 
@@ -10,6 +11,10 @@ class RepeatModule(Module):
     def on_pubmsg(self, connection, event):
         target = event.target
         message = event.arguments[0].strip()
+        
+        if message.startswith(config.CMD_PREFIX):
+            return
+        
         with RepeatModule.updating:
             last = self.last.get(target, None)
             if message == last:
