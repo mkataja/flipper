@@ -2,6 +2,7 @@ import datetime
 import logging
 
 import irc
+import pytz
 
 
 def patch_irclib():
@@ -36,5 +37,5 @@ def patch_schedule_delayedcommand_now():
     @classmethod
     def now_new(cls, tzinfo=None):
         # Ignoring tzinfo because of UTC
-        return datetime.datetime.utcnow()
+        return datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
     irc.schedule.DelayedCommand.now = now_new 

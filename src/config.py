@@ -22,6 +22,9 @@ CMD_PREFIX = "!"
 SUPERUSER_NAME = ""
 SUPERUSER_NICK = ""
 
+TIMEZONE = "UTC"
+# TIMEZONE = "Europe/Helsinki"
+
 GOOGLE_API_KEY = ""
 
 
