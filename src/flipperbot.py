@@ -71,10 +71,12 @@ class FlipperBot(bot.SingleServerIRCBot):
                 self.connection.get_nickname(), config.NICK))
             self.connection.nick(config.NICK)
     
-    def on_disconnect(self, connection, event):
+    def _on_disconnect(self, connection, event):
         logging.info("Disconnected: unloading delayed commands")
         with self.reactor.mutex:
             self.reactor.delayed_commands = []
+        
+        super(FlipperBot, self)._on_disconnect(connection, event)
     
     def on_welcome(self, connection, event):
         self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY,
