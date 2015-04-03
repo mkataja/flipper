@@ -145,7 +145,7 @@ class WeatherCommand(Command):
     def _get_weather_data(self, requested_place):
         url = 'http://openweathermap.org/data/2.5/weather?q={}'.format(requested_place)
         try:
-            reply = urllib.request.urlopen(url, timeout=3).read().decode()
+            reply = urllib.request.urlopen(url, timeout=6).read().decode()
             return json.loads(reply)
         except urllib.error.HTTPError:
             return None
