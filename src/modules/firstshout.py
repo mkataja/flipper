@@ -21,7 +21,6 @@ class FirstShoutModule(Module):
     
     def _message_first_g6(self):
         for channel in self._bot.channels.keys():
-            # TODO: Get channels from DB
             if channel == "#g6":
                 self._bot.safe_privmsg(channel, "EKA")
         self._setup_first_new_day()
