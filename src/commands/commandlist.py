@@ -8,6 +8,7 @@ from commands import (
                       flipcommand,
                       irccommands,
                       mooncommand,
+                      fmiweathercommand,
                       )
 
 
@@ -18,6 +19,8 @@ PUBLIC_CMDS = {
                'flippaa': flipcommand.FlipCommand,
                'reload': systemcommands.ReloadCommand,
                'quit': irccommands.QuitCommand,
+               'sää': fmiweathercommand.FmiWeatherCommand,
+               'fmi': fmiweathercommand.FmiWeatherCommand,
                'openweathermap': openweathermapcommand.OpenWeatherMapCommand,
                'todellinensää': realweathercommand.RealWeatherCommand,
                'roll': rollcommand.RollCommand,

@@ -25,8 +25,9 @@ SUPERUSER_NICK = ""
 TIMEZONE = "UTC"
 # TIMEZONE = "Europe/Helsinki"
 
-GOOGLE_API_KEY = ""
+LOCATION = "0,0"
 
+GOOGLE_API_KEY = ""
 
 # Import config_local.py
 try:
