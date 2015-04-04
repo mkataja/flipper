@@ -13,7 +13,7 @@ locale.setlocale(locale.LC_ALL, '')
 KELVINTOCELSIUS = -273.15
 RETRIES = 3
 
-class WeatherCommand(Command):
+class OpenWeatherMapCommand(Command):
     weather_condition_strings = {
         200: "ukkosta ja heikkoa sadetta",
         201: "ukkosta ja sadetta",

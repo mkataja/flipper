@@ -134,17 +134,17 @@ class TestHelpOnReload(TestHelp):
 
 
 class TestWeather(PublicTestCommand):
-    commandToRun = "sää"
+    commandToRun = "openweathermap"
 
 class TestWeatherDefault(TestWeather):
     def runTest(self):
-        self.message.content = "!sää"
+        self.message.content = "!openweathermap"
         self.message.run_command()
-        self.assertEqual(self.message._connection.reply[:21], "otus: Sää Espoo (FI) ")
+        self.assertEqual(self.message._connection.reply[:17], "otus: Sää Espoo (")
         
 class TestWeatherFail(TestWeather):
     def runTest(self):
-        self.message.content = "!sää Uasfkjasfdljfsdl"
+        self.message.content = "!openweathermap Uasfkjasfdljfsdl"
         self.message.run_command()
         self.assertEqual(self.message._connection.reply, "otus: Paikkakunnalla Uasfkjasfdljfsdl ei ole säätä")
 

@@ -39,8 +39,8 @@ class ReloadCommand(Command):
         import commands.systemcommands
         imp.reload(commands.systemcommands)
         
-        import commands.weathercommand
-        imp.reload(commands.weathercommand)
+        import commands.openweathermapcommand
+        imp.reload(commands.openweathermapcommand)
         
         import message
         message.reload_commandlist()

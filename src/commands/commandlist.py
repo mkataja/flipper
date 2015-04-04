@@ -2,7 +2,7 @@
 
 from commands import (
                       systemcommands,
-                      weathercommand,
+                      openweathermapcommand,
                       rollcommand,
                       realweathercommand,
                       flipcommand,
@@ -18,7 +18,7 @@ PUBLIC_CMDS = {
                'flippaa': flipcommand.FlipCommand,
                'reload': systemcommands.ReloadCommand,
                'quit': irccommands.QuitCommand,
-               'sää': weathercommand.WeatherCommand,
+               'openweathermap': openweathermapcommand.OpenWeatherMapCommand,
                'todellinensää': realweathercommand.RealWeatherCommand,
                'roll': rollcommand.RollCommand,
                'moon': mooncommand.MoonCommand,
