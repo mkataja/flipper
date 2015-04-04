@@ -2,16 +2,14 @@ import datetime
 import json
 import locale
 import math
-import urllib.request, urllib.error
 from time import sleep
+import urllib.request, urllib.error, urllib.parse
 
 from commands.command import Command
 
 
-locale.setlocale(locale.LC_ALL, '')
-
 KELVINTOCELSIUS = -273.15
-RETRIES = 3
+RETRIES = 5
 
 class OpenWeatherMapCommand(Command):
     weather_condition_strings = {
@@ -143,9 +141,10 @@ class OpenWeatherMapCommand(Command):
         return temp_diff_string
     
     def _get_weather_data(self, requested_place):
-        url = 'http://openweathermap.org/data/2.5/weather?q={}'.format(requested_place)
+        url = ('http://openweathermap.org/data/2.5/weather?q={}'
+            .format(urllib.parse.quote(requested_place)))
         try:
-            reply = urllib.request.urlopen(url, timeout=6).read().decode()
+            reply = urllib.request.urlopen(url, timeout=3).read().decode()
             return json.loads(reply)
         except urllib.error.HTTPError:
             return None
@@ -191,11 +190,11 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
         else:
             requested_place = message.params
         
-        for attempt in range(RETRIES):  # @UnusedVariable
+        for _ in range(RETRIES):
             data = self._get_weather_data(requested_place)
             if data is not None:
                 break
-            sleep(0.1)
+            sleep(0.2)
         
         if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")
