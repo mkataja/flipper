@@ -13,3 +13,9 @@ CHANNELS = [ "#flipperdev" ]
 
 SUPERUSER_NAME = "developer"
 SUPERUSER_NICK = "developer"
+
+TIMEZONE = "Europe/Helsinki"
+
+LOCATION = "60.22,24.81" # Leppävaara, Espoo, Finland
+
+GOOGLE_API_KEY = "get yours at https://code.google.com/apis/console"
