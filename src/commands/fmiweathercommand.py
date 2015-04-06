@@ -2,6 +2,7 @@ import datetime
 import json
 import locale
 import logging
+import socket
 from time import sleep
 import urllib.request, urllib.error, urllib.parse
 
@@ -87,7 +88,7 @@ class FmiWeatherCommand(Command):
         try:
             reply = urllib.request.urlopen(url, timeout=3).read().decode()
             return json.loads(reply)
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, socket.timeout):
             return None
     
     def _get_weather_string(self, data):
@@ -150,7 +151,7 @@ Kosteus {}%, Ilmanpaine {} hPa, {}tuulta {} m/s, Pilvisyys: {}/8.{}".format(
             data = self._get_weather_data(location)
             if data is not None:
                 break
-            sleep(0.1)
+            sleep(0.2)
         
         if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")

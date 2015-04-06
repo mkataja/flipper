@@ -2,6 +2,7 @@ import datetime
 import json
 import locale
 import math
+import socket
 from time import sleep
 import urllib.request, urllib.error, urllib.parse
 
@@ -146,7 +147,7 @@ class OpenWeatherMapCommand(Command):
         try:
             reply = urllib.request.urlopen(url, timeout=3).read().decode()
             return json.loads(reply)
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, socket.timeout):
             return None
     
     def _get_weather_string(self, data):
