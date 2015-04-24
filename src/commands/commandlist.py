@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from commands import (
+from commands import (talkcommand,
                       systemcommands,
                       openweathermapcommand,
                       rollcommand,
@@ -12,7 +12,7 @@ from commands import (
                       )
 
 
-PUBLIC_CMDS = {
+PUBLIC_CMDS = {'puhu': talkcommand.TalkCommand,
                'help': systemcommands.HelpCommand,
                'list': systemcommands.ListCommand,
                'flip': flipcommand.FlipCommand,
