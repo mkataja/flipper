@@ -20,5 +20,3 @@ Pip install commands
     pip install irc
     pip install beautifulsoup4
     pip install pytz
-
-

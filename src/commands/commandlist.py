@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from commands import (talkcommand,
+from commands import (
                       systemcommands,
                       openweathermapcommand,
                       rollcommand,
@@ -9,10 +9,11 @@ from commands import (talkcommand,
                       irccommands,
                       mooncommand,
                       fmiweathercommand,
+                      talkcommand,
                       )
 
 
-PUBLIC_CMDS = {'puhu': talkcommand.TalkCommand,
+PUBLIC_CMDS = {
                'help': systemcommands.HelpCommand,
                'list': systemcommands.ListCommand,
                'flip': flipcommand.FlipCommand,
@@ -26,6 +27,7 @@ PUBLIC_CMDS = {'puhu': talkcommand.TalkCommand,
                'roll': rollcommand.RollCommand,
                'moon': mooncommand.MoonCommand,
                'kuu': mooncommand.MoonCommand,
+               'puhu': talkcommand.TalkCommand,
                }
 
 PRIVATE_CMDS = {

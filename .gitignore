@@ -8,3 +8,6 @@
 
 # Local configuration file
 src/config_local.py
+
+# Data directory
+/data/
