@@ -27,6 +27,8 @@ TIMEZONE = "UTC"
 
 LOCATION = "0,0"
 
+DATABASE_URI = ""
+
 GOOGLE_API_KEY = ""
 
 # Import config_local.py

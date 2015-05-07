@@ -11,11 +11,14 @@ import irc
 import config
 from message import Message
 import modules.modulelist
+from services import database
 
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
         signal.signal(signal.SIGINT, self._sigint_handler)
+        
+        database.initialize()
         
         self.last_pong = None
         self.nick_tail = ""
