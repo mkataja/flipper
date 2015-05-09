@@ -10,6 +10,7 @@ from commands import (
                       mooncommand,
                       fmiweathercommand,
                       talkcommand,
+                      markovcommand,
                       )
 
 
@@ -28,6 +29,7 @@ PUBLIC_CMDS = {
                'moon': mooncommand.MoonCommand,
                'kuu': mooncommand.MoonCommand,
                'puhu': talkcommand.TalkCommand,
+               'markov': markovcommand.MarkovCommand,
                }
 
 PRIVATE_CMDS = {
