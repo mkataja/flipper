@@ -30,6 +30,7 @@ PUBLIC_CMDS = {
                'kuu': mooncommand.MoonCommand,
                'puhu': talkcommand.TalkCommand,
                'markov': markovcommand.MarkovCommand,
+               'pyhä': markovcommand.markov_command_factory('raamattu'),
                }
 
 PRIVATE_CMDS = {
