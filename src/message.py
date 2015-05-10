@@ -4,7 +4,7 @@ import re
 
 import config
 from commands import commandlist
-from commands.accesscontrol import has_admin_access
+from services.accesscontrol import has_admin_access
 
 
 def reload_commandlist():
