@@ -91,6 +91,50 @@ class FmiWeatherCommand(Command):
         except (urllib.error.HTTPError, socket.timeout):
             return None
     
+    def _get_weather_conditions(self, station):
+        if station.get('WW_AWS') == 'nan':
+            return None
+        synop_ww = int(float(station.get('WW_AWS')))
+        weather_conditions = self.synop_ww_strings.get(synop_ww)
+        if not weather_conditions:
+            return "Tuntematon sääilmiö ({})".format(synop_ww)
+        else:
+            return weather_conditions[:1].upper() + weather_conditions[1:]
+    
+    def _get_temperature(self, station):
+        if station.get('Temperature') == 'nan':
+            return None
+        temp = locale.format("%.1f", float(station.get('Temperature')))
+        return "Lämpötila {} °C".format(temp)
+    
+    def _get_humidity(self, station):
+        if station.get('Humidity') == 'nan':
+            return None
+        humidity = int(float(station.get('Humidity')))
+        return "Kosteus {}%".format(humidity)
+    
+    def _get_pressure(self, station):
+        if station.get('Pressure') == 'nan':
+            return None
+        pressure = locale.format("%.0f", float(station.get('Pressure')))
+        return "Ilmanpaine {} hPa".format(pressure)
+    
+    def _get_wind(self, station):
+        if station.get('WindCompass8') == 'nan' or station.get('WindSpeedMS') == 'nan':
+            return None
+        direction = self.wind_directions.get(station.get('WindCompass8'))
+        speed = locale.format("%.1f", float(station.get('WindSpeedMS')))
+        return "{}tuulta {} m/s".format(direction, speed)
+    
+    def _get_cloud_cover(self, station):
+        if station.get('TotalCloudCover') == 'nan':
+            return None
+        cover = int(float(station.get('TotalCloudCover')))
+        if cover <= 8:
+            return "Pilvisyys: {}/8".format(cover)
+        else:
+            return "Pilvisyys: taivas ei näkyvissä"
+    
     def _get_weather_string(self, data):
         suninfo = list(data.get('suninfo').values())[0]
         sunrise = None
@@ -104,34 +148,40 @@ class FmiWeatherCommand(Command):
             sunset = sunset.strftime('%H:%M')
         
         observations = data.get('observations')
-        if (observations is None 
+        if (observations is None
             or len(observations) == 0
             or False in observations.values()):
             return "Ei havaintoja"
-        closest = (list(observations.values())[0])[0]
         
-        synop_ww = int(float(closest.get('WW_AWS')))
-        weather_conditions = self.synop_ww_strings.get(synop_ww)
-        if weather_conditions == None:
-            weather_conditions = "Tuntematon sääilmiö ({})".format(synop_ww)
+        stations = list(observations.values())[0]
+        synop_stations = [s for s in stations if s.get('WW_AWS') != 'nan']
+        if len(synop_stations) > 0:
+            station = synop_stations[0]
         else:
-            weather_conditions = weather_conditions[:1].upper() + weather_conditions[1:]
+            station = stations[0]
         
-        weather_string = "Sää {} {}. {}. Lämpötila {} °C, \
-Kosteus {}%, Ilmanpaine {} hPa, {}tuulta {} m/s, Pilvisyys: {}/8.{}".format(
-            closest.get('stationname'),
-            datetime.datetime.strptime(closest['time'], '%Y%m%d%H%M')
+        weather_conditions = self._get_weather_conditions(station)
+        weather_data = [
+                        self._get_temperature(station),
+                        self._get_humidity(station),
+                        self._get_pressure(station),
+                        self._get_wind(station),
+                        self._get_cloud_cover(station),
+                        ]
+        weather_data = [wd for wd in weather_data if wd]
+        if len(weather_data) > 0:
+            weather_data_string = ', '.join(weather_data)
+        else:
+            weather_data_string = None
+        
+        weather_string = "Sää {} {}.{}{}{}".format(
+            station.get('stationname'),
+            datetime.datetime.strptime(station['time'], '%Y%m%d%H%M')
                 .strftime('%d.%m.%Y %H:%M'),
-            weather_conditions,
-            locale.format("%.1f", float(closest.get('Temperature'))),
-            int(float(closest.get('Humidity'))),
-            locale.format("%.0f", float(closest.get('Pressure'))),
-            self.wind_directions.get(closest.get('WindCompass8')),
-            locale.format("%.1f", float(closest.get('WindSpeedMS'))),
-            int(float(closest.get('TotalCloudCover'))),
+            " {}.".format(weather_conditions) if weather_conditions else "",
+            " {}.".format(weather_data_string) if weather_data_string else "",
             " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
-                if (sunrise and sunset)
-                else ""
+                if (sunrise and sunset) else ""
         )
         
         return weather_string
