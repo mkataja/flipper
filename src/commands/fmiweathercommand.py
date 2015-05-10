@@ -212,7 +212,7 @@ class FmiWeatherCommand(Command):
         else:
             weather_data_string = None
         
-        weather_string = "Sää {} ({}) {}.{}{}".format(
+        weather_string = "Ennuste {} ({}) {}.{}{}".format(
             forecast.get('name'),
             forecast.get('country'),
             datetime.datetime.strptime(forecast['localtime'], '%Y%m%dT%H%M%S')
