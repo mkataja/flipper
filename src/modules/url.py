@@ -42,6 +42,9 @@ class UrlModule(Module):
             title = title_async.get()
             short = short_async.get()
             
+            if title.lower() in url.lower():
+                title = None
+            
             message = short if short is not None else ""
             if title is not None:
                 message += "-> {}".format(title)
