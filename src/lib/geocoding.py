@@ -9,7 +9,7 @@ def geocode(address):
     logging.info("Geocoding '{}'".format(address))
     
     url = ('https://maps.googleapis.com/maps/api/geocode/json?address={}&key={}'
-        .format(urllib.parse.quote(address), config.GOOGLE_API_KEY))
+           .format(urllib.parse.quote(address), config.GOOGLE_API_KEY))
     try:
         reply = urllib.request.urlopen(url, timeout=3).read().decode()
     except urllib.error.HTTPError:

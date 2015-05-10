@@ -6,7 +6,10 @@ import socket
 from time import sleep
 import urllib.request, urllib.error, urllib.parse
 
+import pytz
+
 from commands.command import Command
+from lib import time
 
 
 KELVINTOCELSIUS = -273.15
@@ -152,12 +155,15 @@ class OpenWeatherMapCommand(Command):
     
     def _get_weather_string(self, data):
         sunrise = None
-        if data.get('sys').get('sunrise'):
-            sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M')
-        
         sunset = None
-        if data.get('sys').get('sunset'):
-            sunset = datetime.datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M')
+        if data.get('sys').get('sunrise') and data.get('sys').get('sunset'):
+            sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise'], tz=pytz.utc)
+            sunset = datetime.datetime.fromtimestamp(data['sys']['sunset'], tz=pytz.utc)
+            latitude = data.get('coord').get('lat')
+            longitude = data.get('coord').get('lon')
+            timezone_id = time.get_geographic_timezone(latitude, longitude)
+            sunrise = time.get_time_in_timezone(sunrise, timezone_id)
+            sunset = time.get_time_in_timezone(sunset, timezone_id)
         
         weather_conditions = []
         for w in data.get('weather'):
@@ -178,7 +184,8 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
             self._get_wind_word(wind_dir=data.get('wind').get('deg')),
             locale.format("%.1f", data.get('wind').get('speed')),
             self._get_clouds_eights(clouds_percentage=data.get('clouds').get('all')),
-            " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
+            " Aurinko nousee {} ja laskee {}.".format(sunrise.strftime('%H:%M'),
+                                                      sunset.strftime('%H:%M'))
                 if (sunrise and sunset)
                 else ""
         )
