@@ -19,14 +19,12 @@ class FmiWeatherCommand(Command):
         4: "auerta, savua tai ilmassa leijuvaa pölyä ja näkyvyys vähintään 1 km",
         5: "auerta, savua tai ilmassa leijuvaa pölyä ja näkyvyys alle 1 km",
         10: "utua",
-        
         20: "sumua edellisen tunnin aikana",
         21: "sadetta edellisen tunnin aikana",
         22: "tihkua tai lumijyväsiä edellisen tunnin aikana",
         23: "vesisadetta edellisen tunnin aikana",
         24: "lumisadetta edellisen tunnin aikana",
         25: "jäätävää vesisadetta tai jäätävää tihkua edellisen tunnin aikana",
-        
         30: "sumua",
         31: "sumuhattaroita",
         32: "sumua (ohentunut edellisen tunnin aikana)",
@@ -91,45 +89,45 @@ class FmiWeatherCommand(Command):
         except (urllib.error.HTTPError, socket.timeout):
             return None
     
-    def _get_weather_conditions(self, station):
-        if station.get('WW_AWS') == 'nan':
+    def _get_weather_conditions(self, data):
+        if data.get('WW_AWS') == 'nan':
             return None
-        synop_ww = int(float(station.get('WW_AWS')))
+        synop_ww = int(float(data.get('WW_AWS')))
         weather_conditions = self.synop_ww_strings.get(synop_ww)
         if not weather_conditions:
             return "Tuntematon sääilmiö ({})".format(synop_ww)
         else:
             return weather_conditions[:1].upper() + weather_conditions[1:]
     
-    def _get_temperature(self, station):
-        if station.get('Temperature') == 'nan':
+    def _get_temperature(self, data):
+        if data.get('Temperature') == 'nan':
             return None
-        temp = locale.format("%.1f", float(station.get('Temperature')))
+        temp = locale.format("%.1f", float(data.get('Temperature')))
         return "Lämpötila {} °C".format(temp)
     
-    def _get_humidity(self, station):
-        if station.get('Humidity') == 'nan':
+    def _get_humidity(self, data):
+        if data.get('Humidity') == 'nan':
             return None
-        humidity = int(float(station.get('Humidity')))
+        humidity = int(float(data.get('Humidity')))
         return "Kosteus {}%".format(humidity)
     
-    def _get_pressure(self, station):
-        if station.get('Pressure') == 'nan':
+    def _get_pressure(self, data):
+        if data.get('Pressure') == 'nan':
             return None
-        pressure = locale.format("%.0f", float(station.get('Pressure')))
+        pressure = locale.format("%.0f", float(data.get('Pressure')))
         return "Ilmanpaine {} hPa".format(pressure)
     
-    def _get_wind(self, station):
-        if station.get('WindCompass8') == 'nan' or station.get('WindSpeedMS') == 'nan':
+    def _get_wind(self, data):
+        if data.get('WindCompass8') == 'nan' or data.get('WindSpeedMS') == 'nan':
             return None
-        direction = self.wind_directions.get(station.get('WindCompass8'))
-        speed = locale.format("%.1f", float(station.get('WindSpeedMS')))
+        direction = self.wind_directions.get(data.get('WindCompass8'))
+        speed = locale.format("%.1f", float(data.get('WindSpeedMS')))
         return "{}tuulta {} m/s".format(direction, speed)
     
-    def _get_cloud_cover(self, station):
-        if station.get('TotalCloudCover') == 'nan':
+    def _get_cloud_cover(self, data):
+        if data.get('TotalCloudCover') == 'nan':
             return None
-        cover = int(float(station.get('TotalCloudCover')))
+        cover = int(float(data.get('TotalCloudCover')))
         if cover <= 8:
             return "Pilvisyys: {}/8".format(cover)
         else:
