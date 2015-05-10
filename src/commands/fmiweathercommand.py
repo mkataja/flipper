@@ -69,6 +69,36 @@ class FmiWeatherCommand(Command):
         89: "raekuuroja mahdollisesti yhdessä vesi- tai räntäsateen kanssa",
     }
     
+    weather_symbol_3_strings = {
+        1: "selkeää",
+        2: "puolipilvistä",
+        21: "heikkoja sadekuuroja",
+        22: "sadekuuroja",
+        23: "voimakkaita sadekuuroja",
+        3: "pilvistä",
+        31: "heikkoa vesisadetta",
+        32: "vesisadetta",
+        33: "voimakasta vesisadetta",
+        41: "heikkoja lumikuuroja",
+        42: "lumikuuroja",
+        43: "voimakkaita lumikuuroja",
+        51: "heikkoa lumisadetta",
+        52: "lumisadetta",
+        53: "voimakasta lumisadetta",
+        61: "ukkoskuuroja",
+        62: "voimakkaita ukkoskuuroja",
+        63: "ukkosta",
+        64: "voimakasta ukkosta",
+        71: "heikkoja räntäkuuroja",
+        72: "räntäkuuroja",
+        73: "voimakkaita räntäkuuroja",
+        81: "heikkoa räntäsadetta",
+        82: "räntäsadetta",
+        83: "voimakasta räntäsadetta",
+        91: "utua",
+        92: "sumua",
+    }
+    
     wind_directions = {
          "N": "Pohjois",
          "NE": "Koillis",
@@ -133,24 +163,7 @@ class FmiWeatherCommand(Command):
         else:
             return "Pilvisyys: taivas ei näkyvissä"
     
-    def _get_weather_string(self, data):
-        suninfo = list(data.get('suninfo').values())[0]
-        sunrise = None
-        sunset = None
-        if suninfo.get('sunrisetoday') == '1' and suninfo.get('sunsettoday') == '1':
-            sunrise = datetime.datetime.strptime(suninfo['sunrise'],
-                                                 '%Y%m%dT%H%M%S')
-            sunrise = sunrise.strftime('%H:%M')
-            sunset = datetime.datetime.strptime(suninfo['sunset'],
-                                                '%Y%m%dT%H%M%S')
-            sunset = sunset.strftime('%H:%M')
-        
-        observations = data.get('observations')
-        if (observations is None
-            or len(observations) == 0
-            or False in observations.values()):
-            return "Ei havaintoja"
-        
+    def _get_weather_from_observations(self, observations):
         stations = list(observations.values())[0]
         synop_stations = [s for s in stations if s.get('WW_AWS') != 'nan']
         if len(synop_stations) > 0:
@@ -172,15 +185,65 @@ class FmiWeatherCommand(Command):
         else:
             weather_data_string = None
         
-        weather_string = "Sää {} {}.{}{}{}".format(
+        weather_string = "Sää {} {}.{}{}".format(
             station.get('stationname'),
             datetime.datetime.strptime(station['time'], '%Y%m%d%H%M')
                 .strftime('%d.%m.%Y %H:%M'),
             " {}.".format(weather_conditions) if weather_conditions else "",
-            " {}.".format(weather_data_string) if weather_data_string else "",
-            " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
-                if (sunrise and sunset) else ""
+            " {}.".format(weather_data_string) if weather_data_string else ""
         )
+        return weather_string
+    
+    def _get_weather_from_forecast(self, forecast):
+        ws3 = int(float(forecast.get('WeatherSymbol3')))
+        weather_conditions = self.weather_symbol_3_strings.get(ws3)
+        if not weather_conditions:
+            weather_conditions = "Tuntematon sääilmiö ({})".format(ws3)
+        else:
+            weather_conditions = weather_conditions[:1].upper() + weather_conditions[1:]
+        
+        weather_data = [
+                        self._get_temperature(forecast),
+                        self._get_wind(forecast),
+                        ]
+        weather_data = [wd for wd in weather_data if wd]
+        if len(weather_data) > 0:
+            weather_data_string = ', '.join(weather_data)
+        else:
+            weather_data_string = None
+        
+        weather_string = "Sää {} ({}) {}.{}{}".format(
+            forecast.get('name'),
+            forecast.get('country'),
+            datetime.datetime.strptime(forecast['localtime'], '%Y%m%dT%H%M%S')
+                .strftime('%d.%m.%Y %H:%M'),
+            " {}.".format(weather_conditions) if weather_conditions else "",
+            " {}.".format(weather_data_string) if weather_data_string else ""
+        )
+        return weather_string
+    
+    def _get_weather_string(self, data):
+        suninfo = list(data.get('suninfo').values())[0]
+        sunrise = None
+        sunset = None
+        if suninfo.get('sunrisetoday') == '1' and suninfo.get('sunsettoday') == '1':
+            sunrise = datetime.datetime.strptime(suninfo['sunrise'],
+                                                 '%Y%m%dT%H%M%S')
+            sunrise = sunrise.strftime('%H:%M')
+            sunset = datetime.datetime.strptime(suninfo['sunset'],
+                                                '%Y%m%dT%H%M%S')
+            sunset = sunset.strftime('%H:%M')
+        
+        observations = data.get('observations')
+        if (observations and len(observations) > 0 and not False in observations.values()):
+            weather_string = self._get_weather_from_observations(observations)
+        else:
+            newest_forecast = data.get('forecasts')[0].get('forecast')[0]
+            weather_string = self._get_weather_from_forecast(newest_forecast)
+        
+        if (sunrise and sunset):
+            weather_string = (weather_string + 
+                " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset))
         
         return weather_string
     
