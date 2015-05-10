@@ -12,6 +12,7 @@ import config
 from message import Message
 import modules.modulelist
 from services import database
+from services.accesscontrol import has_admin_access
 
 
 class FlipperBot(bot.SingleServerIRCBot):
@@ -101,6 +102,13 @@ class FlipperBot(bot.SingleServerIRCBot):
         
     def on_pubmsg(self, connection, event):
         self._handle_command(connection, event, False)
+    
+    def on_invite(self, connection, event):
+        sender = event.source
+        if not has_admin_access(sender):
+            return
+        channel = event.arguments[0]
+        connection.join(channel)
     
     def _handle_command(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
