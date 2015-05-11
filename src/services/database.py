@@ -7,8 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative.api import declarative_base, declared_attr
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import Integer
+from sqlalchemy.sql.sqltypes import Integer, DateTime
 
 import config
 
@@ -57,3 +58,7 @@ class FlipperBase(Base):
         return self._tablename
 
     id = Column(Integer, primary_key=True)
+    created_on = Column(DateTime, nullable=False,
+                        default=func.now())
+    updated_on = Column(DateTime, nullable=False,
+                        default=func.now(), onupdate=func.now())
