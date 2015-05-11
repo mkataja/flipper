@@ -10,17 +10,30 @@ from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Integer
 
 import config
+from sqlalchemy.exc import SQLAlchemyError
 
 
 def initialize():
-    logging.info("Initializing database connection to " + config.DATABASE_URI)
-    engine = create_engine(config.DATABASE_URI, pool_size=10)
-    FlipperBase.metadata.create_all(engine)
     global Session
+    Session = None
+    if not config.DATABASE_URI:
+        logging.error("Cannot initialize the database service: "\
+                      "DATABASE_URI not configured")
+        return
+    logging.info("Initializing database connection to " + config.DATABASE_URI)
+    try:
+        engine = create_engine(config.DATABASE_URI, pool_size=10)
+        FlipperBase.metadata.create_all(engine)
+    except SQLAlchemyError as e:
+        logging.error("Failed to initialize database: " + str(e))
+        return
     Session = scoped_session(sessionmaker(bind=engine))
 
 @contextlib.contextmanager
 def get_session():
+    if not Session:
+        raise ValueError("Tried to get database session "\
+                         "but database is not initialized")
     try:
         logging.info("Creating SQLAlchemy session")
         yield Session()
