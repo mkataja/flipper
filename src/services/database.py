@@ -3,6 +3,7 @@ import logging
 import re
 
 from sqlalchemy.engine import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative.api import declarative_base, declared_attr
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
@@ -10,7 +11,6 @@ from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Integer
 
 import config
-from sqlalchemy.exc import SQLAlchemyError
 
 
 def initialize():
