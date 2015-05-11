@@ -113,7 +113,7 @@ class FlipperBot(bot.SingleServerIRCBot):
     def _handle_command(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
         logging.info("handling privmsg: {}".format(message))
-        threading.Thread(target=message.run_command).start()
+        threading.Thread(target=message.try_run_command).start()
     
     def safe_privmsg(self, target, message):
         if not self.connection.is_connected():

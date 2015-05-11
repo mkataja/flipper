@@ -77,6 +77,13 @@ class Message(object):
                 logging.warn("unrecognized command: {}".
                               format(self.commandword))
     
+    def try_run_command(self):
+        try:
+            self.run_command()
+        except:
+            self.reply_to("Tapahtui virhe. Kerro tästä devaajille.")
+            raise
+    
     def reply_to(self, replytext):
         replytext = re.sub(r"(\r?\n|\t)+", " ", replytext)
         
