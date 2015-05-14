@@ -56,4 +56,11 @@ class SayCommand(Command):
         else:
             target = params[0]
             text = params[1]
+            
+            if target[0] == '!':
+                channels = [k for k in message.bot.channels.keys() 
+                            if k.endswith(target[1:]) and k[0] == '!']
+                if len(channels) == 1:
+                    target = channels[0]
+            
             message._connection.privmsg(target, text)
