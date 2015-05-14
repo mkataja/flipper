@@ -1,14 +1,9 @@
-import imp
 import logging
 import re
 
-import config
 from commands import commandlist
+import config
 from services.accesscontrol import has_admin_access
-
-
-def reload_commandlist():
-    imp.reload(commandlist)
 
 
 class Message(object):

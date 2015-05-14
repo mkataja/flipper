@@ -19,7 +19,6 @@ PUBLIC_CMDS = {
                'list': systemcommands.ListCommand,
                'flip': flipcommand.FlipCommand,
                'flippaa': flipcommand.FlipCommand,
-               'reload': systemcommands.ReloadCommand,
                'quit': irccommands.QuitCommand,
                'sää': fmiweathercommand.FmiWeatherCommand,
                'fmi': fmiweathercommand.FmiWeatherCommand,
@@ -40,5 +39,6 @@ PRIVATE_CMDS = {
                 'hop': irccommands.HopCommand,
                 }
 
-ALL_CMDS = PUBLIC_CMDS.copy()
+ALL_CMDS = {}
+ALL_CMDS.update(PUBLIC_CMDS)
 ALL_CMDS.update(PRIVATE_CMDS)
