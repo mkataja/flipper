@@ -42,11 +42,12 @@ class UrlModule(Module):
             title = title_async.get()
             short = short_async.get()
             
-            if title.lower() in url.lower():
+            if title and title.lower() in url.lower():
                 title = None
             
-            message = short if short is not None else ""
-            if title is not None:
+            message = short if short else ""
+            
+            if title:
                 message += "-> {}".format(title)
             
             if message != "":
@@ -55,11 +56,11 @@ class UrlModule(Module):
         def _get_title_text(self, url):
             try:
                 webpage = BeautifulSoup(urlopen(url, timeout=3))
-            except Exception:
+            except Exception as e:
                 # Doesn't really matter what went wrong, abort in any case
-                logging.warn("Getting url title failed for {}".format(url))
+                logging.warn("Getting url title failed for {} ({})".format(url, str(e)))
                 return None
-            if webpage is None or webpage.title is None:
+            if not webpage or not webpage.title or not webpage.title.string:
                 return None
             title = webpage.title.string.strip()
             return re.sub(r"\s{2,}", " ", title)
