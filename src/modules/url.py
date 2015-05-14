@@ -1,3 +1,4 @@
+import codecs
 import json
 import logging
 from multiprocessing.pool import ThreadPool
@@ -63,6 +64,8 @@ class UrlModule(Module):
             if not webpage or not webpage.title or not webpage.title.string:
                 return None
             title = webpage.title.string.strip()
+            if re.search('\\\\u\d*', title):
+                title = codecs.decode(title, 'unicode_escape')
             return re.sub(r"\s{2,}", " ", title)
         
         def _get_short_url_text(self, url):
