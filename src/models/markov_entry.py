@@ -9,4 +9,4 @@ class MarkovEntry(database.FlipperBase):
     sentence_id = Column(Text, nullable=False)
     prev_2 = Column(Text, nullable=True)
     prev_1 = Column(Text, nullable=False)
-    next = Column(Text, nullable=False)
+    next = Column(Text, nullable=True)

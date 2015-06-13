@@ -9,32 +9,26 @@ from services import database
 
 
 class MarkovCommand(Command):
-    helpstr = "Käyttö: anna aineiston nimi ensimmäisenä parametrina, halutessasi yksi avainsana toisena"
-    
+    helpstr = ("Käyttö: anna aineiston nimi ensimmäisenä parametrina, "
+               "halutessasi avainsanoja sen jälkeen")    
     def handle(self, message):
-        params = message.params.split()
+        params = message.params.split(maxsplit=1)
         if len(params) < 1:
             self.replytoinvalidparams(message)
             return
-        if len(params) > 2:
-            self.replytoinvalidparams(message)
-            return
         corpus_id = params[0]
-        keyword = params[1] if len(params) > 1 else ''
-        message.params = keyword
+        seed = params[1] if len(params) > 1 else ''
+        message.params = seed
         command = markov_command_factory(corpus_id)
         command().handle(message)
 
 
 class AbstractMarkovCommand(Command):
-    helpstr = "Käyttö: anna halutessasi yksi avainsana parametrina"
+    helpstr = "Käyttö: anna halutessasi avainsanoja"
     
     def handle(self, message):
         params = message.params.split()
-        if len(params) > 1:
-            self.replytoinvalidparams(message)
-            return
-        keyword = params[0] if len(params) > 0 else None
+        seed = params if len(params) > 0 else None
         
         with database.get_session() as session:
             try:
@@ -42,11 +36,9 @@ class AbstractMarkovCommand(Command):
             except ValueError:
                 message.reply_to("Korpusta {} ei löydy".format(self.corpus_id))
                 return
-            sentence = markov.get_sentence(keyword)
+            sentence = markov.get_sentence(seed)
         if sentence is not None:
             message.reply_to((sentence[0].upper() + sentence[1:]) + '.')
-        elif keyword:
-            message.reply_to("Ei löydy mitään sanalla " + keyword)
         else:
             message.reply_to("Ei löydy mitään")
 
@@ -63,8 +55,8 @@ class MarkovChain():
     SENTENCE_LENGTH_MINIMUM = 8
     SENTENCE_LENGTH_RANDOM_PART = 4
     
-    SENTENCE_END_ALGORITHM_THRESHOLD = 7
-    LAST_WORDS_MINIMUM_HITS = 20
+    END_SENTENCE_REMAINING_THRESHOLD = 7
+    END_SENTENCE_MINIMUM_LENGTH = 5
     
     def __init__(self, session, corpus_id):
         self.session = session
@@ -74,61 +66,122 @@ class MarkovChain():
             self.corpus = (self.session.query(MarkovEntry)
                            .filter_by(corpus_id=corpus_id))
     
-    def get_sentence(self, keyword):
-        sentence_max_length = self._get_sentence_length()
+    def get_sentence(self, seed):
+        """
+        seed -- (optional) a list of words to use as a basis for generating the sentence
+        """
         
-        if keyword is None:
-            keyword = self._get_random_word()
+        if seed is None or len(seed) == 0:
+            seed = [self._get_random_word()]
         else:
-            if not self._word_in_corpus(keyword):
+            if (not self._word_in_corpus(seed[0])
+                and not self._word_in_corpus(seed[-1])):
                 return None
         
-        words = []
-        words.append(None)
-        words.append(keyword)
-        min_word_results = 1
-        for i in range(sentence_max_length - 1):
-            if i > sentence_max_length - MarkovChain.SENTENCE_END_ALGORITHM_THRESHOLD:
-                min_word_results = MarkovChain.LAST_WORDS_MINIMUM_HITS
-            prev_2 = words[i]
-            prev_1 = words[i + 1]
-            next_word = self._get_next_word(prev_2, prev_1, min_word_results)
-            if next_word is None:
-                break
-            words.append(next_word)
-            
-        return ' '.join(words[1:])
+        sentence_max_length = self._get_sentence_max_length() + len(seed)
+        
+        logging.debug("Markov: Creating sentence with max_length {}"
+                      .format(sentence_max_length))
+        
+        sentence = filter(None, self._extend_sentence(seed, sentence_max_length))
+        return ' '.join(sentence)
     
-    def _get_sentence_length(self):
-        return (MarkovChain.SENTENCE_LENGTH_MINIMUM
-                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART)
-                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART))
+    def _get_random_word(self):
+        row_count = self.corpus.count()
+        return self.corpus.offset(randrange(row_count)).first().prev_1
     
     def _word_in_corpus(self, word):
         matches = self.corpus.filter_by(prev_1=word)
         row_count = matches.count()
         return row_count > 0
     
-    def _get_random_word(self):
-        row_count = self.corpus.count()
-        return self.corpus.offset(randrange(row_count)).first().prev_1
+    def _get_sentence_max_length(self):
+        return (MarkovChain.SENTENCE_LENGTH_MINIMUM
+                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART)
+                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART))
+
+    def _extend_sentence(self, sentence, max_length):
+        if len(sentence) >= max_length:
+            logging.debug("Markov: Terminating: sentence length at maximum ({}/{})"
+                          .format(len(sentence), max_length))
+            return sentence
+        
+        if sentence[0] is None and sentence[-1] is None:
+            logging.debug("Markov: Terminating: terminals at both ends")
+            return sentence
+        
+        prefer_nonterminal = True
+        current_length = len(sentence)
+        if (current_length > MarkovChain.END_SENTENCE_MINIMUM_LENGTH 
+            and current_length > max_length - MarkovChain.END_SENTENCE_REMAINING_THRESHOLD):
+            prefer_nonterminal = False
+        
+        # Extend sentence forward
+        prev_1 = sentence[-1]
+        if prev_1 is not None:
+            prev_2 = sentence[-2] if len(sentence) > 1 else None
+            next_word = self._get_next_word(prev_1, prev_2, False, prefer_nonterminal)
+            sentence.append(next_word)
+        
+        # Extend sentence backward
+        follow_1 = sentence[0]
+        if follow_1 is not None:
+            follow_2 = sentence[1] if len(sentence) > 1 else None
+            next_word = self._get_next_word(follow_1, follow_2, True, prefer_nonterminal)
+            sentence.insert(0, next_word)
+        
+        sentence = self._extend_sentence(sentence, max_length)
+        return sentence
     
-    def _get_next_word(self, prev_2, prev_1, minimum_hits=1):
-        if prev_1 is None:
+    def _get_next_word(self, s_0, s_1, backwards, prefer_nonterminal):
+        """
+        s_0 -- the nearest search predicate
+        s_1 -- the second nearest search predicate (may be None)
+        """
+        
+        if s_0 is None:
             return None
         
-        if prev_2 is not None:
-            candidates = self.corpus.filter_by(prev_2=prev_2, prev_1=prev_1)
+        filtered_attr = MarkovEntry.prev_2 if backwards else MarkovEntry.next
+        if prefer_nonterminal:
+            filter_expr = filtered_attr != None
+        else:
+            filter_expr = filtered_attr == None
+        
+        if s_1 is not None:
+            if backwards:
+                candidates = self.corpus.filter_by(prev_1=s_0, next=s_1)
+            else:
+                candidates = self.corpus.filter_by(prev_1=s_0, prev_2=s_1)
+            
+            terminal_filtered = candidates.filter(filter_expr)
+            if terminal_filtered.count() > 0:
+                logging.debug("Markov: Getting only {}terminal hits"
+                              .format('non' if prefer_nonterminal else ''))
+                candidates = terminal_filtered
+            
             hits = candidates.count()
-            logging.debug("Markov: second order hits for '{} {}': {}"
-                          .format(prev_2, prev_1, hits))
-        if prev_2 is None or hits < MarkovChain.SECOND_ORDER_MINIMUM_HITS:
-            candidates = self.corpus.filter_by(prev_1=prev_1)
+            logging.debug("Markov: {} second order hits for s_1={}, s_0={}: {}"
+                          .format('<' if backwards else '>', s_1, s_0, hits))
+        
+        if s_1 is None or hits < MarkovChain.SECOND_ORDER_MINIMUM_HITS:
+            candidates = self.corpus.filter_by(prev_1=s_0)
+            
+            terminal_filtered = candidates.filter(filter_expr)
+            if terminal_filtered.count() > 0:
+                logging.debug("Markov: Getting only {}terminal hits"
+                              .format('non' if prefer_nonterminal else ''))
+                candidates = terminal_filtered
+                
             hits = candidates.count()
-            logging.debug("Markov: first order hits for '{}': {}"
-                          .format(prev_1, hits))
-            if hits < minimum_hits:
+            logging.debug("Markov: {} first order hits for '{}': {}"
+                          .format('<' if backwards else '>', s_0, hits))
+            if hits < 1:
                 return None
         
-        next_word = candidates.offset(randrange(hits)).first().next
+        selection = candidates.offset(randrange(hits)).first()
+        if backwards:
+            next_word = selection.prev_2
+        else:
+            next_word = selection.next
         return next_word
