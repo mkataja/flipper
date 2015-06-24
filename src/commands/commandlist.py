@@ -1,17 +1,6 @@
 # coding=utf-8
 
-from commands import (
-                      systemcommands,
-                      openweathermapcommand,
-                      rollcommand,
-                      realweathercommand,
-                      flipcommand,
-                      irccommands,
-                      mooncommand,
-                      fmiweathercommand,
-                      talkcommand,
-                      markovcommand,
-                      )
+from commands import *
 
 
 PUBLIC_CMDS = {
