@@ -19,8 +19,11 @@ class MarkovCommand(Command):
         corpus_id = params[0]
         seed = params[1] if len(params) > 1 else ''
         message.params = seed
-        command = markov_command_factory(corpus_id)
-        command().handle(message)
+        command = markov_command_factory(corpus_id)()
+        try:
+            command.handle(message)
+        except MarkovCorpusMissingException:
+            message.reply_to("Korpusta {} ei löydy".format(corpus_id))
 
 
 class AbstractMarkovCommand(Command):
@@ -31,11 +34,7 @@ class AbstractMarkovCommand(Command):
         seed = params if len(params) > 0 else None
         
         with database.get_session() as session:
-            try:
-                markov = MarkovChain(session, self.corpus_id)
-            except ValueError:
-                message.reply_to("Korpusta {} ei löydy".format(self.corpus_id))
-                return
+            markov = MarkovChain(session, self.corpus_id)
             sentence = markov.get_sentence(seed)
         if sentence is not None:
             message.reply_to((sentence[0].upper() + sentence[1:]) + '.')
@@ -47,6 +46,10 @@ def markov_command_factory(corpus_id):
     return type(corpus_id + 'MarkovCommand',
                 (AbstractMarkovCommand,),
                 {'corpus_id': corpus_id})
+
+
+class MarkovCorpusMissingException(ValueError):
+    pass
 
 
 class MarkovChain():
@@ -61,7 +64,8 @@ class MarkovChain():
     def __init__(self, session, corpus_id):
         self.session = session
         if not session.query(exists().where(MarkovEntry.corpus_id == corpus_id)).scalar():
-            raise ValueError("Corpus does not exist")
+            raise MarkovCorpusMissingException("Corpus '{}' does not exist"
+                                               .format(corpus_id))
         else:
             self.corpus = (self.session.query(MarkovEntry)
                            .filter_by(corpus_id=corpus_id))
