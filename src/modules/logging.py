@@ -27,7 +27,7 @@ class LoggingModule(Module):
         
         markov_sentences = parse_markov_sentences(message)
         insert_markov_sentences(markov_sentences,
-                                'imitate_{}'.format(nick),
+                                'imitate_{}'.format(nick.lower()),
                                 '{}_{}'.format(target, timestamp.isoformat()))
     
     def _create_log_entry(self, target, nick, timestamp, message):
