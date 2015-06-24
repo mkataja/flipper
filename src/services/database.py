@@ -4,10 +4,11 @@ import re
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative.api import declarative_base, declared_attr
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
-from sqlalchemy.sql.functions import func
+from sqlalchemy.sql import expression
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Integer, DateTime
 
@@ -41,6 +42,15 @@ def get_session():
     finally:
         logging.info("Removing SQLAlchemy session")
         Session.remove()
+
+
+class utcnow(expression.FunctionElement):
+    type = DateTime()
+
+
+@compiles(utcnow, 'postgresql')
+def pg_utcnow(element, compiler, **kw):
+    return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
         
 
 Base = declarative_base()
@@ -59,6 +69,6 @@ class FlipperBase(Base):
 
     id = Column(Integer, primary_key=True)
     created_on = Column(DateTime, nullable=False,
-                        default=func.now())
+                        default=utcnow())
     updated_on = Column(DateTime, nullable=False,
-                        default=func.now(), onupdate=func.now())
+                        default=utcnow(), onupdate=utcnow())
