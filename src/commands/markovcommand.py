@@ -2,6 +2,7 @@ import logging
 from random import randrange
 
 from sqlalchemy.sql.expression import exists
+from sqlalchemy.sql.functions import func
 
 from commands.command import Command
 from models.markov_entry import MarkovEntry
@@ -91,8 +92,17 @@ class MarkovChain():
         return ' '.join(sentence)
     
     def _get_random_word(self):
-        row_count = self.corpus.count()
-        return self.corpus.offset(randrange(row_count)).first().prev_1
+        random_source = (self.corpus
+                         .with_entities(MarkovEntry.prev_1)
+                         .group_by(MarkovEntry.prev_1)
+                         .having(func.count(MarkovEntry.prev_1) > 1))
+        row_count = random_source.count()
+        
+        if row_count == 0:
+            random_source = self.corpus
+            row_count = random_source.count()
+        
+        return random_source.offset(randrange(row_count)).first().prev_1
     
     def _word_in_corpus(self, word):
         matches = self.corpus.filter_by(prev_1=word)
