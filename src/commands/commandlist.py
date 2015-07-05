@@ -20,6 +20,7 @@ PUBLIC_CMDS = {
                'markov': markovcommand.MarkovCommand,
                'pyhä': markovcommand.markov_command_factory('raamattu'),
                'imitate': imitatecommand.ImitateCommand,
+               'imitoi': imitatecommand.ImitateCommand,
                'top': topcommand.TopCommand,
                'juo': drinkcommand.DrinkCommand
                }
