@@ -223,16 +223,18 @@ class FmiWeatherCommand(Command):
         return weather_string
     
     def _get_weather_string(self, data):
-        suninfo = list(data.get('suninfo').values())[0]
         sunrise = None
         sunset = None
-        if suninfo.get('sunrisetoday') == '1' and suninfo.get('sunsettoday') == '1':
-            sunrise = datetime.datetime.strptime(suninfo['sunrise'],
-                                                 '%Y%m%dT%H%M%S')
-            sunrise = sunrise.strftime('%H:%M')
-            sunset = datetime.datetime.strptime(suninfo['sunset'],
-                                                '%Y%m%dT%H%M%S')
-            sunset = sunset.strftime('%H:%M')
+        suninfo_data = data.get('suninfo')
+        if suninfo_data != []:
+            suninfo = list(suninfo_data.values())[0]
+            if suninfo.get('sunrisetoday') == '1' and suninfo.get('sunsettoday') == '1':
+                sunrise = datetime.datetime.strptime(suninfo['sunrise'],
+                                                     '%Y%m%dT%H%M%S')
+                sunrise = sunrise.strftime('%H:%M')
+                sunset = datetime.datetime.strptime(suninfo['sunset'],
+                                                    '%Y%m%dT%H%M%S')
+                sunset = sunset.strftime('%H:%M')
         
         observations = data.get('observations')
         if (observations and len(observations) > 0 and not False in observations.values()):
@@ -270,6 +272,10 @@ class FmiWeatherCommand(Command):
         
         if data.get('status') != "ok":
             message.reply_to("Kysely epäonnistui: {}".format(data.get('message')))
+            return
+        
+        if data.get('forecasts') == [] and data.get('observations') == []:
+            message.reply_to("Ei säätietoja paikkakunnalle {}".format(address))
             return
         
         weather_string = self._get_weather_string(data)
