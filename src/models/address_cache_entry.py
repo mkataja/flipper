@@ -6,5 +6,5 @@ from services import database
 
 class AddressCacheEntry(database.FlipperBase):
     address = Column(Text, unique=True, nullable=False)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
+    latitude = Column(Float)
+    longitude = Column(Float)
