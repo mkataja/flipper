@@ -98,10 +98,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         connection.nick(config.NICK + self.nick_tail)
         
     def on_privmsg(self, connection, event):
-        self._handle_command(connection, event, True)
+        self._handle_message(connection, event, True)
         
     def on_pubmsg(self, connection, event):
-        self._handle_command(connection, event, False)
+        self._handle_message(connection, event, False)
     
     def on_invite(self, connection, event):
         sender = event.source
@@ -110,7 +110,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         channel = event.arguments[0]
         connection.join(channel)
     
-    def _handle_command(self, connection, event, is_private_message):
+    def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
         logging.info("handling privmsg: {}".format(message))
         threading.Thread(target=message.try_run_command).start()
