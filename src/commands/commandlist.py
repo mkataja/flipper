@@ -19,7 +19,9 @@ PUBLIC_CMDS = {
                'puhu': talkcommand.TalkCommand,
                'markov': markovcommand.MarkovCommand,
                'pyhä': markovcommand.markov_command_factory('raamattu'),
-               'imitate': imitatecommand.ImitateCommand
+               'imitate': imitatecommand.ImitateCommand,
+               'top': topcommand.TopCommand,
+               'juo': drinkcommand.DrinkCommand
                }
 
 PRIVATE_CMDS = {
