@@ -37,11 +37,12 @@ def get_session():
         raise ValueError("Tried to get database session "\
                          "but database is not initialized")
     try:
-        logging.info("Creating SQLAlchemy session")
-        yield Session()
+        session = Session()
+        logging.info("Using SQLAlchemy session {}".format(session))
+        yield session
     finally:
-        logging.info("Removing SQLAlchemy session")
-        Session.remove()
+        if len(session.transaction._iterate_parents()) > 0:
+            session.rollback()
 
 
 class utcnow(expression.FunctionElement):
