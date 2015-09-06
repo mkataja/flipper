@@ -55,14 +55,22 @@ class MarkovChain():
         return ' '.join(words)
 
     def _get_random_word_id(self):
-        random_source = (self.corpus
+        words = (self.corpus
+                 .filter(MarkovEntry.prev2_id != None)
+                 .filter(MarkovEntry.next_id != None))
+        if words.count() == 0:
+            words = (self.corpus
+                     .filter((MarkovEntry.prev2_id != None)
+                             | (MarkovEntry.next_id != None)))
+
+        random_source = (words
                          .with_entities(MarkovEntry.prev1_id)
                          .group_by(MarkovEntry.prev1_id)
                          .having(func.count(MarkovEntry.prev1_id) > 1))
         row_count = random_source.count()
 
         if row_count == 0:
-            random_source = self.corpus
+            random_source = words
             row_count = random_source.count()
 
         return random_source.offset(randrange(row_count)).first().prev1_id
