@@ -1,13 +1,15 @@
 import logging
 from random import randrange
 
-from sqlalchemy.sql.expression import exists
 from sqlalchemy.sql.functions import func
 
+from lib.markov_helper import get_or_create_word
+from models.markov_corpus import MarkovCorpus
 from models.markov_entry import MarkovEntry
+from models.markov_word import MarkovWord
 
 
-class MarkovCorpusMissingException(ValueError):
+class MarkovCorpusException(ValueError):
     pass
 
 
@@ -20,50 +22,53 @@ class MarkovChain():
     END_SENTENCE_REMAINING_THRESHOLD = 7
     END_SENTENCE_MINIMUM_LENGTH = 5
 
-    def __init__(self, session, corpus_id):
+    def __init__(self, session, corpus_name):
         self.session = session
-        if not session.query(exists().where(MarkovEntry.corpus_id == corpus_id)).scalar():
-            raise MarkovCorpusMissingException("Corpus '{}' does not exist"
-                                               .format(corpus_id))
-        else:
-            self.corpus = (self.session.query(MarkovEntry)
-                           .filter_by(corpus_id=corpus_id))
+        corpus_id = session.query(MarkovCorpus.id).filter_by(name=corpus_name).scalar()
+        if not corpus_id:
+            raise MarkovCorpusException("Corpus '{}' does not exist".format(corpus_id))
+        self.corpus = (self.session.query(MarkovEntry).filter_by(corpus_id=corpus_id))
+        if self.corpus.count() == 0:
+            raise MarkovCorpusException("Corpus '{}' is empty".format(corpus_id))
 
-    def get_sentence(self, seed):
+    def get_sentence(self, seed_words):
         """
-        seed -- (optional) a list of words to use as a basis for generating the sentence
+        seed_words -- (optional) a list of words to use as a basis for 
+                      generating the sentence
         """
 
-        if seed is None or len(seed) == 0:
-            seed = [self._get_random_word()]
+        if seed_words is None or len(seed_words) == 0:
+            seed_ids = [self._get_random_word_id()]
         else:
-            if (not self._word_in_corpus(seed[0])
-                and not self._word_in_corpus(seed[-1])):
+            seed_ids = [get_or_create_word(word) for word in seed_words]
+            if (not self._word_id_in_corpus(seed_ids[0])
+                and not self._word_id_in_corpus(seed_ids[-1])):
                 return None
 
-        sentence_max_length = self._get_sentence_max_length() + len(seed)
+        sentence_max_length = self._get_sentence_max_length() + len(seed_ids)
 
         logging.debug("Markov: Creating sentence with max_length {}"
                       .format(sentence_max_length))
 
-        sentence = filter(None, self._extend_sentence(seed, sentence_max_length))
-        return ' '.join(sentence)
+        word_ids = filter(None, self._extend_sentence(seed_ids, sentence_max_length))
+        words = [self.session.query(MarkovWord).get(word_id).text for word_id in word_ids]
+        return ' '.join(words)
 
-    def _get_random_word(self):
+    def _get_random_word_id(self):
         random_source = (self.corpus
-                         .with_entities(MarkovEntry.prev_1)
-                         .group_by(MarkovEntry.prev_1)
-                         .having(func.count(MarkovEntry.prev_1) > 1))
+                         .with_entities(MarkovEntry.prev1_id)
+                         .group_by(MarkovEntry.prev1_id)
+                         .having(func.count(MarkovEntry.prev1_id) > 1))
         row_count = random_source.count()
 
         if row_count == 0:
             random_source = self.corpus
             row_count = random_source.count()
 
-        return random_source.offset(randrange(row_count)).first().prev_1
+        return random_source.offset(randrange(row_count)).first().prev1_id
 
-    def _word_in_corpus(self, word):
-        matches = self.corpus.filter_by(prev_1=word)
+    def _word_id_in_corpus(self, word_id):
+        matches = self.corpus.filter_by(prev1_id=word_id)
         row_count = matches.count()
         return row_count > 0
 
@@ -89,42 +94,44 @@ class MarkovChain():
             prefer_nonterminal = False
 
         # Extend sentence forward
-        prev_1 = sentence[-1]
-        if prev_1 is not None:
-            prev_2 = sentence[-2] if len(sentence) > 1 else None
-            next_word = self._get_next_word(prev_1, prev_2, False, prefer_nonterminal)
-            sentence.append(next_word)
+        prev1_id = sentence[-1]
+        if prev1_id is not None:
+            prev2_id = sentence[-2] if len(sentence) > 1 else None
+            next_word_id = self._get_next_word_id(prev1_id, prev2_id,
+                                                  False, prefer_nonterminal)
+            sentence.append(next_word_id)
 
         # Extend sentence backward
-        follow_1 = sentence[0]
-        if follow_1 is not None:
-            follow_2 = sentence[1] if len(sentence) > 1 else None
-            next_word = self._get_next_word(follow_1, follow_2, True, prefer_nonterminal)
-            sentence.insert(0, next_word)
+        follow1_id = sentence[0]
+        if follow1_id is not None:
+            follow2_id = sentence[1] if len(sentence) > 1 else None
+            next_word_id = self._get_next_word_id(follow1_id, follow2_id,
+                                                  True, prefer_nonterminal)
+            sentence.insert(0, next_word_id)
 
         sentence = self._extend_sentence(sentence, max_length)
         return sentence
 
-    def _get_next_word(self, s_0, s_1, backwards, prefer_nonterminal):
+    def _get_next_word_id(self, s0_id, s1_id, backwards, prefer_nonterminal):
         """
-        s_0 -- the nearest search predicate
-        s_1 -- the second nearest search predicate (may be None)
+        s0_id -- the nearest search predicate
+        s1_id -- the second nearest search predicate (may be None)
         """
 
-        if s_0 is None:
+        if s0_id is None:
             return None
 
-        filtered_attr = MarkovEntry.prev_2 if backwards else MarkovEntry.next
+        filtered_attr = MarkovEntry.prev2_id if backwards else MarkovEntry.next_id
         if prefer_nonterminal:
             filter_expr = filtered_attr != None
         else:
             filter_expr = filtered_attr == None
 
-        if s_1 is not None:
+        if s1_id is not None:
             if backwards:
-                candidates = self.corpus.filter_by(prev_1=s_0, next=s_1)
+                candidates = self.corpus.filter_by(prev1_id=s0_id, next_id=s1_id)
             else:
-                candidates = self.corpus.filter_by(prev_1=s_0, prev_2=s_1)
+                candidates = self.corpus.filter_by(prev1_id=s0_id, prev2_id=s1_id)
 
             terminal_filtered = candidates.filter(filter_expr)
             if terminal_filtered.count() > 0:
@@ -133,11 +140,11 @@ class MarkovChain():
                 candidates = terminal_filtered
 
             hits = candidates.count()
-            logging.debug("Markov: {} second order hits for s_1={}, s_0={}: {}"
-                          .format('<' if backwards else '>', s_1, s_0, hits))
+            logging.debug("Markov: {} second order hits for s1_id={}, s0_id={}: {}"
+                          .format('<' if backwards else '>', s1_id, s0_id, hits))
 
-        if s_1 is None or hits < MarkovChain.SECOND_ORDER_MINIMUM_HITS:
-            candidates = self.corpus.filter_by(prev_1=s_0)
+        if s1_id is None or hits < MarkovChain.SECOND_ORDER_MINIMUM_HITS:
+            candidates = self.corpus.filter_by(prev1_id=s0_id)
 
             terminal_filtered = candidates.filter(filter_expr)
             if terminal_filtered.count() > 0:
@@ -147,13 +154,13 @@ class MarkovChain():
 
             hits = candidates.count()
             logging.debug("Markov: {} first order hits for '{}': {}"
-                          .format('<' if backwards else '>', s_0, hits))
+                          .format('<' if backwards else '>', s0_id, hits))
             if hits < 1:
                 return None
 
         selection = candidates.offset(randrange(hits)).first()
         if backwards:
-            next_word = selection.prev_2
+            next_word_id = selection.prev2_id
         else:
-            next_word = selection.next
-        return next_word
+            next_word_id = selection.next_id
+        return next_word_id

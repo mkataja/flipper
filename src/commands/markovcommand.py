@@ -1,5 +1,5 @@
 from commands.command import Command
-from lib.markov_chain import MarkovCorpusMissingException, MarkovChain
+from lib.markov_chain import MarkovCorpusException, MarkovChain
 from services import database
 
 
@@ -17,7 +17,7 @@ class MarkovCommand(Command):
         command = markov_command_factory(corpus_id)()
         try:
             command.handle(message)
-        except MarkovCorpusMissingException:
+        except MarkovCorpusException:
             message.reply_to("Korpusta {} ei löydy".format(corpus_id))
 
 
