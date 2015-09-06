@@ -6,6 +6,7 @@ from services import database
 class MarkovCommand(Command):
     helpstr = ("Käyttö: anna aineiston nimi ensimmäisenä parametrina, "
                "halutessasi avainsanoja sen jälkeen")
+
     def handle(self, message):
         params = message.params.split(maxsplit=1)
         if len(params) < 1:
@@ -26,7 +27,7 @@ class AbstractMarkovCommand(Command):
 
     def handle(self, message):
         params = message.params.split()
-        seed = params if len(params) > 0 else None
+        seed = [w.lower() for w in params] if len(params) > 0 else None
 
         with database.get_session() as session:
             markov = MarkovChain(session, self.corpus_id)
