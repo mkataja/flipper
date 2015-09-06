@@ -1,5 +1,6 @@
 from commands.command import Command
 from lib.markov_chain import MarkovCorpusException, MarkovChain
+from models.markov_corpus import MarkovCorpus
 from services import database
 
 
@@ -15,11 +16,11 @@ class MarkovCommand(Command):
         corpus_id = params[0]
         seed = params[1] if len(params) > 1 else ''
         message.params = seed
-        command = markov_command_factory(corpus_id)()
+        command = get_markov_command_by_corpus_name(corpus_id)()
         try:
             command.handle(message)
         except MarkovCorpusException:
-            message.reply_to("Korpusta {} ei löydy".format(corpus_id))
+            message.reply_to("Sanastoa {} ei löydy".format(corpus_id))
 
 
 class AbstractMarkovCommand(Command):
@@ -30,7 +31,14 @@ class AbstractMarkovCommand(Command):
         seed = [w.lower() for w in params] if len(params) > 0 else None
 
         with database.get_session() as session:
-            markov = MarkovChain(session, self.corpus_id)
+            try:
+                corpus_id = self.corpus_id
+            except AttributeError:
+                corpus_id = (session.query(MarkovCorpus.id)
+                             .filter_by(name=self.corpus_name).scalar())
+                if not corpus_id:
+                    raise MarkovCorpusException("Corpus '{}' does not exist".format(corpus_id))
+            markov = MarkovChain(session, corpus_id)
             sentence = markov.get_sentence(seed)
         if sentence is not None:
             message.reply_to((sentence[0].upper() + sentence[1:]) + '.')
@@ -38,7 +46,12 @@ class AbstractMarkovCommand(Command):
             message.reply_to("Ei löydy mitään")
 
 
-def markov_command_factory(corpus_id):
-    return type(corpus_id + 'MarkovCommand',
+def get_markov_command_by_corpus_name(corpus_name):
+    return type('{}MarkovCommand'.format(corpus_name),
+                (AbstractMarkovCommand,),
+                {'corpus_name': corpus_name})
+
+def get_markov_command_by_corpus_id(corpus_id):
+    return type('Id{}MarkovCommand'.format(corpus_id),
                 (AbstractMarkovCommand,),
                 {'corpus_id': corpus_id})

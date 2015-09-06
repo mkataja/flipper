@@ -3,8 +3,6 @@ from random import randrange
 
 from sqlalchemy.sql.functions import func
 
-from lib.markov_helper import get_or_create_word
-from models.markov_corpus import MarkovCorpus
 from models.markov_entry import MarkovEntry
 from models.markov_word import MarkovWord
 
@@ -22,11 +20,8 @@ class MarkovChain():
     END_SENTENCE_REMAINING_THRESHOLD = 7
     END_SENTENCE_MINIMUM_LENGTH = 5
 
-    def __init__(self, session, corpus_name):
+    def __init__(self, session, corpus_id):
         self.session = session
-        corpus_id = session.query(MarkovCorpus.id).filter_by(name=corpus_name).scalar()
-        if not corpus_id:
-            raise MarkovCorpusException("Corpus '{}' does not exist".format(corpus_id))
         self.corpus = (self.session.query(MarkovEntry).filter_by(corpus_id=corpus_id))
         if self.corpus.count() == 0:
             raise MarkovCorpusException("Corpus '{}' is empty".format(corpus_id))
@@ -40,7 +35,7 @@ class MarkovChain():
         if seed_words is None or len(seed_words) == 0:
             seed_ids = [self._get_random_word_id()]
         else:
-            seed_ids = [get_or_create_word(word) for word in seed_words]
+            seed_ids = [MarkovWord.get_or_create(word) for word in seed_words]
             if (not self._word_id_in_corpus(seed_ids[0])
                 and not self._word_id_in_corpus(seed_ids[-1])):
                 return None
