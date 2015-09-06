@@ -12,14 +12,13 @@ class DrinkCommand(Command):
     def __volts(self, s):
         #if ( "," in s or "." in s):
         t = s.replace( u'\u0025',u'').replace( u'\u002E',u'').replace(u'\u002C', u'')#s.translate(None, '.,%')
-        #print(u'----------------------------'+t)
         if ( t.isdigit() ):
             return float( s.replace( u'\u0025',u'').replace(u'\u002C', u'.') )#s.translate(None, '%'))
         return False
 
     # Checks wheter the given alcohol volume is valid
     def __vol(self, s):
-        print("Not yet implemented")
+        logging.error("DrinkCommand: __vol not yet implemented")
 
         
     def handle(self, message):
@@ -55,7 +54,7 @@ class DrinkCommand(Command):
                 msg = "Virheelliset parametrit!"# Syötä !juo [vahvuus(%)] [tilavuus(ml)] [nimi], esim. !juo 4.8 330 olut"
         else:
             msg = "Virhe jossain :("
-            print("LOL, something went really wrong here")
+            logging.error("DrinkCommand: LOL, something went really wrong here")
         
         #url = 'http://dementia.alakerta.org/kannit/add_drink'
         #values = {'nick':message.sender}
@@ -64,10 +63,12 @@ class DrinkCommand(Command):
             binary_data = data.encode('utf-8')
             req = urllib.request.Request(url, binary_data)
             try:
-                response = urllib.request.urlopen(req)
+                response = urllib.request.urlopen(req, timeout=3)
                 message.reply_to( json.loads(response.read().decode('utf-8')) )
             except urllib.error.HTTPError as error:
-                print(error)
-                message.reply_to("Nyt jokin meni pieleen palvelun päässä :(")        
+                logging.error("DrinkCommand: {}".format(error))
+                message.reply_to("Nyt jokin meni pieleen palvelun päässä :(")
+            except urllib.error.URLError:
+                message.reply_to("Juomapalvelu ei vastannut ennen aikakatkaisua :(")
         else:
             message.reply_to(msg)
