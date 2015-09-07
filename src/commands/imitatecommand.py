@@ -16,7 +16,7 @@ class ImitateCommand(Command):
             self.replytoinvalidparams(message)
             return
 
-        channel = message._event.target
+        channel = message._event.target.lower()
         nick = params[0]
         with database.get_session() as session:
             channel = session.query(Channel).filter_by(name=channel).first()
