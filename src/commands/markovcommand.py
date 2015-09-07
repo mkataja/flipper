@@ -2,6 +2,7 @@ from commands.command import Command
 from lib.markov_chain import MarkovCorpusException, MarkovChain
 from models.markov_corpus import MarkovCorpus
 from services import database
+from _ctypes import ArgumentError
 
 
 class MarkovCommand(Command):
@@ -13,14 +14,11 @@ class MarkovCommand(Command):
         if len(params) < 1:
             self.replytoinvalidparams(message)
             return
-        corpus_id = params[0]
+        corpus_name = params[0]
         seed = params[1] if len(params) > 1 else ''
         message.params = seed
-        command = get_markov_command_by_corpus_name(corpus_id)()
-        try:
-            command.handle(message)
-        except MarkovCorpusException:
-            message.reply_to("Sanastoa {} ei löydy".format(corpus_id))
+        command = get_markov_command(corpus_name=corpus_name)()
+        command.handle(message)
 
 
 class AbstractMarkovCommand(Command):
@@ -31,14 +29,19 @@ class AbstractMarkovCommand(Command):
         seed = [w.lower() for w in params] if len(params) > 0 else None
 
         with database.get_session() as session:
-            try:
+            if self.corpus_id:
                 corpus_id = self.corpus_id
-            except AttributeError:
+            else:
                 corpus_id = (session.query(MarkovCorpus.id)
                              .filter_by(name=self.corpus_name).scalar())
                 if not corpus_id:
-                    raise MarkovCorpusException("Corpus '{}' does not exist".format(corpus_id))
-            markov = MarkovChain(session, corpus_id)
+                    message.reply_to("Sanastoa {} ei löydy".format(self.corpus_name))
+                    return
+            try:
+                markov = MarkovChain(session, corpus_id)
+            except MarkovCorpusException:
+                message.reply_to("Sanasto on tyhjä")
+                return
             sentence = markov.get_sentence(seed)
         if sentence is not None:
             message.reply_to((sentence[0].upper() + sentence[1:]) + '.')
@@ -46,12 +49,8 @@ class AbstractMarkovCommand(Command):
             message.reply_to("Ei löydy mitään")
 
 
-def get_markov_command_by_corpus_name(corpus_name):
-    return type('{}MarkovCommand'.format(corpus_name),
-                (AbstractMarkovCommand,),
-                {'corpus_name': corpus_name})
-
-def get_markov_command_by_corpus_id(corpus_id):
-    return type('Id{}MarkovCommand'.format(corpus_id),
-                (AbstractMarkovCommand,),
-                {'corpus_id': corpus_id})
+def get_markov_command(corpus_id=None, corpus_name=None):
+    if corpus_id and corpus_name:
+        raise ArgumentError("Both corpus_id and corpus_name given (only one argument allowed)")
+    class_name = '{}MarkovCommand'.format(corpus_name or 'Id{}'.format(corpus_id))
+    return type(class_name, (AbstractMarkovCommand,), locals())

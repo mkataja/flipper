@@ -1,5 +1,5 @@
 from commands.command import Command
-from commands.markovcommand import get_markov_command_by_corpus_id
+from commands.markovcommand import get_markov_command
 from lib.markov_chain import MarkovCorpusException
 from models.channel import Channel
 from models.imitate_corpus import ImitateCorpus
@@ -30,7 +30,7 @@ class ImitateCommand(Command):
 
         seed = params[1] if len(params) > 1 else ''
         message.params = seed
-        command = get_markov_command_by_corpus_id(corpus_id)()
+        command = get_markov_command(corpus_id=corpus_id)()
         try:
             command.handle(message)
         except MarkovCorpusException:

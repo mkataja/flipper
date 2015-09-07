@@ -18,7 +18,7 @@ PUBLIC_CMDS = {
                'kuu': mooncommand.MoonCommand,
                'puhu': talkcommand.TalkCommand,
                'markov': markovcommand.MarkovCommand,
-               'pyhä': markovcommand.get_markov_command_by_corpus_name('raamattu'),
+               'pyhä': markovcommand.get_markov_command(corpus_name='raamattu'),
                'imitate': imitatecommand.ImitateCommand,
                'imitoi': imitatecommand.ImitateCommand,
                'top': topcommand.TopCommand,

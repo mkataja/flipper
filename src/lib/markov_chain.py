@@ -24,7 +24,7 @@ class MarkovChain():
         self.session = session
         self.corpus = (self.session.query(MarkovEntry).filter_by(corpus_id=corpus_id))
         if self.corpus.count() == 0:
-            raise MarkovCorpusException("Corpus '{}' is empty".format(corpus_id))
+            raise MarkovCorpusException("Corpus id {} is empty".format(corpus_id))
 
     def get_sentence(self, seed_words):
         """
