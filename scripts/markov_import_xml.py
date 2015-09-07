@@ -4,41 +4,25 @@ Reads the Finnish bible xml into the markov_entry table:
 http://homepages.inf.ed.ac.uk/s0787820/bible/download.php?url=Finnish
 """
 
-from itertools import tee, islice, chain
-import re
 from xml.etree import ElementTree
 
-from commands.markovcommand import MarkovEntry
+from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
+from models.markov_corpus import MarkovCorpus
 from services import database
 
 
-def previous_and_next(iterable):
-    prevs, items, nexts = tee(iterable, 3)
-    prevs = chain([None], prevs)
-    nexts = chain(islice(nexts, 1, None), [None])
-    return zip(prevs, items, nexts)
+FILE_PATH = '../data/raamattu.xml'
+CORPUS_NAME = "raamattu"
 
 database.initialize()
 
-session = database.Session
+with database.get_session() as session:
+    corpus_id = MarkovCorpus.get_or_create(CORPUS_NAME)
 
-corpus_id = "raamattu2"
-
-tree = ElementTree.parse('../data/raamattu.xml')
+tree = ElementTree.parse(FILE_PATH)
 root = tree.getroot()
 
 for seg in root.iter('seg'):
-    text = re.sub('[^ .\w-]', '', seg.text.lower())
-    sentences = text.split('.')
-    for i, sentence in enumerate(sentences):
-        id = '{}_{}'.format(seg.attrib['id'], i)
-        words = sentence.split()
-        for previous, current, next in previous_and_next(words):
-            e = MarkovEntry()
-            e.corpus_id = corpus_id
-            e.sentence_id = id
-            e.prev_2 = previous
-            e.prev_1 = current
-            e.next = next
-            session.add(e)
-    session.commit()
+    text_identifier = seg.attrib['id']
+    markov_sentences = parse_markov_sentences(seg.text.lower())
+    insert_markov_sentences(markov_sentences, corpus_id, text_identifier)
