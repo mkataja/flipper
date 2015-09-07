@@ -1,7 +1,6 @@
 import re
 
 from lib.iteration import previous_and_next
-from models.markov_corpus import MarkovCorpus
 from models.markov_entry import MarkovEntry
 from models.markov_word import MarkovWord
 from services import database

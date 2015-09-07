@@ -40,7 +40,7 @@ class LoggingModule(Module):
             session.commit()
 
     def _create_imitate_entry(self, channel, user, timestamp, message):
-        markov_sentences = parse_markov_sentences(message)
         corpus_id = ImitateCorpus.get_or_create(channel, user)
         text_identifier = '{}_{}'.format(channel.name, timestamp.isoformat())
+        markov_sentences = parse_markov_sentences(message)
         insert_markov_sentences(markov_sentences, corpus_id, text_identifier)
