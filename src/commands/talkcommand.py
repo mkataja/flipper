@@ -112,7 +112,7 @@ class TalkCommand(Command):
         return a + ' '.join(w).split(' ', 1)[1] + ' ' + b.split(' ', 1)[1]
     
     def handle(self, message):
-        connection = sqlite3.connect('../data/vocabulary')
+        connection = sqlite3.connect('../data/talk_vocabulary.sqlite')
         try:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
