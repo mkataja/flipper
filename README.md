@@ -5,15 +5,15 @@ Requirements
 ------------
 
 * Python 3.4
-* irc: IRC protocol client library for Python (https://pypi.python.org/pypi/irc)
-* SQLAlchemy (http://www.sqlalchemy.org/)
-* pytz - World Timezone Definitions for Python (http://pytz.sourceforge.net/)
-* Beautiful Soup 4 (http://www.crummy.com/software/BeautifulSoup/)
+* [irc](http://pypi.python.org/pypi/irc) - IRC protocol client library for Python 
+* [SQLAlchemy](http://www.sqlalchemy.org/)
+* [pytz](http://pytz.sourceforge.net/) - World Timezone Definitions for Python
+* [Beautiful Soup 4](http://www.crummy.com/software/BeautifulSoup/)
 
 Other
 -----
 
-* Vocabulary file for sentence forming functionality (http://ristis.alakerta.org/vocabulary.rar)
+* [Data files](../../../flipper_data) for talkcommand and importer scripts
 
 Pip install commands
 --------------------
@@ -22,3 +22,10 @@ Pip install commands
     pip install sqlalchemy
     pip install pytz
     pip install beautifulsoup4
+
+Running importer scripts
+------------------------
+
+    $ cd scripts
+    $ PYTHONPATH=../src python markov_import_flat_file.py
+    $ PYTHONPATH=../src python markov_import_xml.py
