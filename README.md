@@ -9,6 +9,7 @@ Requirements
 * [SQLAlchemy](http://www.sqlalchemy.org/)
 * [pytz](http://pytz.sourceforge.net/) - World Timezone Definitions for Python
 * [Beautiful Soup 4](http://www.crummy.com/software/BeautifulSoup/)
+* [Flask](http://flask.pocoo.org/)
 
 Other
 -----
@@ -22,6 +23,7 @@ Pip install commands
     pip install sqlalchemy
     pip install pytz
     pip install beautifulsoup4
+    pip install flask
 
 Running importer scripts
 ------------------------

@@ -20,4 +20,7 @@ LOCATION = "60.22,24.81" # Leppävaara, Espoo, Finland
 
 DATABASE_URI = "postgresql://user:password@host:port/databasename"
 
+API_HOST = '127.0.0.1' # Set to '0.0.0.0' to listen to outside connections
+API_APP_KEY = None # Generate your own key!
+
 GOOGLE_API_KEY = "get yours at https://code.google.com/apis/console"

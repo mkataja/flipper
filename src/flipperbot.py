@@ -11,7 +11,7 @@ import irc
 import config
 from message import Message
 import modules.modulelist
-from services import database
+from services import database, http_api
 from services.accesscontrol import has_admin_access
 
 
@@ -20,6 +20,8 @@ class FlipperBot(bot.SingleServerIRCBot):
         signal.signal(signal.SIGINT, self._sigint_handler)
         
         database.initialize()
+        
+        http_api.listen(self)
         
         self.last_pong = None
         self.nick_tail = ""

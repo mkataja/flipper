@@ -29,6 +29,10 @@ LOCATION = "0,0"
 
 DATABASE_URI = ""
 
+API_HOST = '127.0.0.1'
+API_PORT = 6420
+API_APP_KEY = None
+
 GOOGLE_API_KEY = ""
 
 # Import config_local.py
