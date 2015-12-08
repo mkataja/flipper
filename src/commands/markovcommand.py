@@ -2,7 +2,6 @@ from commands.command import Command
 from lib.markov_chain import MarkovCorpusException, MarkovChain
 from models.markov_corpus import MarkovCorpus
 from services import database
-from _ctypes import ArgumentError
 
 
 class MarkovCommand(Command):
@@ -51,6 +50,6 @@ class AbstractMarkovCommand(Command):
 
 def get_markov_command(corpus_id=None, corpus_name=None):
     if corpus_id and corpus_name:
-        raise ArgumentError("Both corpus_id and corpus_name given (only one argument allowed)")
+        raise ValueError("Both corpus_id and corpus_name given (only one argument allowed)")
     class_name = '{}MarkovCommand'.format(corpus_name or 'Id{}'.format(corpus_id))
     return type(class_name, (AbstractMarkovCommand,), locals())
