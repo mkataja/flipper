@@ -31,8 +31,8 @@ def listen(callback):
 def require_appkey(view_function):
     @wraps(view_function)
     def decorated_function(*args, **kwargs):
-        if (request.args.get('key')
-            and request.args.get('key').lower() == config.API_APP_KEY):
+        if (request.values.get('key')
+            and request.values.get('key').lower() == config.API_APP_KEY):
             return view_function(*args, **kwargs)
         else:
             abort(401)
@@ -54,7 +54,7 @@ def version():
 @app.route('/say', methods = ['POST'])
 @require_appkey
 def say():
-    target = request.args.get('target')
-    message = request.args.get('message')
+    target = request.values.get('target')
+    message = request.values.get('message')
     _callback.safe_privmsg(target, message)
     return flask.jsonify(response='ok')
