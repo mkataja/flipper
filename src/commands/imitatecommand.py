@@ -17,7 +17,7 @@ class ImitateCommand(Command):
             return
 
         channel = message._event.target.lower()
-        nick = params[0]
+        nick = params[0].lower()
         with database.get_session() as session:
             channel = session.query(Channel).filter_by(name=channel).first()
             user = session.query(User).filter_by(nick=nick).first()
