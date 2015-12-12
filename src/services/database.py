@@ -19,7 +19,7 @@ def initialize():
     global Session
     Session = None
     if not config.DATABASE_URI:
-        logging.error("Cannot initialize the database service: "\
+        logging.error("Cannot initialize the database service: "
                       "DATABASE_URI not configured")
         return
     logging.info("Initializing database connection to " + config.DATABASE_URI)
@@ -34,13 +34,14 @@ def initialize():
 @contextlib.contextmanager
 def get_session():
     if not Session:
-        raise ValueError("Tried to get database session "\
+        raise ValueError("Tried to get a database session "
                          "but database is not initialized")
     try:
         session = Session()
         logging.info("Using SQLAlchemy session {}".format(session))
         yield session
     finally:
+        # Rollback uncommitted transactions if any:
         if len(session.transaction._iterate_parents()) > 0:
             session.rollback()
 
