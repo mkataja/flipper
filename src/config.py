@@ -4,6 +4,8 @@ Do not change this file to configure a bot instance. To override
 these settings, create config_local.py and make any configuration
 changes there. 
 '''
+import logging
+
 
 SERVER = ""
 PORT = 6667
@@ -31,13 +33,12 @@ DATABASE_URI = ""
 
 API_HOST = '127.0.0.1'
 API_PORT = 6420
-API_APP_KEY = None
 
 GOOGLE_API_KEY = ""
 
 # Import config_local.py
 try:
     from config_local import *  # @UnusedWildImport
-except ImportError:
+except ImportError as e:
     # No local config found
-    pass
+    logging.error("Error while importing config_local: {}".format(e))
