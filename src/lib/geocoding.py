@@ -14,7 +14,8 @@ def geocode(address):
         with database.get_session() as session:
             cache_entry = session.query(AddressCacheEntry).filter_by(address=address).first()
             if cache_entry:
-                logging.info("Found address in cache: '{}'".format(address))
+                logging.info("Found address in cache: '{}' ({}, {})"
+                             .format(address, cache_entry.latitude, cache_entry.longitude))
                 if cache_entry.latitude is None or cache_entry.longitude is None:
                     return None
                 else:
@@ -62,6 +63,36 @@ def geocode(address):
         pass
 
     if latitude is None or longitude is None:
+        logging.info("No geocode match for address '{}'".format(address))
         return None
     else:
+        logging.info("Geocoded address '{}': {}, {}"
+                     .format(address, latitude, longitude))
         return (latitude, longitude)
+
+def decdeg_to_dms(dd):
+    negative = dd < 0
+    dd = abs(dd)
+    minutes, seconds = divmod(dd * 3600, 60)
+    degrees, minutes = divmod(minutes, 60)
+    if negative:
+        if degrees > 0:
+            degrees = -degrees
+        elif minutes > 0:
+            minutes = -minutes
+        else:
+            seconds = -seconds
+    return (degrees, minutes, seconds)
+
+def dms_to_human(degrees, minutes, seconds):
+    return "{}°{}'{}\"".format(int(degrees), int(minutes), round(seconds, 4))
+
+def lat_to_human(dd):
+    degrees, minutes, seconds = decdeg_to_dms(dd)
+    s = 'N' if degrees >= 0 else 'S'
+    return "{} {}".format(dms_to_human(abs(degrees), minutes, seconds), s)
+
+def long_to_human(dd):
+    degrees, minutes, seconds = decdeg_to_dms(dd)
+    s = 'E' if degrees >= 0 else 'W'
+    return "{} {}".format(dms_to_human(abs(degrees), minutes, seconds), s)

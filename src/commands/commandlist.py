@@ -23,7 +23,8 @@ PUBLIC_CMDS = {
                'imitate': imitatecommand.ImitateCommand,
                'imitoi': imitatecommand.ImitateCommand,
                'top': topcommand.TopCommand,
-               'juo': drinkcommand.DrinkCommand
+               'juo': drinkcommand.DrinkCommand,
+               'geocode': geocodecommand.GeocodeCommand,
                }
 
 PRIVATE_CMDS = {
