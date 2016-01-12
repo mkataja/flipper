@@ -33,6 +33,7 @@ DATABASE_URI = ""
 
 API_HOST = '127.0.0.1'
 API_PORT = 6420
+API_HOSTNAME = 'localhost'
 
 GOOGLE_API_KEY = ""
 

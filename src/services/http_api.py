@@ -9,6 +9,7 @@ from werkzeug.exceptions import abort
 
 import config
 from models.api_account import ApiAccount
+from models.memo import Memo
 from services import database
 
 
@@ -16,6 +17,10 @@ API_APPLICATION_NAME = 'flipper API'
 API_VERSION = '1.0.0'
 
 app = Flask(__name__)
+
+app.config.update(SERVER_NAME="{}:{}".format(config.API_HOSTNAME,
+                                               config.API_PORT))
+
 _bot_callback = None
 
 def listen(bot_callback):
@@ -30,6 +35,10 @@ def listen(bot_callback):
             }
     logging.info("Starting HTTP API in {}:{}".format(args['host'], args['port']))
     threading.Thread(target=app.run, kwargs=args).start()
+
+def url_for(*args, **kwargs):
+    with app.app_context():
+        return flask.url_for(*args, **kwargs)
 
 
 def require_appkey(view_function):
@@ -74,3 +83,12 @@ def say():
     message = "{} {}".format(request.values.get('message'), account_name)
     _bot_callback.safe_privmsg(target, message)
     return flask.jsonify(response='ok')
+
+@app.route('/data/memo', methods=['GET'])
+def memo():
+    memo_name = request.values.get('name')
+    with database.get_session() as session:
+        memo = session.query(Memo).filter_by(name=memo_name).first()
+        if memo is None:
+            abort(404)
+        return flask.jsonify(memo=memo.basic_info())
