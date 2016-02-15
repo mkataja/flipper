@@ -12,12 +12,12 @@ from models.imitate_corpus import ImitateCorpus
 
 class LoggingModule(Module):
     def on_privmsg(self, connection, event):
-        self._log(connection, event)
+        self._log(connection, event, is_private_message=True)
 
     def on_pubmsg(self, connection, event):
-        self._log(connection, event)
+        self._log(connection, event, is_private_message=False)
 
-    def _log(self, connection, event):
+    def _log(self, connection, event, is_private_message):
         message = event.arguments[0]
         channel = Channel.get_or_create(event.target)
         user = User.get_or_create(event.source.nick)
@@ -27,7 +27,8 @@ class LoggingModule(Module):
             return
 
         self._create_log_entry(channel.id, user.id, timestamp, message)
-        self._create_imitate_entry(channel, user, timestamp, message)
+        if not is_private_message:
+            self._create_imitate_entry(channel, user, timestamp, message)
 
     def _create_log_entry(self, channel_id, user_id, timestamp, message):
         e = LogEntry()

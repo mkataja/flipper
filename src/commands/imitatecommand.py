@@ -11,6 +11,10 @@ class ImitateCommand(Command):
     helpstr = ("Käyttö: anna imitoitavan nick ensimmäisenä parametrina, "
                "halutessasi avainsanoja sen jälkeen")
     def handle(self, message):
+        if message.is_private_message:
+            message.reply_to("Komentoa voi käyttää vain kanavilla")
+            return
+        
         params = message.params.split(maxsplit=1)
         if len(params) < 1:
             self.replytoinvalidparams(message)
