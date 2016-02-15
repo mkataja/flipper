@@ -10,7 +10,7 @@ class RepeatModule(Module):
     updating = threading.Lock()
 
     def on_pubmsg(self, connection, event):
-        target = event.target
+        target = event.target.lower()
         message = event.arguments[0].strip()
 
         if message is None or message.startswith(config.CMD_PREFIX):
