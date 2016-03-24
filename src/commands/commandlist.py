@@ -26,6 +26,7 @@ PUBLIC_CMDS = {
                'juo': drinkcommand.DrinkCommand,
                'geocode': geocodecommand.GeocodeCommand,
                'memo': memocommand.MemoCommand,
+               'kommentoi': commentcommand.CommentCommand,
                }
 
 PRIVATE_CMDS = {
