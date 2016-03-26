@@ -61,7 +61,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         if (self.last_pong is not None and 
                 current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
             self.last_pong = None
-            self.jump_server("Timeout")
+            self.jump_server("Server timeout")
             return
         
         self.connection.ping("keep-alive")
