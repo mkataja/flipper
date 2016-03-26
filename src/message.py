@@ -1,6 +1,6 @@
 import logging
 import re
-import string
+import time
 import unicodedata
 
 from commands import commandlist
@@ -67,9 +67,13 @@ class Message(object):
 
             if self.commandword in all_commands:
                 command = all_commands[self.commandword]
+                command_start = time.time()
                 command().handle(self)
-                logging.info("ran command: '{}' (with params: '{}')".
-                              format(self.commandword, self.params))
+                logging.info("Ran command: '{}' (with params: '{}') "
+                             "(took {:.3f} s)".
+                              format(self.commandword,
+                                     self.params,
+                                     time.time() - command_start))
             else:
                 logging.warn("unrecognized command: {}".
                               format(self.commandword))
