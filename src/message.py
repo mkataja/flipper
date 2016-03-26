@@ -75,7 +75,7 @@ class Message(object):
                                      self.params,
                                      time.time() - command_start))
             else:
-                logging.warn("unrecognized command: {}".
+                logging.warn("Unrecognized command: {}".
                               format(self.commandword))
 
     def try_run_command(self):

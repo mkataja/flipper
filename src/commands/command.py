@@ -28,7 +28,7 @@ class Command(object):
     helpstr = "Tämän komennon käyttöön ei ole ohjeita."
     
     def handle(self, message):
-        logging.error("no handler defined for '{}'".format(message.cmd))
+        logging.error("No handler defined for '{}'".format(message.cmd))
     
     def replytoinvalidparams(self, message):
         message.reply_to("{} {}".format(self.USAGE_ERROR, self.helpstr))

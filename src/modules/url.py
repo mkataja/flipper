@@ -32,7 +32,7 @@ class UrlModule(Module):
             for url in urls:
                 if not url.startswith("http"):
                     url = "http://" + url
-                logging.debug("found url: {}".format(url))
+                logging.debug("Found url: {}".format(url))
                 threading.Thread(target=self._process_url, args=(url,)).start()
             
         def _process_url(self, url):
