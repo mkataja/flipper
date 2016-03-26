@@ -11,29 +11,14 @@ def _weighted_choice(choices):
         upto += w
     assert False, "Shouldn't get here"
 
-def _random_letters_aab(alphabet):
-    doubled = random.choice(alphabet)
-    return [doubled, doubled, random.choice(alphabet)]
-
-def _random_letters_aba(alphabet):
-    doubled = random.choice(alphabet)
-    return [doubled, random.choice(alphabet), doubled]
-
-def _random_letters_abb(alphabet):
-    doubled = random.choice(alphabet)
-    return [random.choice(alphabet), doubled, doubled]
-
-def _random_letters_abc(alphabet):
-    return [random.choice(alphabet) for _ in range(3)]
-
 def _random_vowels(alphabet):
-    algorithms = [
-                  _random_letters_aab,
-                  _random_letters_aba,
-                  _random_letters_abb,
-                  _random_letters_abc,
-                  ]
-    return random.choice(algorithms)(alphabet)
+    chosen = [random.choice(alphabet) for _ in range(3)]
+    return random.choice([
+            lambda l: [l[0], l[0], l[1]],
+            lambda l: [l[0], l[1], l[0]],
+            lambda l: [l[0], l[1], l[1]],
+            lambda l: [l[0], l[1], l[2]],
+        ])(chosen)
 
 def _pick_vowel_type():
     return random.choice([list('äöyei'), list('aouei')])
@@ -46,7 +31,7 @@ def _random_ending(last_vowel, vowels):
             lambda l, v: "r{}".format(l),
             lambda l, v: "r{}{}".format(l, l),
             lambda l, v: "kk{}".format(l),
-            lambda l, v: "d{}r".format(l),
+            lambda l, v: "nd{}r".format(l),
             lambda l, v: "t{}s".format(l),
             lambda l, v: "ts{}".format(l),
             lambda l, v: "l{}{}n{}".format(l, l, random.choice(vowels)),
@@ -63,7 +48,7 @@ def random_word():
                                     ])(vowels[0])
     first_consonant = random.choice(['s', 'ss', 'p', 'pp', 'ps', 't', 'ts', ''])
 
-    header = _weighted_choice([['nj', 8], ['tj', 2], ['h', 1], ['p', 1]])
+    header = _weighted_choice([['nj', 8], ['tj', 2], ['j', 1], ['h', 1], ['p', 1]])
     ender = _random_ending(vowels[2], all_vowels)
 
     return "{}{}{}{}{}".format(header, first_vowel, first_consonant, vowels[1], ender)
