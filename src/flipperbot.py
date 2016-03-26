@@ -50,7 +50,8 @@ class FlipperBot(bot.SingleServerIRCBot):
             method = getattr(module, "on_" + event.type, None)
             if method is not None:
                 threading.Thread(target=method,
-                                 args=(connection, event)).start()
+                                 args=(connection, event),
+                                 name=module.__class__.__name__).start()
 
     def _keep_alive(self):
         if not self.connection.is_connected():
@@ -81,7 +82,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
     def _on_disconnect(self, connection, event):
         self.last_pong = None
-        
+
         logging.info("Disconnected: unloading delayed commands")
         with self.reactor.mutex:
             self.reactor.delayed_commands = []
@@ -119,7 +120,8 @@ class FlipperBot(bot.SingleServerIRCBot):
     def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
         logging.info("Handling privmsg: {}".format(message))
-        threading.Thread(target=message.try_run_command).start()
+        threading.Thread(target=message.try_run_command,
+                         name=message.command_name).start()
 
     def safe_privmsg(self, target, message):
         if not self.connection.is_connected():

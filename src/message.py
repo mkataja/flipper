@@ -23,6 +23,15 @@ class Message(object):
         self.content = event.arguments[0]
         self.is_private_message = is_private_message
 
+        self.command = self._parse_command()
+    
+    @property
+    def command_name(self):
+        if self.command:
+            return self.command.__name__
+        else:
+            return "UnrecognizedCommand"
+
     def __str__(self):
         desc = "{}@{}: {}".format(self.sender,
                                   self.source,
@@ -57,28 +66,32 @@ class Message(object):
         if result:
             self.commandword = result.groups()[1].lower()
             self.params = result.groups()[2]
-            return True
+            all_commands = commandlist.ALL_CMDS
+            if self.commandword in all_commands:
+                return all_commands[self.commandword]
+            else:
+                logging.warn("Unrecognized command: {}"
+                             .format(self.commandword))
+                return None
         else:
-            return False
+            return None
 
     def run_command(self):
-        if self._parse_command():
-            all_commands = commandlist.ALL_CMDS
-
-            if self.commandword in all_commands:
-                command = all_commands[self.commandword]
-                command_start = time.time()
-                command().handle(self)
-                logging.info("Ran command: '{}' (with params: '{}') "
-                             "(took {:.3f} s)".
-                              format(self.commandword,
-                                     self.params,
-                                     time.time() - command_start))
-            else:
-                logging.warn("Unrecognized command: {}".
-                              format(self.commandword))
+        if self.command:
+            command_start = time.time()
+            self.command().handle(self)
+            logging.info("Ran command: '{}' (with params: '{}') "
+                         "(took {:.3f} s)"
+                         .format(self.commandword,
+                                 self.params,
+                                 time.time() - command_start))
+        else:
+            raise "Cannot run unrecognized command: {}".format(self.commandword)
 
     def try_run_command(self):
+        logging.info("test")
+        if not self.command:
+            return
         try:
             self.run_command()
         except:
@@ -87,7 +100,7 @@ class Message(object):
 
     def reply_to(self, replytext):
         replytext = re.sub(r"(\r?\n|\t)+", ' ', replytext)
-        replytext = ''.join(c for c in replytext if unicodedata.category(c)[0]!="C")
+        replytext = ''.join(c for c in replytext if unicodedata.category(c)[0] != "C")
 
         if self.is_private_message:
             target = self.sender
