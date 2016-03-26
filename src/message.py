@@ -89,7 +89,6 @@ class Message(object):
             raise "Cannot run unrecognized command: {}".format(self.commandword)
 
     def try_run_command(self):
-        logging.info("test")
         if not self.command:
             return
         try:
@@ -108,4 +107,4 @@ class Message(object):
             target = self.source
             replytext = self.sender + ": " + replytext
 
-        self._connection.privmsg(target, replytext)
+        self.bot.safe_privmsg(target, replytext)

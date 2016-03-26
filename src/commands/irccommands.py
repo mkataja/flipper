@@ -1,3 +1,4 @@
+import _thread
 import re
 
 from commands.command import Command, admin_required
@@ -9,8 +10,9 @@ class QuitCommand(Command):
         quit_message = "kthxbye"
         if message.params:
             quit_message = message.params
-        
-        message._connection.quit(quit_message)
+
+        message.bot.disconnect(quit_message)
+        _thread.interrupt_main()
 
 
 class HopCommand(Command):
@@ -25,7 +27,7 @@ class JoinCommand(Command):
         if not re.match("(#|!)\w+", message.params):
             self.replytoinvalidparams(message)
             return
-        
+
         message._connection.join(message.params)
 
 
@@ -41,13 +43,13 @@ class PartCommand(Command):
         else:
             self.replytoinvalidparams(message)
             return
-        
+
         message._connection.part(channel_to_part)
 
 
 class SayCommand(Command):
     helpstr = "Käyttö: anna ensimmäisenä parametrinä kohde, sitten viesti"
-    
+
     @admin_required
     def handle(self, message):
         params = message.params.split(" ", 1)
@@ -56,11 +58,11 @@ class SayCommand(Command):
         else:
             target = params[0]
             text = params[1]
-            
+
             if target[0] == '!':
-                channels = [k for k in message.bot.channels.keys() 
+                channels = [k for k in message.bot.channels.keys()
                             if k.endswith(target[1:]) and k[0] == '!']
                 if len(channels) == 1:
                     target = channels[0]
-            
+
             message._connection.privmsg(target, text)

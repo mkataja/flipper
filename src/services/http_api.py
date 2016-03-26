@@ -34,7 +34,7 @@ def listen(bot_callback):
             'use_reloader': False,
             }
     logging.info("Starting HTTP API in {}:{}".format(args['host'], args['port']))
-    threading.Thread(target=app.run, kwargs=args, name="HttpApi").start()
+    threading.Thread(target=app.run, kwargs=args, name="HttpApi", daemon=True).start()
 
 def url_for(*args, **kwargs):
     with app.app_context():
