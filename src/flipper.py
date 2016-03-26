@@ -2,18 +2,36 @@
 
 import logging
 
+import config
 import flipperbot
 import patch
 
 
+
+def setup_logging():
+    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] "
+        "[%(levelname)-5.5s]  %(message)s")
+    logging.basicConfig(level=config.LOG_LEVEL)
+    root_logger = logging.getLogger()
+    
+    file_handler = logging.FileHandler(config.LOG_FILE)
+    file_handler.setFormatter(log_formatter)
+    root_logger.addHandler(file_handler)
+    
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
+
 def main():
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s %(levelname)s: %(message)s")
+    setup_logging()
     
     patch.patch_irclib()
     
     bot = flipperbot.FlipperBot()
     bot.start()
+    
+    logging.info("Bot stopped, shutting down")
+    logging.shutdown()
 
 if __name__ == '__main__':
     main()

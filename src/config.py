@@ -7,6 +7,9 @@ changes there.
 import logging
 
 
+LOG_FILE = '../log/flipper.log'
+LOG_LEVEL = logging.DEBUG
+
 SERVER = ""
 PORT = 6667
 RECONNECTION_INTERVAL = 30
