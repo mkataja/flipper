@@ -12,10 +12,13 @@ def geocode(address):
 
     try:
         with database.get_session() as session:
-            cache_entry = session.query(AddressCacheEntry).filter_by(address=address).first()
+            cache_entry = (session.query(AddressCacheEntry)
+                           .filter_by(address=address).first())
             if cache_entry:
                 logging.info("Found address in cache: '{}' ({}, {})"
-                             .format(address, cache_entry.latitude, cache_entry.longitude))
+                             .format(address,
+                                     cache_entry.latitude,
+                                     cache_entry.longitude))
                 if cache_entry.latitude is None or cache_entry.longitude is None:
                     return None
                 else:
@@ -70,6 +73,7 @@ def geocode(address):
                      .format(address, latitude, longitude))
         return (latitude, longitude)
 
+
 def decdeg_to_dms(dd):
     negative = dd < 0
     dd = abs(dd)
@@ -84,13 +88,16 @@ def decdeg_to_dms(dd):
             seconds = -seconds
     return (degrees, minutes, seconds)
 
+
 def dms_to_human(degrees, minutes, seconds):
     return "{}°{}'{}\"".format(int(degrees), int(minutes), round(seconds, 4))
+
 
 def lat_to_human(dd):
     degrees, minutes, seconds = decdeg_to_dms(dd)
     s = 'N' if degrees >= 0 else 'S'
     return "{} {}".format(dms_to_human(abs(degrees), minutes, seconds), s)
+
 
 def long_to_human(dd):
     degrees, minutes, seconds = decdeg_to_dms(dd)

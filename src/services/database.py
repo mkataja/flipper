@@ -31,6 +31,7 @@ def initialize():
         return
     Session = scoped_session(sessionmaker(bind=engine))
 
+
 @contextlib.contextmanager
 def get_session():
     if not Session:
@@ -53,15 +54,16 @@ class utcnow(expression.FunctionElement):
 @compiles(utcnow, 'postgresql')
 def pg_utcnow(element, compiler, **kw):
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
-        
+
 
 Base = declarative_base()
 
+
 class FlipperBase(Base):
     __abstract__ = True
-    
+
     _tablename = None
-    
+
     @declared_attr
     def __tablename__(self):
         if self._tablename is None:

@@ -19,7 +19,7 @@ class TalkCommand(Command):
                 if (ret[1] > 15):
                     return False
         return True
-    
+
     def _get_word(self, cursor, d, word):
         """
         Gets a word from the database.
@@ -58,7 +58,7 @@ class TalkCommand(Command):
     def _get_sentence(self, cursor, d, s):
         """Gets a sentence in the chosen direction (d)"""
         # Superintelligently built word length algorithm for natural sentence length:
-        sentence_length = (random.randint(0, 1) + random.randint(0, 2) + 
+        sentence_length = (random.randint(0, 1) + random.randint(0, 2) +
                            random.randint(0, 3) + random.randint(1, 3))
         w = [s, True]
         ret = s + ' '
@@ -71,7 +71,7 @@ class TalkCommand(Command):
                     ret = w[0] + ' ' + ret
             else:
                 break
-        
+
         count = 0
         while (count < 8 and w[1] == True):
             count += 1
@@ -80,7 +80,7 @@ class TalkCommand(Command):
                 if (d == 'next'):
                     ret += w[0] + ' '
                 else:
-                    ret = w[0] + ' ' + ret 
+                    ret = w[0] + ' ' + ret
             else:
                 break
         return ret
@@ -93,7 +93,7 @@ class TalkCommand(Command):
             r = len(allr)
             ret = ['lol', 0]
             while (ret[1] < 20):
-                ret = allr[random.randint(0, r)]	
+                ret = allr[random.randint(0, r)]
             return self._get_sentence(cursor, 'next', ret[0])
         except sqlite3.Error as e:
             logging.error('Error in talkcommand: ' + str(e))
@@ -110,21 +110,21 @@ class TalkCommand(Command):
         a = self._get_sentence(cursor, 'prev', w[0].strip())
         b = self._get_sentence(cursor, 'next', w[len(w) - 1].strip())
         return a + ' '.join(w).split(' ', 1)[1] + ' ' + b.split(' ', 1)[1]
-    
+
     def handle(self, message):
         connection = sqlite3.connect('../data/talk_vocabulary.sqlite')
         try:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
-    
+
             words = message.params.split(" ")
             words = [x.strip() for x in words if x.strip() != ""]
-            
+
             if not words:
                 reply = self._get_random_sentence(cursor)
             else:
                 if (len(words) > 1):
-                    reply = self._get_sentence_sentence(cursor, words)                    
+                    reply = self._get_sentence_sentence(cursor, words)
                 else:
                     reply = self._get_keyword_sentence(cursor, words[0].strip())
             reply = (reply[0].upper() + reply[1:]).strip() + '.'

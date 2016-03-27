@@ -7,7 +7,7 @@ from lib import moon
 
 class MoonCommand(Command):
     helpstr = "Käyttö: voit antaa päivämäärän muodossa yyyy-mm-dd (oletus on tänään)"
-    
+
     def handle(self, message):
         if not message.params:
             date = datetime.now()
@@ -16,7 +16,7 @@ class MoonCommand(Command):
                 date = datetime.strptime(message.params, "%Y-%m-%d")
             except ValueError:
                 self.replytoinvalidparams(message)
-        
+
         result = moon.phase(date)
         illuminated = result['illuminated']
         phase = phase_string(result['phase'])
@@ -31,7 +31,7 @@ def phase_string(p):
     full = 2 / 4.0
     last = 3 / 4.0
     nextnew = 4 / 4.0
-    
+
     phase_strings = (
         (new + precision, "uusikuu"),
         (first - precision, "kasvava sirppi"),
@@ -42,6 +42,6 @@ def phase_string(p):
         (last + precision, "viimeinen neljännes"),
         (nextnew - precision, "vähenevä sirppi"),
         (nextnew + precision, "uusikuu"))
-    
+
     i = bisect.bisect([a[0] for a in phase_strings], p)
     return phase_strings[i][1]

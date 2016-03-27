@@ -34,7 +34,8 @@ class AbstractMarkovCommand(Command):
                 corpus_id = (session.query(MarkovCorpus.id)
                              .filter_by(name=self.corpus_name).scalar())
                 if not corpus_id:
-                    message.reply_to("Sanastoa {} ei löydy".format(self.corpus_name))
+                    message.reply_to("Sanastoa {} ei löydy"
+                                     .format(self.corpus_name))
                     return
             try:
                 markov = MarkovChain(session, corpus_id)
@@ -50,6 +51,8 @@ class AbstractMarkovCommand(Command):
 
 def get_markov_command(corpus_id=None, corpus_name=None):
     if corpus_id and corpus_name:
-        raise ValueError("Both corpus_id and corpus_name given (only one argument allowed)")
-    class_name = '{}MarkovCommand'.format(corpus_name or 'Id{}'.format(corpus_id))
+        raise ValueError("Both corpus_id and corpus_name given "
+                         "(only one argument allowed)")
+    class_name = '{}MarkovCommand'.format(corpus_name or 'Id{}'
+                                          .format(corpus_id))
     return type(class_name, (AbstractMarkovCommand,), locals())

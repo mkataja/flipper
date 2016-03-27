@@ -12,7 +12,7 @@ class Memo(database.FlipperBase):
 
     def basic_info(self):
         return {
-                'name': self.name,
-                'created_on': self.created_on,
-                'lines': [x.basic_info() for x in self.lines]
-                }
+            'name': self.name,
+            'created_on': self.created_on,
+            'lines': [x.basic_info() for x in self.lines]
+        }

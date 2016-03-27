@@ -1,8 +1,8 @@
 '''
 The purpose of this file is to supply default configuration settings.
-Do not change this file to configure a bot instance. To override 
+Do not change this file to configure a bot instance. To override
 these settings, create config_local.py and make any configuration
-changes there. 
+changes there.
 '''
 import logging
 

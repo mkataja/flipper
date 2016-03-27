@@ -88,6 +88,7 @@ todeg = lambda r: r * 180.0 / pi
 dsin = lambda d: sin(torad(d))
 dcos = lambda d: cos(torad(d))
 
+
 def phase(phase_date=datetime.now()):
     """Calculate phase of moon as a fraction:
 
@@ -114,7 +115,7 @@ def phase(phase_date=datetime.now()):
     x = modf((year + 4900 + a) / 100.0)[1]
     jd -= modf((3 * x) / 4.0)[1]
     jd += day - 2432075.5  # was 32075; add 2400000.5
-    
+
     day = 2400000.5 + jd - c.epoch
 
     # Mean anomaly of the Sun
@@ -186,8 +187,8 @@ def phase(phase_date=datetime.now()):
     moon_phase = (1 - cos(torad(moon_age))) / 2.0
 
     # Calculate distance of Moon from the centre of the Earth
-    moon_dist = (c.moon_smaxis * (1 - c.moon_eccentricity ** 2))\
-                / (1 + c.moon_eccentricity * cos(torad(MmP + mEc)))
+    moon_dist = ((c.moon_smaxis * (1 - c.moon_eccentricity ** 2)) /
+                 (1 + c.moon_eccentricity * cos(torad(MmP + mEc))))
 
     # Calculate Moon's angular diameter
     moon_diam_frac = moon_dist / c.moon_smaxis
@@ -196,12 +197,13 @@ def phase(phase_date=datetime.now()):
     return {
         'phase': fixangle(moon_age) / 360.0,
         'illuminated': moon_phase,
-        'age': c.synodic_month * fixangle(moon_age) / 360.0 ,
+        'age': c.synodic_month * fixangle(moon_age) / 360.0,
         'distance': moon_dist,
         'angular_diameter': moon_angular_diameter,
         'sun_distance': sun_dist,
         'sun_angular_diameter': sun_angular_diameter
     }
+
 
 def kepler(m, ecc):
     """Solve the equation of Kepler."""

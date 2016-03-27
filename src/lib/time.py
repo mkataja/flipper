@@ -17,12 +17,14 @@ def get_utc_datetime(local_naive_datetime):
     utc_datetime = timezone.localize(local_naive_datetime).astimezone(pytz.utc)
     return utc_datetime
 
+
 def get_time_in_timezone(time, timezone_id):
     """
     Converts the given timezone aware time into another timezone's local time.
     """
     timezone = pytz.timezone(timezone_id)
     return time.astimezone(timezone)
+
 
 def get_geographic_timezone(latitude, longitude, timestamp=int(time.time())):
     """
@@ -32,7 +34,7 @@ def get_geographic_timezone(latitude, longitude, timestamp=int(time.time())):
     """
     logging.info("Getting timezone for lat: {}, long: {}, at: {}"
                  .format(latitude, longitude, timestamp))
-    
+
     url = ("https://maps.googleapis.com/maps/api/timezone/json?location={}&timestamp={}&key={}"
            .format(urllib.parse.quote("{},{}".format(latitude, longitude)),
                    timestamp, config.GOOGLE_API_KEY))
@@ -40,14 +42,14 @@ def get_geographic_timezone(latitude, longitude, timestamp=int(time.time())):
         reply = urllib.request.urlopen(url, timeout=3).read().decode()
     except urllib.error.HTTPError:
         return None
-    
+
     data = json.loads(reply)
     if data is None:
         return None
-    
+
     status = data.get('status')
     if status is None or status != 'OK':
         return None
-    
+
     timezone_id = data.get('timeZoneId')
     return timezone_id

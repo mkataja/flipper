@@ -15,6 +15,7 @@ from lib import time
 KELVINTOCELSIUS = -273.15
 RETRIES = 5
 
+
 class OpenWeatherMapCommand(Command):
     weather_condition_strings = {
         200: "ukkosta ja heikkoa sadetta",
@@ -27,7 +28,7 @@ class OpenWeatherMapCommand(Command):
         230: "ukkosta ja heikkoa tihkua",
         231: "ukkosta ja tihkua",
         232: "ukkosta ja runsasta tihkua",
-        
+
         300: "heikkoa tihkua",
         301: "tihkua",
         302: "runsasta tihkua",
@@ -37,7 +38,7 @@ class OpenWeatherMapCommand(Command):
         313: "sadekuuroja ja tihkua",
         314: "runsaita sadekuuroja ja tihkua",
         321: "kuuroittaista tihkua",
-        
+
         500: "heikkoa sadetta",
         501: "sadetta",
         502: "runsasta sadetta",
@@ -48,7 +49,7 @@ class OpenWeatherMapCommand(Command):
         521: "sadekuuroja",
         522: "runsaita sadekuuroja",
         531: "ajoittaisia kuurosateita",
-        
+
         600: "heikkoa lumisadetta",
         601: "lumisadetta",
         602: "runsasta lumisadetta",
@@ -59,7 +60,7 @@ class OpenWeatherMapCommand(Command):
         620: "heikkoja lumikuuroja",
         621: "lumikuuroja",
         622: "sakeita lumikuuroja",
-        
+
         701: "utua",
         711: "savua",
         721: "auerta",
@@ -70,13 +71,13 @@ class OpenWeatherMapCommand(Command):
         762: "vulkaanista tuhkaa",
         771: "tuulenpuuskia",
         781: "tornado",
-        
+
         800: "selkeää",
         801: "melkein selkeää",
         802: "puolipilvistä",
         803: "melkein pilvistä",
         804: "pilvistä",
-        
+
         900: "tornado",
         901: "trooppinen hirmumyrsky",
         902: "hurrikaani",
@@ -84,7 +85,7 @@ class OpenWeatherMapCommand(Command):
         904: "hellettä",
         905: "tuulista",
         906: "rakeita",
-        
+
         950: "asettuvaa",
         951: "tyyntä",
         952: "heikkoa tuulta",
@@ -99,41 +100,44 @@ class OpenWeatherMapCommand(Command):
         961: "ankaraa myrskyä",
         962: "hirmumyrskyä",
     }
-    
+
     def _get_wind_word(self, wind_dir):
-        return [ "Pohjois",
-                 "Koillis",
-                 "Itä",
-                 "Kaakkois",
-                 "Etelä",
-                 "Lounais",
-                 "Länsi",
-                 "Luoteis"
-                 ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
-    
+        return [
+                "Pohjois",
+                "Koillis",
+                "Itä",
+                "Kaakkois",
+                "Etelä",
+                "Lounais",
+                "Länsi",
+                "Luoteis"
+                ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
+
     def _get_clouds_eights(self, clouds_percentage):
-        if (datetime.datetime.now().hour == 4 or (datetime.datetime.now().hour == 16)
-            and (datetime.datetime.now().minute == 20)):
+        hour = datetime.datetime.now().hour
+        minute = datetime.datetime.now().minute
+        if (hour == 4 or hour == 16) and minute == 20:
             return "ERITTÄIN pilvistä"
         else:
             clouds = math.ceil(clouds_percentage / 100.0 * 8)
             if clouds == 8 and clouds_percentage < 100:
                 clouds = 7
             return "{}/8".format(clouds)
-    
+
     def _get_weather_conditions(self, weather_conditions):
         if weather_conditions != []:
             conditions_string = ', '.join(weather_conditions)
-            conditions_string = conditions_string[:1].upper() + conditions_string[1:]
+            conditions_string = (conditions_string[:1].upper() +
+                                 conditions_string[1:])
             return conditions_string
         else:
             return "Ei tietoa sääilmiöistä"
-    
+
     def _get_temp_diff(self, data):
         temp = data.get('main').get('temp')
         temp_min = data.get('main').get('temp_min')
         temp_max = data.get('main').get('temp_max')
-        
+
         if temp and temp_min and temp_max and temp_min != temp_max:
             diff_to_min = temp - temp_min
             diff_to_max = temp_max - temp
@@ -141,37 +145,41 @@ class OpenWeatherMapCommand(Command):
             temp_diff_string = " (±{} °C)".format(temp_diff)
         else:
             temp_diff_string = ""
-            
+
         return temp_diff_string
-    
+
     def _get_weather_data(self, requested_place):
         url = ('http://openweathermap.org/data/2.5/weather?q={}'
-            .format(urllib.parse.quote(requested_place)))
+               .format(urllib.parse.quote(requested_place)))
         try:
             reply = urllib.request.urlopen(url, timeout=3).read().decode()
             return json.loads(reply)
         except (urllib.error.HTTPError, socket.timeout):
             return None
-    
+
     def _get_weather_string(self, data):
         sunrise = None
         sunset = None
         if data.get('sys').get('sunrise') and data.get('sys').get('sunset'):
-            sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise'], tz=pytz.utc)
-            sunset = datetime.datetime.fromtimestamp(data['sys']['sunset'], tz=pytz.utc)
+            sunrise = datetime.datetime.fromtimestamp(data['sys']['sunrise'],
+                                                      tz=pytz.utc)
+            sunset = datetime.datetime.fromtimestamp(data['sys']['sunset'],
+                                                     tz=pytz.utc)
             latitude = data.get('coord').get('lat')
             longitude = data.get('coord').get('lon')
             timezone_id = time.get_geographic_timezone(latitude, longitude)
             sunrise = time.get_time_in_timezone(sunrise, timezone_id)
             sunset = time.get_time_in_timezone(sunset, timezone_id)
-        
+
         weather_conditions = []
         for w in data.get('weather'):
             condition = self.weather_condition_strings.get(w.get('id'))
             weather_conditions.append(condition)
-        
-        weather_string = "Sää {} {}. {}. Lämpötila {} °C{}, \
-Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
+
+        weather_string = ("Sää {} {}. {}. Lämpötila {} °C{}, "
+                          "Kosteus {}%, Ilmanpaine {} hPa, "
+                          "{} {} m/s, Pilvisyys: {}.{}"
+                          .format(
             "{} ({})".format(data['name'], data['sys']['country'])
                 if data['name']
                 else data['sys']['country'],
@@ -188,32 +196,33 @@ Kosteus {}%, Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
                                                       sunset.strftime('%H:%M'))
                 if (sunrise and sunset)
                 else ""
-        )
-        
+            ))
+
         return weather_string
-    
+
     def handle(self, message):
         if not message.params:
             requested_place = "Espoo"
         else:
             requested_place = message.params
-        
+
         for _ in range(RETRIES):
             data = self._get_weather_data(requested_place)
             if data is not None:
                 break
             sleep(0.2)
-        
+
         if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")
             return
-        
+
         if data.get('cod') == "404":
-            message.reply_to("Paikkakunnalla {} ei ole säätä".format(requested_place))
+            message.reply_to("Paikkakunnalla {} ei ole säätä"
+                             .format(requested_place))
             return
         elif 'message' in data:
             message.reply_to("Virhe: ".format(data.get('message')))
             return
-        
+
         weather_string = self._get_weather_string(data)
         message.reply_to(weather_string)

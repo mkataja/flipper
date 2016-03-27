@@ -13,6 +13,7 @@ WORD_MAX_LENGTH = 31
 def _is_valid_word(w):
     return len(w) >= WORD_MIN_LENGTH and len(w) <= WORD_MAX_LENGTH
 
+
 def parse_markov_sentences(input_text):
     """
     Parses the input into properly sanitized sentences compliant with
@@ -26,6 +27,7 @@ def parse_markov_sentences(input_text):
                  for s in re.split('[.!?]', input_text)]
     sentences = [s for s in sentences if len(s) > 1]
     return sentences
+
 
 def insert_markov_sentences(sentences, corpus_id, text_identifier):
     with database.get_session() as session:

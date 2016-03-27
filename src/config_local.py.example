@@ -9,14 +9,14 @@ SERVER = "irc.ircnet.org"
 NICK = "flipper"
 REALNAME = NICK
 
-CHANNELS = [ "#flipperdev" ]
+CHANNELS = ["#flipperdev"]
 
 SUPERUSER_NAME = "developer"
 SUPERUSER_NICK = "developer"
 
 TIMEZONE = "Europe/Helsinki"
 
-LOCATION = "60.22,24.81" # Leppävaara, Espoo, Finland
+LOCATION = "60.22,24.81"  # Leppävaara, Espoo, Finland
 
 DATABASE_URI = "postgresql://user:password@host:port/databasename"
 

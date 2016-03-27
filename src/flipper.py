@@ -9,7 +9,8 @@ import patch
 
 
 def setup_logging():
-    log_formatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] "
+    log_formatter = logging.Formatter(
+        "%(asctime)s [%(threadName)-12.12s] "
         "[%(levelname)-5.5s]  %(message)s")
     logging.basicConfig(level=config.LOG_LEVEL)
     root_logger = logging.getLogger()
@@ -21,6 +22,7 @@ def setup_logging():
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
     root_logger.addHandler(console_handler)
+
 
 def main():
     setup_logging()

@@ -13,6 +13,7 @@ from lib import geocoding
 
 RETRIES = 3
 
+
 class FmiWeatherCommand(Command):
     synop_ww_strings = {
         0: "selkeää",
@@ -68,7 +69,7 @@ class FmiWeatherCommand(Command):
         87: "kovia lumikuuroja",
         89: "raekuuroja mahdollisesti yhdessä vesi- tai räntäsateen kanssa",
     }
-    
+
     weather_symbol_3_strings = {
         1: "selkeää",
         2: "puolipilvistä",
@@ -98,7 +99,7 @@ class FmiWeatherCommand(Command):
         91: "utua",
         92: "sumua",
     }
-    
+
     wind_directions = {
          "N": "Pohjois",
          "NE": "Koillis",
@@ -109,16 +110,16 @@ class FmiWeatherCommand(Command):
          "W": "Länsi",
          "NW": "Luoteis",
      }
-    
+
     def _get_weather_data(self, location):
         url = ('http://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
-            .format(urllib.parse.quote(location)))
+               .format(urllib.parse.quote(location)))
         try:
             reply = urllib.request.urlopen(url, timeout=3).read().decode()
             return json.loads(reply)
         except (urllib.error.HTTPError, socket.timeout):
             return None
-    
+
     def _get_weather_conditions(self, data):
         if data.get('WW_AWS') == 'nan':
             return None
@@ -128,32 +129,32 @@ class FmiWeatherCommand(Command):
             return "Tuntematon sääilmiö ({})".format(synop_ww)
         else:
             return weather_conditions[:1].upper() + weather_conditions[1:]
-    
+
     def _get_temperature(self, data):
         if data.get('Temperature') == 'nan':
             return None
         temp = locale.format("%.1f", float(data.get('Temperature')))
         return "Lämpötila {} °C".format(temp)
-    
+
     def _get_humidity(self, data):
         if data.get('Humidity') == 'nan':
             return None
         humidity = int(float(data.get('Humidity')))
         return "Kosteus {}%".format(humidity)
-    
+
     def _get_pressure(self, data):
         if data.get('Pressure') == 'nan':
             return None
         pressure = locale.format("%.0f", float(data.get('Pressure')))
         return "Ilmanpaine {} hPa".format(pressure)
-    
+
     def _get_wind(self, data):
         if data.get('WindCompass8') == 'nan' or data.get('WindSpeedMS') == 'nan':
             return None
         direction = self.wind_directions.get(data.get('WindCompass8'))
         speed = locale.format("%.1f", float(data.get('WindSpeedMS')))
         return "{}tuulta {} m/s".format(direction, speed)
-    
+
     def _get_cloud_cover(self, data):
         if data.get('TotalCloudCover') == 'nan':
             return None
@@ -162,7 +163,7 @@ class FmiWeatherCommand(Command):
             return "Pilvisyys: {}/8".format(cover)
         else:
             return "Pilvisyys: taivas ei näkyvissä"
-    
+
     def _get_weather_from_observations(self, observations):
         stations = list(observations.values())[0]
         synop_stations = [s for s in stations if s.get('WW_AWS') != 'nan']
@@ -170,7 +171,7 @@ class FmiWeatherCommand(Command):
             station = synop_stations[0]
         else:
             station = stations[0]
-        
+
         weather_conditions = self._get_weather_conditions(station)
         weather_data = [
                         self._get_temperature(station),
@@ -184,16 +185,16 @@ class FmiWeatherCommand(Command):
             weather_data_string = ', '.join(weather_data)
         else:
             weather_data_string = None
-        
+
         weather_string = "Sää {} {}.{}{}".format(
             station.get('stationname'),
             datetime.datetime.strptime(station['time'], '%Y%m%d%H%M')
-                .strftime('%d.%m.%Y %H:%M'),
+                             .strftime('%d.%m.%Y %H:%M'),
             " {}.".format(weather_conditions) if weather_conditions else "",
             " {}.".format(weather_data_string) if weather_data_string else ""
         )
         return weather_string
-    
+
     def _get_weather_from_forecast(self, forecast):
         ws3 = int(float(forecast.get('WeatherSymbol3')))
         weather_conditions = self.weather_symbol_3_strings.get(ws3)
@@ -201,7 +202,7 @@ class FmiWeatherCommand(Command):
             weather_conditions = "Tuntematon sääilmiö ({})".format(ws3)
         else:
             weather_conditions = weather_conditions[:1].upper() + weather_conditions[1:]
-        
+
         weather_data = [
                         self._get_temperature(forecast),
                         self._get_wind(forecast),
@@ -211,17 +212,17 @@ class FmiWeatherCommand(Command):
             weather_data_string = ', '.join(weather_data)
         else:
             weather_data_string = None
-        
+
         weather_string = "Ennuste {} ({}) {}.{}{}".format(
             forecast.get('name'),
             forecast.get('country'),
             datetime.datetime.strptime(forecast['localtime'], '%Y%m%dT%H%M%S')
-                .strftime('%d.%m.%Y %H:%M'),
+                             .strftime('%d.%m.%Y %H:%M'),
             " {}.".format(weather_conditions) if weather_conditions else "",
             " {}.".format(weather_data_string) if weather_data_string else ""
         )
         return weather_string
-    
+
     def _get_weather_string(self, data):
         sunrise = None
         sunset = None
@@ -235,20 +236,21 @@ class FmiWeatherCommand(Command):
                 sunset = datetime.datetime.strptime(suninfo['sunset'],
                                                     '%Y%m%dT%H%M%S')
                 sunset = sunset.strftime('%H:%M')
-        
+
         observations = data.get('observations')
-        if (observations and len(observations) > 0 and not False in observations.values()):
+        if (observations and len(observations) > 0 and False not in observations.values()):
             weather_string = self._get_weather_from_observations(observations)
         else:
             newest_forecast = data.get('forecasts')[0].get('forecast')[0]
             weather_string = self._get_weather_from_forecast(newest_forecast)
-        
+
         if (sunrise and sunset):
-            weather_string = (weather_string + 
-                " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset))
-        
+            weather_string = (weather_string +
+                              " Aurinko nousee {} ja laskee {}."
+                              .format(sunrise, sunset))
+
         return weather_string
-    
+
     def handle(self, message):
         if not message.params:
             location = config.LOCATION
@@ -256,7 +258,8 @@ class FmiWeatherCommand(Command):
             address = message.params
             coordinates = geocoding.geocode(address)
             if coordinates is None:
-                message.reply_to("Sijaintia {} ei ole olemassa".format(address))
+                message.reply_to("Sijaintia {} ei ole olemassa"
+                                 .format(address))
                 return
             location = ",".join(str(c) for c in coordinates)
         logging.info("Getting weather data in '{}'".format(location))
@@ -265,18 +268,19 @@ class FmiWeatherCommand(Command):
             if data is not None:
                 break
             sleep(0.2)
-        
+
         if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")
             return
-        
+
         if data.get('status') != "ok":
-            message.reply_to("Kysely epäonnistui: {}".format(data.get('message')))
+            message.reply_to("Kysely epäonnistui: {}"
+                             .format(data.get('message')))
             return
-        
+
         if data.get('forecasts') == [] and data.get('observations') == []:
             message.reply_to("Ei säätietoja paikkakunnalle {}".format(address))
             return
-        
+
         weather_string = self._get_weather_string(data)
         message.reply_to(weather_string)

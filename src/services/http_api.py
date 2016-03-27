@@ -20,22 +20,28 @@ API_VERSION = '1.0.0'
 app = Flask(__name__)
 
 app.config.update(SERVER_NAME="{}:{}".format(config.API_HOSTNAME,
-                                               config.API_PORT))
+                                             config.API_PORT))
 
 _bot_callback = None
+
 
 def listen(bot_callback):
     global _bot_callback  # TODO: Better implementation
     _bot_callback = bot_callback
 
     args = {
-            'host': config.API_HOST,
-            'port': config.API_PORT,
-            'debug': False,
-            'use_reloader': False,
-            }
-    logging.info("Starting HTTP API in {}:{}".format(args['host'], args['port']))
-    threading.Thread(target=app.run, kwargs=args, name="HttpApi", daemon=True).start()
+        'host': config.API_HOST,
+        'port': config.API_PORT,
+        'debug': False,
+        'use_reloader': False,
+    }
+    logging.info("Starting HTTP API in {}:{}"
+                 .format(args['host'], args['port']))
+    threading.Thread(target=app.run,
+                     kwargs=args,
+                     name="HttpApi",
+                     daemon=True).start()
+
 
 def url_for(*args, **kwargs):
     with app.app_context():
@@ -50,7 +56,7 @@ def require_appkey(view_function):
             with database.get_session() as session:
                 account = (session.query(ApiAccount)
                            .filter_by(key=key, enabled=True).first())
-                if account != None:
+                if account is not None:
                     logging.info("API account '{}' authenticated"
                                  .format(account.name))
                     g.account = account
@@ -68,12 +74,14 @@ def require_appkey(view_function):
 def root():
     return ''
 
+
 @app.route('/version')
 def version():
     return flask.jsonify(
-                         application=API_APPLICATION_NAME,
-                         api_version=API_VERSION,
-                         )
+        application=API_APPLICATION_NAME,
+        api_version=API_VERSION,
+    )
+
 
 # TODO wrap success/failure responses somehow
 # TODO check required parameters
@@ -86,6 +94,7 @@ def say():
     message = "{} {}".format(request.values.get('message'), account_name)
     _bot_callback.privmsg(target, message)
     return flask.jsonify(response='ok')
+
 
 @app.route('/data/memo', methods=['GET'])
 def memo():

@@ -22,13 +22,15 @@ class MarkovChain():
 
     def __init__(self, session, corpus_id):
         self.session = session
-        self.corpus = (self.session.query(MarkovEntry).filter_by(corpus_id=corpus_id))
+        self.corpus = (self.session.query(MarkovEntry)
+                       .filter_by(corpus_id=corpus_id))
         if self.corpus.count() == 0:
-            raise MarkovCorpusException("Corpus id {} is empty".format(corpus_id))
+            raise MarkovCorpusException("Corpus id {} is empty"
+                                        .format(corpus_id))
 
     def get_sentence(self, seed_words):
         """
-        seed_words -- (optional) a list of words to use as a basis for 
+        seed_words -- (optional) a list of words to use as a basis for
                       generating the sentence
         """
 
@@ -36,8 +38,8 @@ class MarkovChain():
             seed_ids = [self._get_random_word_id()]
         else:
             seed_ids = [MarkovWord.get_or_create(word) for word in seed_words]
-            if (not self._word_id_in_corpus(seed_ids[0])
-                and not self._word_id_in_corpus(seed_ids[-1])):
+            if (not self._word_id_in_corpus(seed_ids[0]) and
+                    not self._word_id_in_corpus(seed_ids[-1])):
                 return None
 
         sentence_max_length = self._get_sentence_max_length() + len(seed_ids)
@@ -45,18 +47,19 @@ class MarkovChain():
         logging.debug("Markov: Creating sentence with max_length {}"
                       .format(sentence_max_length))
 
-        word_ids = filter(None, self._extend_sentence(seed_ids, sentence_max_length))
+        word_ids = filter(None, self._extend_sentence(seed_ids,
+                                                      sentence_max_length))
         words = [self.session.query(MarkovWord).get(word_id).text for word_id in word_ids]
         return ' '.join(words)
 
     def _get_random_word_id(self):
         words = (self.corpus
-                 .filter(MarkovEntry.prev2_id != None)
-                 .filter(MarkovEntry.next_id != None))
+                 .filter(MarkovEntry.prev2_id is not None)
+                 .filter(MarkovEntry.next_id is not None))
         if words.count() == 0:
             words = (self.corpus
-                     .filter((MarkovEntry.prev2_id != None)
-                             | (MarkovEntry.next_id != None)))
+                     .filter((MarkovEntry.prev2_id is not None) |
+                             (MarkovEntry.next_id is not None)))
 
         random_source = (words
                          .with_entities(MarkovEntry.prev1_id)
@@ -76,9 +79,9 @@ class MarkovChain():
         return row_count > 0
 
     def _get_sentence_max_length(self):
-        return (MarkovChain.SENTENCE_LENGTH_MINIMUM
-                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART)
-                + randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART))
+        return (MarkovChain.SENTENCE_LENGTH_MINIMUM +
+                randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART) +
+                randrange(MarkovChain.SENTENCE_LENGTH_RANDOM_PART))
 
     def _extend_sentence(self, sentence, max_length):
         if len(sentence) >= max_length:
@@ -92,8 +95,8 @@ class MarkovChain():
 
         prefer_nonterminal = True
         current_length = len(sentence)
-        if (current_length > MarkovChain.END_SENTENCE_MINIMUM_LENGTH
-            and current_length > max_length - MarkovChain.END_SENTENCE_REMAINING_THRESHOLD):
+        if (current_length > MarkovChain.END_SENTENCE_MINIMUM_LENGTH and
+                current_length > max_length - MarkovChain.END_SENTENCE_REMAINING_THRESHOLD):
             prefer_nonterminal = False
 
         # Extend sentence forward
@@ -126,9 +129,9 @@ class MarkovChain():
 
         filtered_attr = MarkovEntry.prev2_id if backwards else MarkovEntry.next_id
         if prefer_nonterminal:
-            filter_expr = filtered_attr != None
+            filter_expr = filtered_attr is not None
         else:
-            filter_expr = filtered_attr == None
+            filter_expr = filtered_attr is None
 
         if s1_id is not None:
             if backwards:

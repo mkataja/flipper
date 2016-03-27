@@ -15,7 +15,8 @@ def admin_required(fn):
                       "Oletpa tuhma poika",
                       "Sinulla ei ole OIKEUTTA",
                       ]
-            message.reply_to("{}, {}".format(random.choice(taunts), message.sender))
+            message.reply_to("{}, {}".format(random.choice(taunts),
+                                             message.sender))
         else:
             return fn(self, message)
     return decorated_handle
@@ -23,12 +24,12 @@ def admin_required(fn):
 
 class Command(object):
     USAGE_ERROR = "Virheelliset parametrit."
-    
+
     description = "Tälle komennolle ei ole kuvausta."
     helpstr = "Tämän komennon käyttöön ei ole ohjeita."
-    
+
     def handle(self, message):
         logging.error("No handler defined for '{}'".format(message.cmd))
-    
+
     def replytoinvalidparams(self, message):
         message.reply_to("{} {}".format(self.USAGE_ERROR, self.helpstr))
