@@ -24,7 +24,7 @@ class Message(object):
         self.is_private_message = is_private_message
 
         self.command = self._parse_command()
-    
+
     @property
     def command_name(self):
         if self.command:
@@ -54,11 +54,9 @@ class Message(object):
         else:
             cmd_prefix_regex = re.escape(config.CMD_PREFIX)
 
-        regex = re.compile("^({}[:,\s]+|{})"
-                           .format(
-                                   self._connection.get_nickname(),
-                                   cmd_prefix_regex)
-                           + "([^\s]*)\s*(.*)",
+        regex = re.compile("^({}[:,\s]+|{})([^\s]*)\s*(.*)"
+                           .format(self._connection.get_nickname(),
+                                   cmd_prefix_regex),
                            re.IGNORECASE)
 
         result = regex.search(self.content)
@@ -86,7 +84,8 @@ class Message(object):
                                  self.params,
                                  time.time() - command_start))
         else:
-            raise "Cannot run unrecognized command: {}".format(self.commandword)
+            raise ("Cannot run unrecognized command: {}"
+                   .format(self.commandword))
 
     def try_run_command(self):
         if not self.command:

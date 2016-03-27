@@ -34,5 +34,8 @@ def color(string, fg_color, bg_color=None):
         color_code = "{},{}".format(color_code, bg_color.value)
     return "{}{}{}".format(color_code, string, ControlCode.reset.value)
 
+
 def bold(string):
-    return "{}{}{}".format(ControlCode.bold.value, string, ControlCode.reset.value)
+    return "{}{}{}".format(ControlCode.bold.value,
+                           string,
+                           ControlCode.reset.value)
