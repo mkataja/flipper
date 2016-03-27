@@ -1,7 +1,6 @@
 import logging
 import re
 import time
-import unicodedata
 
 from commands import commandlist
 import config
@@ -97,13 +96,13 @@ class Message(object):
             raise
 
     def reply_to(self, replytext):
-        replytext = re.sub(r"(\r?\n|\t)+", ' ', replytext)
-        replytext = ''.join(c for c in replytext if unicodedata.category(c)[0] != "C")
+        if not self.is_private_message:
+            replytext = self.sender + ": " + replytext
+        self.reply(replytext)
 
+    def reply(self, replytext):
         if self.is_private_message:
             target = self.sender
         else:
             target = self.source
-            replytext = self.sender + ": " + replytext
-
         self.bot.privmsg(target, replytext)

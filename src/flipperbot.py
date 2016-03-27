@@ -4,16 +4,29 @@ import signal
 import sys
 import threading
 import time
+import unicodedata
 
 from irc import bot
 import irc
 from irc.bot import ExponentialBackoff
 
 import config
+from lib.irc_colors import ControlCode
 from message import Message
 import modules.modulelist
 from services import database, http_api
 from services.accesscontrol import has_admin_access
+
+
+def is_allowed_character(character):
+    return (character in [cc.value for cc in ControlCode] or
+            unicodedata.category(character)[0] != 'C')
+
+
+def sanitize(string):
+    string = re.sub(r"(\r?\n|\t)+", ' ', string)
+    string = ''.join(c for c in string if is_allowed_character(c))
+    return string
 
 
 class FlipperBot(bot.SingleServerIRCBot):
@@ -127,5 +140,4 @@ class FlipperBot(bot.SingleServerIRCBot):
         if not self.connection.is_connected():
             logging.error("Tried to send privmsg while disconnected: aborting")
             return
-        text = re.sub(r"(\r?\n|\t)+", " ", message)
-        self.connection.privmsg(target, text)
+        self.connection.privmsg(target, sanitize(message))
