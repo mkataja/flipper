@@ -60,8 +60,9 @@ class UrlModule(Module):
                 self._bot.privmsg(self._event.target, message)
 
         def _get_title_text(self, url):
+            request = Request(url, headers={'User-Agent': config.USER_AGENT})
             try:
-                webpage = BeautifulSoup(urlopen(url, timeout=3))
+                webpage = BeautifulSoup(urlopen(request, timeout=3))
             except Exception as e:
                 # Doesn't really matter what went wrong, abort in any case
                 logging.warn("Getting url title failed for {} ({})"
@@ -88,8 +89,7 @@ class UrlModule(Module):
             }).encode()
 
             request = Request(request_url, request_data,
-                              {'Content-Type': 'application/json'})
-
+                              headers={'Content-Type': 'application/json'})
             try:
                 response = urlopen(request)
             except HTTPError:
