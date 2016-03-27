@@ -65,4 +65,4 @@ class SayCommand(Command):
                 if len(channels) == 1:
                     target = channels[0]
 
-            message._connection.privmsg(target, text)
+            message.bot.privmsg(target, text)
