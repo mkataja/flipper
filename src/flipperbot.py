@@ -123,7 +123,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         threading.Thread(target=message.try_run_command,
                          name=message.command_name).start()
 
-    def safe_privmsg(self, target, message):
+    def privmsg(self, target, message):
         if not self.connection.is_connected():
             logging.error("Tried to send privmsg while disconnected: aborting")
             return

@@ -54,7 +54,7 @@ class UrlModule(Module):
                 message += "-> {}".format(title)
             
             if message != "":
-                self._bot.safe_privmsg(self._event.target, message)
+                self._bot.privmsg(self._event.target, message)
         
         def _get_title_text(self, url):
             try:

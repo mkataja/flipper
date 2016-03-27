@@ -20,7 +20,7 @@ class RepeatModule(Module):
             last = self.last.get(target, None)
             logging.debug("Repeat: last: {}, current: {}".format(last, message))
             if message == last:
-                self._bot.safe_privmsg(target, message)
+                self._bot.privmsg(target, message)
                 self.last[target] = None
             else:
                 self.last[target] = message

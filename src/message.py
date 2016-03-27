@@ -107,4 +107,4 @@ class Message(object):
             target = self.source
             replytext = self.sender + ": " + replytext
 
-        self.bot.safe_privmsg(target, replytext)
+        self.bot.privmsg(target, replytext)

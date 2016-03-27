@@ -9,4 +9,4 @@ class NiiloismModule(Module):
 
         if message is not None and message.startswith('nj'):
             word = niiloism.random_word()
-            self._bot.safe_privmsg(target, word)
+            self._bot.privmsg(target, word)

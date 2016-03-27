@@ -84,7 +84,7 @@ def say():
     account_name = color("[{}]".format(g.account.name), Color.dgrey)
     target = request.values.get('target')
     message = "{} {}".format(request.values.get('message'), account_name)
-    _bot_callback.safe_privmsg(target, message)
+    _bot_callback.privmsg(target, message)
     return flask.jsonify(response='ok')
 
 @app.route('/data/memo', methods=['GET'])

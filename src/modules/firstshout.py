@@ -19,5 +19,5 @@ class FirstShoutModule(Module):
     
     def _message_first_new_year(self):
         for channel in self._bot.channels.keys():
-            self._bot.safe_privmsg(channel, "Hyvää uutta vuotta!")
+            self._bot.privmsg(channel, "Hyvää uutta vuotta!")
         self._setup_first_new_year()
