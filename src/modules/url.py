@@ -51,10 +51,10 @@ class UrlModule(Module):
             if title and title.lower() in url.lower():
                 title = None
 
-            message = short if short else ""
+            message = color(short, Color.dgrey) if short else ""
 
             if title:
-                message += "-> {}".format(title)
+                message += "{}".format(color(title, Color.dcyan))
 
             if message != "":
                 self._bot.privmsg(self._event.target, message)
