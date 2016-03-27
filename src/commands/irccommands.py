@@ -2,12 +2,13 @@ import _thread
 import re
 
 from commands.command import Command, admin_required
+from lib import niiloism
 
 
 class QuitCommand(Command):
     @admin_required
     def handle(self, message):
-        quit_message = "kthxbye"
+        quit_message = niiloism.random_word()
         if message.params:
             quit_message = message.params
 
