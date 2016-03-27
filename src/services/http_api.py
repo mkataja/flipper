@@ -8,6 +8,7 @@ from flask.globals import request, g
 from werkzeug.exceptions import abort
 
 import config
+from lib.irc_colors import color, Color
 from models.api_account import ApiAccount
 from models.memo import Memo
 from services import database
@@ -75,10 +76,12 @@ def version():
                          )
 
 # TODO wrap success/failure responses somehow
+# TODO check required parameters
+# TODO take parameters as JSON
 @app.route('/say', methods=['POST'])
 @require_appkey
 def say():
-    account_name = "\x0314,1[{}]\x03".format(g.account.name)
+    account_name = color("[{}]".format(g.account.name), Color.dgrey)
     target = request.values.get('target')
     message = "{} {}".format(request.values.get('message'), account_name)
     _bot_callback.safe_privmsg(target, message)
