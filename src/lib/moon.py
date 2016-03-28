@@ -81,12 +81,27 @@ class AstronomicalConstants:
 
 c = AstronomicalConstants()
 
-# Little handy mathematical functions.
-fixangle = lambda a: a - 360.0 * floor(a / 360.0)
-torad = lambda d: d * pi / 180.0
-todeg = lambda r: r * 180.0 / pi
-dsin = lambda d: sin(torad(d))
-dcos = lambda d: cos(torad(d))
+
+# Little handy mathematical functions:
+
+def fixangle(angle):
+    return angle - 360.0 * floor(angle / 360.0)
+
+
+def torad(degrees):
+    return degrees * pi / 180.0
+
+
+def todeg(radians):
+    return radians * 180.0 / pi
+
+
+def dsin(degrees):
+    return sin(torad(degrees))
+
+
+def dcos(degrees):
+    return cos(torad(degrees))
 
 
 def phase(phase_date=datetime.now()):

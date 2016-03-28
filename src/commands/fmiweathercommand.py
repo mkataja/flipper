@@ -101,15 +101,15 @@ class FmiWeatherCommand(Command):
     }
 
     wind_directions = {
-         "N": "Pohjois",
-         "NE": "Koillis",
-         "E": "Itä",
-         "SE": "Kaakkois",
-         "S": "Etelä",
-         "SW": "Lounais",
-         "W": "Länsi",
-         "NW": "Luoteis",
-     }
+        "N": "Pohjois",
+        "NE": "Koillis",
+        "E": "Itä",
+        "SE": "Kaakkois",
+        "S": "Etelä",
+        "SW": "Lounais",
+        "W": "Länsi",
+        "NW": "Luoteis",
+    }
 
     def _get_weather_data(self, location):
         url = ('http://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
@@ -174,12 +174,12 @@ class FmiWeatherCommand(Command):
 
         weather_conditions = self._get_weather_conditions(station)
         weather_data = [
-                        self._get_temperature(station),
-                        self._get_humidity(station),
-                        self._get_pressure(station),
-                        self._get_wind(station),
-                        self._get_cloud_cover(station),
-                        ]
+            self._get_temperature(station),
+            self._get_humidity(station),
+            self._get_pressure(station),
+            self._get_wind(station),
+            self._get_cloud_cover(station),
+        ]
         weather_data = [wd for wd in weather_data if wd]
         if len(weather_data) > 0:
             weather_data_string = ', '.join(weather_data)
@@ -204,9 +204,9 @@ class FmiWeatherCommand(Command):
             weather_conditions = weather_conditions[:1].upper() + weather_conditions[1:]
 
         weather_data = [
-                        self._get_temperature(forecast),
-                        self._get_wind(forecast),
-                        ]
+            self._get_temperature(forecast),
+            self._get_wind(forecast),
+        ]
         weather_data = [wd for wd in weather_data if wd]
         if len(weather_data) > 0:
             weather_data_string = ', '.join(weather_data)
