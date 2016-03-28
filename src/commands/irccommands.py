@@ -8,9 +8,14 @@ from lib import niiloism
 class QuitCommand(Command):
     @admin_required
     def handle(self, message):
-        quit_message = niiloism.random_word()
         if message.params:
             quit_message = message.params
+        else:
+            try:
+                quit_message = niiloism.random_word()
+            except:
+                # The failure doesn't matter; a message is required nonetheless
+                quit_message = "Quitting"
 
         message.bot.disconnect(quit_message)
         _thread.interrupt_main()
