@@ -29,6 +29,8 @@ class ControlCode(Enum):
 
 
 def color(string, fg_color, bg_color=None):
+    if fg_color is None:
+        return string
     color_code = "{}{}".format(ControlCode.color.value, fg_color.value)
     if bg_color:
         color_code = "{},{}".format(color_code, bg_color.value)
