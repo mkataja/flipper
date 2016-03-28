@@ -1,6 +1,7 @@
 import re
 
 from lib.iteration import previous_and_next
+from lib.web import url_regex
 from models.markov_entry import MarkovEntry
 from models.markov_word import MarkovWord
 from services import database
@@ -19,7 +20,6 @@ def parse_markov_sentences(input_text):
     Parses the input into properly sanitized sentences compliant with
     the bot's Markov chain implementation.
     """
-    url_regex = '(?:(?:https?:\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+)(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">)])?'
     input_text = re.sub(url_regex, '', input_text, re.IGNORECASE)
     input_text = re.sub('[^ .!?\w-]', '', input_text)
     input_text = input_text.lower()
