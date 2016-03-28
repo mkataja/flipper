@@ -2,7 +2,7 @@ import _thread
 import re
 
 from commands.command import Command, admin_required
-from lib import niiloism
+from lib import irc_helpers
 
 
 class QuitCommand(Command):
@@ -11,11 +11,7 @@ class QuitCommand(Command):
         if message.params:
             quit_message = message.params
         else:
-            try:
-                quit_message = niiloism.random_word()
-            except:
-                # The failure doesn't matter; a message is required nonetheless
-                quit_message = "Quitting"
+            quit_message = irc_helpers.quit_message()
 
         message.bot.disconnect(quit_message)
         _thread.interrupt_main()

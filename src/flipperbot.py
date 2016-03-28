@@ -11,6 +11,7 @@ import irc
 from irc.bot import ExponentialBackoff
 
 import config
+from lib import irc_helpers
 from lib.irc_colors import ControlCode
 from message import Message
 import modules.modulelist
@@ -53,7 +54,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
     def _sigint_handler(self, signal, frame):
         if self.connection.is_connected():
-            self.connection.quit("Quitting")
+            self.connection.quit(irc_helpers.quit_message())
         sys.exit()
 
     def _dispatcher(self, connection, event):
