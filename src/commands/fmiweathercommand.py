@@ -9,6 +9,7 @@ import urllib.request, urllib.error, urllib.parse
 from commands.command import Command
 import config
 from lib import geocoding
+from lib.irc_colors import Color, color
 
 
 RETRIES = 3
@@ -133,8 +134,15 @@ class FmiWeatherCommand(Command):
     def _get_temperature(self, data):
         if data.get('Temperature') == 'nan':
             return None
-        temp = locale.format("%.1f", float(data.get('Temperature')))
-        return "Lämpötila {} °C".format(temp)
+        temp = float(data.get('Temperature'))
+        if temp >= 25:
+            temp_color = Color.red
+        elif temp > 0:
+            temp_color = Color.yellow
+        else:
+            temp_color = Color.blue
+        temp_string = color(locale.format("%.1f", temp), temp_color)
+        return "Lämpötila {} °C".format(temp_string)
 
     def _get_humidity(self, data):
         if data.get('Humidity') == 'nan':
@@ -152,8 +160,15 @@ class FmiWeatherCommand(Command):
         if data.get('WindCompass8') == 'nan' or data.get('WindSpeedMS') == 'nan':
             return None
         direction = self.wind_directions.get(data.get('WindCompass8'))
-        speed = locale.format("%.1f", float(data.get('WindSpeedMS')))
-        return "{}tuulta {} m/s".format(direction, speed)
+        speed = float(data.get('WindSpeedMS'))
+        if speed >= 14:
+            speed_color = Color.red
+        elif speed >= 8:
+            speed_color = Color.yellow
+        else:
+            speed_color = None
+        speed_string = color(locale.format("%.1f", speed), speed_color)
+        return "{}tuulta {} m/s".format(direction, speed_string)
 
     def _get_cloud_cover(self, data):
         if data.get('TotalCloudCover') == 'nan':
