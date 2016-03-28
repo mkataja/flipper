@@ -35,9 +35,13 @@ class MemoCommand(Command):
         if memo_name == 'new':
             message.reply_to("Nimeä 'new' ei voi käyttää")
             return
-        memo = Memo()
-        memo.name = memo_name
         with database.get_session() as session:
+            memo = session.query(Memo).filter_by(name=memo_name).first()
+            if memo is not None:
+                message.reply_to("Memo '{}' on jo olemassa".format(memo_name))
+                return
+            memo = Memo()
+            memo.name = memo_name
             session.add(memo)
             session.commit()
             message.reply_to("Memo '{}' luotu".format(memo_name))

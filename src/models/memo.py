@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.schema import Column, UniqueConstraint
 from sqlalchemy.sql.sqltypes import Text
 
 from services import database
@@ -7,6 +7,8 @@ from services import database
 
 class Memo(database.FlipperBase):
     name = Column(Text, nullable=False)
+
+    UniqueConstraint(name)
 
     lines = relationship('MemoLine', order_by='MemoLine.created_on')
 
