@@ -39,7 +39,6 @@ def get_session():
                          "but database is not initialized")
     try:
         session = Session()
-        logging.info("Using SQLAlchemy session {}".format(session))
         yield session
     finally:
         # Rollback uncommitted transactions if any:
