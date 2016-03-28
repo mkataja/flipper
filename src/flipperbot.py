@@ -41,7 +41,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         self.last_pong = None
         self.nick_tail = ""
 
-        recon_strategy = ExponentialBackoff(min_interval=config.RECONNECTION_INTERVAL)
+        recon_strategy = ExponentialBackoff(
+            min_interval=config.RECONNECT_MIN_INTERVAL,
+            max_interval=config.RECONNECT_MAX_INTERVAL)
+
         bot.SingleServerIRCBot.__init__(self,
                                         [(config.SERVER, config.PORT)],
                                         config.NICK,
