@@ -27,6 +27,7 @@ PUBLIC_CMDS = {
     'geocode': geocodecommand.GeocodeCommand,
     'memo': memocommand.MemoCommand,
     'kommentoi': commentcommand.CommentCommand,
+    'teach': markovteachcommand.MarkovTeachCommand,
 }
 
 PRIVATE_CMDS = {
