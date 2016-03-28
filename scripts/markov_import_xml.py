@@ -6,6 +6,7 @@ http://homepages.inf.ed.ac.uk/s0787820/bible/download.php?url=Finnish
 
 from xml.etree import ElementTree
 
+from lib import markov_helper
 from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
 from models.markov_corpus import MarkovCorpus
 from services import database
@@ -24,5 +25,4 @@ root = tree.getroot()
 
 for seg in root.iter('seg'):
     text_identifier = seg.attrib['id']
-    markov_sentences = parse_markov_sentences(seg.text.lower())
-    insert_markov_sentences(markov_sentences, corpus_id, text_identifier)
+    markov_helper.insert_text(seg.text.lower(), corpus_id, text_identifier)

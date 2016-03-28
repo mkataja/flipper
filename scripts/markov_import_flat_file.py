@@ -4,6 +4,7 @@ the Markov chain database. Example file parsed from:
 https://fi.wikiquote.org/wiki/Suomalaisia_sananlaskuja
 """
 
+from lib import markov_helper
 from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
 from models.markov_corpus import MarkovCorpus
 from services import database
@@ -20,5 +21,4 @@ with database.get_session() as session:
 with open(FILE_PATH) as file:
     for i, line in enumerate(file.readlines()):
         text_identifier = '{}_{}'.format(CORPUS_NAME, i)
-        markov_sentences = parse_markov_sentences(line)
-        insert_markov_sentences(markov_sentences, corpus_id, text_identifier)
+        markov_helper.insert_text(line, corpus_id, text_identifier)

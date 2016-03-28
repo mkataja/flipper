@@ -15,7 +15,7 @@ def _is_valid_word(w):
     return len(w) >= WORD_MIN_LENGTH and len(w) <= WORD_MAX_LENGTH
 
 
-def parse_markov_sentences(input_text):
+def _parse_markov_sentences(input_text):
     """
     Parses the input into properly sanitized sentences compliant with
     the bot's Markov chain implementation.
@@ -29,7 +29,7 @@ def parse_markov_sentences(input_text):
     return sentences
 
 
-def insert_markov_sentences(sentences, corpus_id, text_identifier):
+def _insert_markov_sentences(sentences, corpus_id, text_identifier):
     with database.get_session() as session:
         for i, sentence in enumerate(sentences):
             sentence_identifier = '{}_{}'.format(text_identifier, i)
@@ -43,3 +43,8 @@ def insert_markov_sentences(sentences, corpus_id, text_identifier):
                 entry.next_id = following
                 session.add(entry)
             session.commit()
+
+
+def insert_text(text, corpus_id, text_identifier):
+    markov_sentences = _parse_markov_sentences(text)
+    _insert_markov_sentences(markov_sentences, corpus_id, text_identifier)

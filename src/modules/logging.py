@@ -1,13 +1,13 @@
 import datetime
 
 import config
-from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
+from lib import markov_helper
 from models.channel import Channel
+from models.imitate_corpus import ImitateCorpus
 from models.log_entry import LogEntry
 from models.user import User
 from modules.module import Module
 from services import database
-from models.imitate_corpus import ImitateCorpus
 
 
 class LoggingModule(Module):
@@ -43,5 +43,4 @@ class LoggingModule(Module):
     def _create_imitate_entry(self, channel, user, timestamp, message):
         corpus_id = ImitateCorpus.get_or_create(channel, user)
         text_identifier = '{}_{}'.format(channel.name, timestamp.isoformat())
-        markov_sentences = parse_markov_sentences(message)
-        insert_markov_sentences(markov_sentences, corpus_id, text_identifier)
+        markov_helper.insert_text(message, corpus_id, text_identifier)
