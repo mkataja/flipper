@@ -4,6 +4,9 @@ from models.memo_line import MemoLine
 from services import database, http_api
 
 
+_reserved_words = ['new', 'list']
+
+
 class MemoCommand(Command):
     helpstr = "Käyttö: !memo <nimi>, !memo <nimi> <viesti> tai !memo new <nimi>"
 
@@ -14,10 +17,12 @@ class MemoCommand(Command):
             self.replytoinvalidparams(message)
             return
 
-        if len(parameters) == 1:
-            self._get_memo(message, parameters)
-        elif parameters[0].lower() == 'new':
+        if parameters[0].lower() == 'new':
             self._new_memo(message, parameters)
+        elif parameters[0].lower() == "list":
+            self._list_memos(message)
+        elif len(parameters) == 1:
+            self._get_memo(message, parameters)
         else:
             self._add_line(message, parameters)
 
@@ -31,9 +36,9 @@ class MemoCommand(Command):
             message.reply_to("{}".format(http_api.url_for('memo', name=memo_name)))
 
     def _new_memo(self, message, parameters):
-        memo_name = parameters[1].lower()
-        if memo_name == 'new':
-            message.reply_to("Nimeä 'new' ei voi käyttää")
+        memo_name = parameters[1].lower().strip()
+        if not memo_name.isalpha() or memo_name in _reserved_words:
+            message.reply_to("Nimeä '{}' ei voi käyttää".format(memo_name))
             return
         with database.get_session() as session:
             memo = session.query(Memo).filter_by(name=memo_name).first()
@@ -45,6 +50,14 @@ class MemoCommand(Command):
             session.add(memo)
             session.commit()
             message.reply_to("Memo '{}' luotu".format(memo_name))
+
+    def _list_memos(self, message):
+        with database.get_session() as session:
+            memo_names = session.query(Memo.name).all()
+            if len(memo_names) < 1:
+                message.reply_to("Ei memoja")
+                return
+            message.reply_to(', '.join([r for r, in memo_names]))
 
     def _add_line(self, message, parameters):
         memo_name = parameters[0].lower()
