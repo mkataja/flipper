@@ -17,16 +17,18 @@ class MarkovTeachCommand(Command):
 
     def handle(self, message):
         params = message.params.split(maxsplit=1)
-        if params[0] == "list":
-            self._list_corpuses(message)
-            return
-        if len(params) < 2:
+        if not (1 <= len(params) <= 2):
             self.replytoinvalidparams()
-        if params[0] == "new":
-            corpus_name = params[1].strip()
+            return
+
+        if params[0].lower() == "new":
+            corpus_name = params[1].lower().strip()
             self._add_corpus(message, corpus_name)
+        elif params[0].lower() == "list":
+            self._list_corpuses(message)
         else:
-            (corpus_name, sentence) = params
+            corpus_name = params[0].lower()
+            sentence = params[1]
             self._add_sentence(message, corpus_name, sentence)
 
     def _list_corpuses(self, message):
