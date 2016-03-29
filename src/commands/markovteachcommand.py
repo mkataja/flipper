@@ -23,7 +23,7 @@ class MarkovTeachCommand(Command):
         if len(params) < 2:
             self.replytoinvalidparams()
         if params[0] == "new":
-            corpus_name = params[1]
+            corpus_name = params[1].strip()
             self._add_corpus(message, corpus_name)
         else:
             (corpus_name, sentence) = params
@@ -40,7 +40,7 @@ class MarkovTeachCommand(Command):
             message.reply_to(', '.join([r for r, in corpus_names]))
 
     def _add_corpus(self, message, corpus_name):
-        if corpus_name in _reserved_words:
+        if not corpus_name.isalpha() or corpus_name in _reserved_words:
             message.reply_to(("Nimeä '{}' ei voi käyttää".format(corpus_name)))
             return
         with database.get_session() as session:
@@ -62,7 +62,7 @@ class MarkovTeachCommand(Command):
             else:
                 message.reply_to("Aineistoa ei ole")
                 return
-            text_identifier = "{}_{}".format(message.sender, datetime.datetime.now())
+            text_identifier = "{}_{}".format(message.sender, datetime.datetime.utcnow())
             markov_helper.insert_text(sentence, corpus.id, text_identifier)
             session.commit()
             message.reply_to("Ok")
