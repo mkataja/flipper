@@ -7,6 +7,6 @@ class NiiloismModule(Module):
         target = event.target.lower()
         message = event.arguments[0].strip()
 
-        if message is not None and message.startswith('nj'):
+        if message is not None and message.lower().startswith('nj'):
             word = niiloism.random_word()
             self._bot.privmsg(target, word)
