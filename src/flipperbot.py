@@ -9,6 +9,7 @@ import unicodedata
 from irc import bot
 import irc
 from irc.bot import ExponentialBackoff
+from jaraco.stream.buffer import LenientDecodingLineBuffer
 
 import config
 from lib import irc_helpers
@@ -51,7 +52,7 @@ class FlipperBot(bot.SingleServerIRCBot):
                                         config.REALNAME,
                                         recon=recon_strategy)
 
-        irc.client.ServerConnection.buffer_class = irc.buffer.LenientDecodingLineBuffer
+        irc.client.ServerConnection.buffer_class = LenientDecodingLineBuffer
 
         self._registered_modules = [m(self) for m in modules.modulelist.MODULES]
 
