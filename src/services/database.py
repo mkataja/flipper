@@ -26,8 +26,8 @@ def initialize():
     try:
         engine = create_engine(config.DATABASE_URI, pool_size=10)
         FlipperBase.metadata.create_all(engine)
-    except SQLAlchemyError as e:
-        logging.error("Failed to initialize database: " + str(e))
+    except SQLAlchemyError:
+        logging.exception("Failed to initialize database:")
         return
     Session = scoped_session(sessionmaker(bind=engine))
 

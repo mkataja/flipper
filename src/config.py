@@ -46,6 +46,6 @@ USER_AGENT = "Mozilla/5.0 Bot/42.0"
 # Import config_local.py
 try:
     from config_local import *  # @UnusedWildImport
-except ImportError as e:
+except ImportError:
     # No local config found
-    logging.error("Error while importing config_local: {}".format(e))
+    logging.exception("Error while importing config_local:")
