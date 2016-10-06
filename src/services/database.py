@@ -2,13 +2,16 @@ import contextlib
 import logging
 import re
 
+from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
+from sqlalchemy.event.api import listen
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative.api import declarative_base, declared_attr
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql import expression
+from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Integer, DateTime
 
@@ -30,6 +33,28 @@ def initialize():
         logging.exception("Failed to initialize database:")
         return
     Session = scoped_session(sessionmaker(bind=engine))
+    listen(engine, "engine_connect", ping_engine)
+
+
+def ping_engine(connection, branch):
+    if branch:
+        return
+    # Save should_close_with_result
+    save_should_close_with_result = connection.should_close_with_result
+    connection.should_close_with_result = False
+    try:
+        # Attempt to execute a dummy query
+        connection.scalar(select([1]))
+    except exc.DBAPIError as err:
+        logging.warn('SQL engine disconnection detected')
+        if err.connection_invalidated:
+            logging.info('Attempting to restart SQL engine')
+            connection.scalar(select([1]))
+        else:
+            raise
+    finally:
+        # Restore should_close_with_result
+        connection.should_close_with_result = save_should_close_with_result
 
 
 @contextlib.contextmanager
