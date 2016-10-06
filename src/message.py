@@ -92,6 +92,8 @@ class Message(object):
         try:
             self.run_command()
         except:
+            logging.exception("Exception while running command '{}':"
+                              .format(self.command.__name__))
             self.reply_to("Tapahtui virhe. Kerro tästä devaajille.")
             raise
 
