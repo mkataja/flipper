@@ -16,14 +16,20 @@ Other
 
 * [Data files](../../../flipper_data) for talkcommand and importer scripts
 
-Pip install commands
---------------------
+Dependencies
+------------
+
+Install the following dependencies:
 
     pip install irc
     pip install sqlalchemy
     pip install pytz
     pip install beautifulsoup4
     pip install flask
+
+You also need a database driver. For PostgreSQL:
+
+    pip install psycopg2
 
 Running importer scripts
 ------------------------
