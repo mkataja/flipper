@@ -9,11 +9,11 @@ class QuitCommand(Command):
     @admin_required
     def handle(self, message):
         if message.params:
-            quit_message = message.params
+            get_quit_message = message.params
         else:
-            quit_message = irc_helpers.quit_message()
+            get_quit_message = irc_helpers.get_quit_message()
 
-        message.bot.disconnect(quit_message)
+        message.bot.disconnect(get_quit_message)
         _thread.interrupt_main()
 
 
