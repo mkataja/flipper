@@ -111,12 +111,9 @@ class ReminderCommand(Command):
         if data['repeat_length'] is None:
             return (None, None)
 
-        try:
-            n = int(data['repeat_n'])
-            if n < 1:
-                raise(ReminderFormatError("Repeat n < 1"))
-        except KeyError:
-            n = 1
+        n = int(data['repeat_n'] or 1)
+        if n < 1:
+            raise(ReminderFormatError("Repeat n < 1"))
 
         try:
             hours = {'tunti': 1, 'päivä': 24}[data['repeat_length']]
