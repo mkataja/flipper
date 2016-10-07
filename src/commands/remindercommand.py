@@ -67,7 +67,10 @@ class ReminderCommand(Command):
         user_id, channel_id = self._get_user_and_channel(message)
         reminders = [r.short_string() for r in
                      Reminder.list_for_user(user_id, channel_id)]
-        message.reply_to('; '.join(reminders))
+        if len(reminders) == 0:
+            message.reply_to("Ei muistutuksia")
+        else:
+            message.reply_to('; '.join(reminders))
 
     def _create_reminder(self, message):
         try:
