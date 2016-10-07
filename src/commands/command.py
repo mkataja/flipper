@@ -31,5 +31,9 @@ class Command(object):
     def handle(self, message):
         logging.error("No handler defined for '{}'".format(message.cmd))
 
-    def replytoinvalidparams(self, message):
-        message.reply_to("{} {}".format(self.USAGE_ERROR, self.helpstr))
+    def replytoinvalidparams(self, message, elaboration=None):
+        if elaboration:
+            usage_error = "{} {}.".format(self.USAGE_ERROR, elaboration)
+        else:
+            usage_error = self.USAGE_ERROR
+        message.reply_to("{} {}".format(usage_error, self.helpstr))

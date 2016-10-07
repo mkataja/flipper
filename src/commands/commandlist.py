@@ -28,6 +28,7 @@ PUBLIC_CMDS = {
     'memo': memocommand.MemoCommand,
     'kommentoi': commentcommand.CommentCommand,
     'teach': markovteachcommand.MarkovTeachCommand,
+    'muistuta': remindercommand.ReminderCommand,
 }
 
 PRIVATE_CMDS = {

@@ -41,7 +41,11 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         irc.client.ServerConnection.buffer_class = LenientDecodingLineBuffer
 
-        self._registered_modules = [m(self) for m in modules.modulelist.MODULES]
+        self._registered_modules = {m.__class__: m(self)
+                                    for m in modules.modulelist.MODULES}
+
+    def get_module_instance(self, module):
+        return self._registered_modules[module.__class__]
 
     def _sigint_handler(self, signal, frame):
         if self.connection.is_connected():
@@ -51,7 +55,7 @@ class FlipperBot(bot.SingleServerIRCBot):
     def _dispatcher(self, connection, event):
         super()._dispatcher(connection, event)
 
-        for module in self._registered_modules:
+        for module in self._registered_modules.values():
             method = getattr(module, "on_" + event.type, None)
             if method is not None:
                 threading.Thread(target=method,
@@ -64,8 +68,8 @@ class FlipperBot(bot.SingleServerIRCBot):
             return
 
         current_time = time.time()
-        logging.info("Last pong at {}, current time {}"
-                     .format(self.last_pong, current_time))
+        logging.debug("Last pong at {}, current time {}"
+                      .format(self.last_pong, current_time))
         if (self.last_pong is not None and
                 current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
             self.last_pong = None

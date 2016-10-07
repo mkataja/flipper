@@ -7,4 +7,5 @@ MODULES = [
     repeat.RepeatModule,
     logging.LoggingModule,
     niiloism.NiiloismModule,
+    reminder.ReminderModule,
 ]
