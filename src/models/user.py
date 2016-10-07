@@ -4,6 +4,8 @@ from sqlalchemy.sql.sqltypes import Text, Integer
 from services import database
 
 
+# TODO: Keep track of current nick?
+
 class User(database.FlipperBase):
     nick = Column(Text, nullable=False)
     alias_of = Column(Integer, ForeignKey('user.id'), nullable=True)

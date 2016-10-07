@@ -56,9 +56,13 @@ class ReminderModule(Module):
 
     def _try_remind(self, reminder):
         try:
-            channel = reminder.channel.name
+            channel = reminder.channel
+            if channel:
+                target = channel.name
+            else:
+                target = reminder.user.nick
             message = "{}: {}".format(reminder.user.nick, reminder.message)
-            self._bot.privmsg(channel, message)
+            self._bot.privmsg(target, message)
         except:
             # This may not fail
             logging.exception("Error while reminding {}".format(reminder.id))
