@@ -41,11 +41,11 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         irc.client.ServerConnection.buffer_class = LenientDecodingLineBuffer
 
-        self._registered_modules = {m.__class__: m(self)
+        self._registered_modules = {m.__name__: m(self)
                                     for m in modules.modulelist.MODULES}
 
     def get_module_instance(self, module):
-        return self._registered_modules[module.__class__]
+        return self._registered_modules[module.__name__]
 
     def _sigint_handler(self, signal, frame):
         if self.connection.is_connected():
