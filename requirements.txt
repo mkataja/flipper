@@ -1,0 +1,5 @@
+irc ~= 15.0
+sqlalchemy
+pytz
+beautifulsoup4
+flask

@@ -4,35 +4,26 @@ Flipper ircbot
 Requirements
 ------------
 
-* Python 3.4
+* Python 3.5
 * [irc](http://pypi.python.org/pypi/irc) - IRC protocol client library for Python 
 * [SQLAlchemy](http://www.sqlalchemy.org/)
 * [pytz](http://pytz.sourceforge.net/) - World Timezone Definitions for Python
 * [Beautiful Soup 4](http://www.crummy.com/software/BeautifulSoup/)
 * [Flask](http://flask.pocoo.org/)
 
-Other
------
+### Installing with pip
 
-* [Data files](../../../flipper_data) for talkcommand and importer scripts
+    pip install -r requirements.txt
 
-Dependencies
-------------
-
-Install the following dependencies:
-
-    pip install irc
-    pip install sqlalchemy
-    pip install pytz
-    pip install beautifulsoup4
-    pip install flask
-
-You also need a database driver. For PostgreSQL:
+You also need a driver for your database of choice. For PostgreSQL:
 
     pip install psycopg2
 
-Running importer scripts
-------------------------
+### Optional dependencies
+
+* [Data files](../../../flipper_data) for importer scripts and talkcommand.
+
+#### Importing data files using scripts
 
     $ cd scripts
     $ PYTHONPATH=../src python markov_import_flat_file.py
