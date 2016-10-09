@@ -67,7 +67,7 @@ def get_session():
         yield session
     finally:
         # Rollback uncommitted transactions if any:
-        if len(session.transaction._iterate_parents()) > 0:
+        if len(session.transaction._iterate_self_and_parents()) > 0:
             session.rollback()
 
 

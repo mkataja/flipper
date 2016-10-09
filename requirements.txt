@@ -1,5 +1,5 @@
-irc ~= 15.0
-sqlalchemy
+irc ~= 15.0.0
+sqlalchemy ~= 1.1.0
 pytz
 beautifulsoup4
 flask
