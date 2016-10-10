@@ -91,6 +91,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
     def _on_disconnect(self, connection, event):
         self.last_pong = None
+        self.nick_tail = ""
 
         logging.info("Disconnected: unloading delayed commands")
         with self.reactor.mutex:
