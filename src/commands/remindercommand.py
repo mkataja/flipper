@@ -35,7 +35,9 @@ class ReminderCommand(Command):
 
     def handle(self, message):
         parameters = message.params.split(maxsplit=1)
-        if parameters[0].lower() == 'peru':
+        if len(parameters) == 0:
+            self.replytoinvalidparams(message)
+        elif parameters[0].lower() == 'peru':
             self._delete_reminder(message, parameters)
         elif parameters[0].lower() == "lista":
             self._list_reminders(message)
