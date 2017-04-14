@@ -16,7 +16,7 @@ class MoonCommand(Command):
                 date = datetime.strptime(message.params, "%Y-%m-%d")
             except ValueError:
                 self.replytoinvalidparams(message)
-
+                return
         result = moon.phase(date)
         illuminated = result['illuminated']
         phase = phase_string(result['phase'])
