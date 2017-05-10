@@ -57,14 +57,41 @@ class SayCommand(Command):
         params = message.params.split(" ", 1)
         if len(params) != 2:
             self.replytoinvalidparams(message)
-        else:
-            target = params[0]
-            text = params[1]
+            return
 
-            if target[0] == '!':
-                channels = [k for k in message.bot.channels.keys()
-                            if k.endswith(target[1:]) and k[0] == '!']
-                if len(channels) == 1:
-                    target = channels[0]
+        target = params[0]
+        text = params[1]
 
-            message.bot.privmsg(target, text)
+        if target[0] == '!':
+            channels = [k for k in message.bot.channels.keys()
+                        if k.endswith(target[1:]) and k[0] == '!']
+            if len(channels) == 1:
+                target = channels[0]
+
+        message.bot.privmsg(target, text)
+
+
+class NickCommand(Command):
+    helpstr = "Käyttö: anna nimimerkki parametrina"
+
+    @admin_required
+    def handle(self, message):
+        if not irc_helpers.is_valid_nick(message.params):
+            self.replytoinvalidparams(message, "Virheellinen nimimerkki")
+            return
+        message.bot.set_nick(message.params)
+
+
+class OpCommand(Command):
+    helpstr = "Käyttö: anna nimimerkki parametrina"
+
+    @admin_required
+    def handle(self, message):
+        if not irc_helpers.is_valid_nick(message.params):
+            self.replytoinvalidparams(message, "Virheellinen nimimerkki")
+            return
+        if message.is_private_message:
+            message.reply_to("Komento käytettävissä vain kanavilla")
+            return
+        message.bot.connection.mode(message.source,
+                                    "+o {}".format(message.params))

@@ -7,9 +7,9 @@ import time
 from irc import bot
 import irc
 from irc.bot import ExponentialBackoff
-from jaraco.stream.buffer import LenientDecodingLineBuffer
 
 import config
+from jaraco.stream.buffer import LenientDecodingLineBuffer
 from lib import irc_helpers
 from lib import string_helpers
 from message import Message
@@ -27,6 +27,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         http_api.listen(self)
 
         self.last_pong = None
+        self.requested_nick = config.NICK
         self.nick_tail = ""
 
         recon_strategy = ExponentialBackoff(
@@ -35,7 +36,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         bot.SingleServerIRCBot.__init__(self,
                                         [(config.SERVER, config.PORT)],
-                                        config.NICK,
+                                        self.requested_nick,
                                         config.REALNAME,
                                         recon=recon_strategy)
 
@@ -86,8 +87,8 @@ class FlipperBot(bot.SingleServerIRCBot):
         if self.nick_tail != "":
             self.nick_tail = ""
             logging.info("Trying to change nick from {} to {}".format(
-                self.connection.get_nickname(), config.NICK))
-            self.connection.nick(config.NICK)
+                self.connection.get_nickname(), self.requested_nick))
+            self.set_nick(self.requested_nick)
 
     def _on_disconnect(self, connection, event):
         self.last_pong = None
@@ -112,7 +113,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
     def on_nicknameinuse(self, connection, event):
         self.nick_tail = self.nick_tail + "_"
-        connection.nick(config.NICK + self.nick_tail)
+        connection.nick(self.requested_nick + self.nick_tail)
 
     def on_privmsg(self, connection, event):
         self._handle_message(connection, event, True)
@@ -138,3 +139,8 @@ class FlipperBot(bot.SingleServerIRCBot):
             logging.error("Tried to send privmsg while disconnected: aborting")
             return
         self.connection.privmsg(target, string_helpers.sanitize(message))
+
+    def set_nick(self, nick):
+        self.requested_nick = nick
+        self.nick_tail = ''
+        self.connection.nick(self.requested_nick)

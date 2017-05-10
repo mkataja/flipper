@@ -36,6 +36,8 @@ PRIVATE_CMDS = {
     'join': irccommands.JoinCommand,
     'part': irccommands.PartCommand,
     'hop': irccommands.HopCommand,
+    'nick': irccommands.NickCommand,
+    'op': irccommands.OpCommand,
 }
 
 ALL_CMDS = {}
