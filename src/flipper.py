@@ -36,6 +36,7 @@ def main():
         logging.info("Bot stopped, shutting down")
         logging.debug("Dumping threads to stderr")
         faulthandler.dump_traceback()
+        logging.debug("Shutting down logging")
         logging.shutdown()
 
 if __name__ == '__main__':
