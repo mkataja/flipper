@@ -51,6 +51,6 @@ class UrlModule(Module):
 
         def _get_short_url_text(self, url):
             short = None
-            if len(url) > 42:
+            if len(url) > 64:
                 short = web.get_short_url(url)
             return short + " " if short is not None else None
