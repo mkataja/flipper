@@ -12,7 +12,7 @@ def build_blueprint(bot_callback):
     @bp.route('/memo', methods=['GET'])
     def get_all():
         with database.get_session() as session:
-            memos = session.query(Memo)
+            memos = session.query(Memo).order_by(Memo.created_on.desc())
             return flask.jsonify(memos=[m.basic_info() for m in memos])
 
     @bp.route('/memo/<string:memo_name>', methods=['GET'])
