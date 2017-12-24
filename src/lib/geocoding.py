@@ -1,6 +1,7 @@
 import json
 import logging
-import urllib.request, urllib.error
+import urllib.error
+import urllib.request
 
 import config
 from models.address_cache_entry import AddressCacheEntry

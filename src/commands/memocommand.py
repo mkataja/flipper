@@ -1,13 +1,12 @@
 from commands.command import Command
 from models.memo import Memo
 from models.memo_line import MemoLine
-from services import database, http_api
-
-
-_reserved_words = ['new', 'list']
+from models.user import User
+from services import database
 
 
 class MemoCommand(Command):
+    reserved_words = ['new', 'list']
     helpstr = "Käyttö: !memo <nimi>, !memo <nimi> <viesti> tai !memo new <nimi>"
 
     def handle(self, message):
@@ -33,7 +32,8 @@ class MemoCommand(Command):
             if memo is None:
                 message.reply_to("Memoa '{}' ei löydy".format(memo_name))
                 return
-            message.reply_to("{}".format(http_api.url_for('memo', name=memo_name)))
+            url = message.bot.http_api.url_for('memo.get', memo_name=memo_name)
+            message.reply_to("{}".format(url))
 
     def _new_memo(self, message, parameters):
         memo_name = parameters[1].lower().strip()
@@ -46,6 +46,7 @@ class MemoCommand(Command):
                 message.reply_to("Memo '{}' on jo olemassa".format(memo_name))
                 return
             memo = Memo()
+            memo.created_by_user = User.get_or_create(message.sender)
             memo.name = memo_name
             session.add(memo)
             session.commit()
@@ -68,8 +69,9 @@ class MemoCommand(Command):
                 return
             memo_line = MemoLine()
             memo_line.memo = memo
+            memo_line.created_by_user = User.get_or_create(message.sender)
             memo_line.content = parameters[1]
             session.add(memo_line)
             session.commit()
-            message.reply_to("Lisätty ({})"
-                             .format(http_api.url_for('memo', name=memo_name)))
+            url = message.bot.http_api.url_for('memo.get', memo_name=memo_name)
+            message.reply_to("Lisätty ({})".format(url))

@@ -1,0 +1,2 @@
+API_APPLICATION_NAME = 'flipper API'
+API_VERSION = '0.2.0'
