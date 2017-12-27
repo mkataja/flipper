@@ -26,8 +26,7 @@ class HttpApi():
 
         for bp in HttpApi._blueprints:
             app.register_blueprint(
-                bp.build_blueprint(self.bot_callback),
-                url_prefix='/api'
+                bp.build_blueprint(self.bot_callback)
             )
 
         return app
