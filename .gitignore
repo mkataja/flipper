@@ -10,7 +10,10 @@
 src/config_local.py
 
 # Data directory
-/data/
+data/
 
 # Log directory
-/log/
+log/
+
+# Virtualenv
+venv/
