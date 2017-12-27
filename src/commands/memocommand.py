@@ -37,7 +37,7 @@ class MemoCommand(Command):
 
     def _new_memo(self, message, parameters):
         memo_name = parameters[1].lower().strip()
-        if not memo_name.isalnum() or memo_name in _reserved_words:
+        if not memo_name.isalnum() or memo_name in self.reserved_words:
             message.reply_to("Nimeä '{}' ei voi käyttää".format(memo_name))
             return
         with database.get_session() as session:
