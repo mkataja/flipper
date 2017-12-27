@@ -22,4 +22,6 @@ DATABASE_URI = "postgresql://user:password@host:port/databasename"
 
 API_HOST = '127.0.0.1' # Set to '0.0.0.0' to listen to outside connections
 
+WEBUI_ADDRESS = 'http://localhost' # Where flipper-ui is hosted
+
 GOOGLE_API_KEY = "get yours at https://code.google.com/apis/console"

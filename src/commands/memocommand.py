@@ -1,3 +1,7 @@
+from functools import reduce
+from urllib.parse import urljoin
+
+import config
 from commands.command import Command
 from models.memo import Memo
 from models.memo_line import MemoLine
@@ -24,6 +28,9 @@ class MemoCommand(Command):
             self._get_memo(message, parameters)
         else:
             self._add_line(message, parameters)
+    
+    def _public_url(self, memo_name):
+        return reduce(urljoin, [config.WEBUI_ADDRESS, 'memo/', memo_name])
 
     def _get_memo(self, message, parameters):
         memo_name = parameters[0].lower()
@@ -32,7 +39,7 @@ class MemoCommand(Command):
             if memo is None:
                 message.reply_to("Memoa '{}' ei löydy".format(memo_name))
                 return
-            url = message.bot.http_api.url_for('memo.get', memo_name=memo_name)
+            url = self._public_url(memo_name)
             message.reply_to("{}".format(url))
 
     def _new_memo(self, message, parameters):
@@ -73,5 +80,5 @@ class MemoCommand(Command):
             memo_line.content = parameters[1]
             session.add(memo_line)
             session.commit()
-            url = message.bot.http_api.url_for('memo.get', memo_name=memo_name)
+            url = self._public_url(memo_name)
             message.reply_to("Lisätty ({})".format(url))
