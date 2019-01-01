@@ -132,6 +132,14 @@ class ReminderCommand(Command):
                              int(data['seconds'] or 0))
         return time
 
+    def _add_years(self, date, years):
+        try:
+            return date.replace(year=date.year + years)
+        except ValueError:
+            return (date +
+                    (datetime.date(date.year + years, 1, 1) -
+                     datetime.date(date.year, 1, 1)))
+
     def _parse_date(self, data, time):
         if data['year']:
             date = datetime.date(int(data['year']),
@@ -142,7 +150,7 @@ class ReminderCommand(Command):
                                  int(data['month']),
                                  int(data['day']))
             if datetime.datetime.combine(date, time) <= datetime.datetime.now():
-                date = date + datetime.timedelta(years=1)
+                date = self._add_years(date, 1)
         return date
 
     def _parse_datestring(self, datestring):
