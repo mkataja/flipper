@@ -28,7 +28,7 @@ class ReminderCommand(Command):
         "(?:(?P<day>\d\d?)\.(?P<month>\d\d?)\.(?P<year>\d\d\d\d)?)|"
         "(?P<timer>\+))?\s*(?:(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
         "(?:\s+(?:joka\s+(?:(?P<repeat_n>\d+)\.?\s+)?(?P<repeat_length>päivä|tunti)))?"
-        ":\s+(?P<message>.+)$"
+        ":?\s+(?P<message>.+)$"
     )
 
     default_time = datetime.time(9, 0, 0)
