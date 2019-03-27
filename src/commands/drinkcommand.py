@@ -20,18 +20,18 @@ class DrinkCommand(Command):
     def __vol(self, s):
         logging.error("DrinkCommand: __vol not yet implemented")
 
-        
+
     def handle(self, message):
 
         words = message.params.split(" ")
         words = [x.strip() for x in words if x.strip() != ""]
 
-        url = 'http://dementia.alakerta.org/kannit/add_drink'
+        url = 'https://dementia.alakerta.org/kannit/add_drink'
         values = {'nick':message.sender, 'cmd':'', 'code':'secret_code'}
 
         ipt = len(words)
         msg = ""
-        
+
         if ( ipt == 0): # if just !juo
             values['cmd'] = 'repeat'
         elif ( ipt == 1): # if !juo word, and at this point !juo peru
@@ -55,9 +55,7 @@ class DrinkCommand(Command):
         else:
             msg = "Virhe jossain :("
             logging.error("DrinkCommand: LOL, something went really wrong here")
-        
-        #url = 'http://dementia.alakerta.org/kannit/add_drink'
-        #values = {'nick':message.sender}
+
         if ( msg == ''):
             data = urllib.parse.urlencode(values)
             binary_data = data.encode('utf-8')
