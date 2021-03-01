@@ -2,6 +2,7 @@ import contextlib
 import logging
 import re
 
+import config
 from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
 from sqlalchemy.event.api import listen
@@ -15,8 +16,6 @@ from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Integer, DateTime
 
-import config
-
 
 def initialize():
     global Session
@@ -26,12 +25,8 @@ def initialize():
                       "DATABASE_URI not configured")
         return
     logging.info("Initializing database connection to " + config.DATABASE_URI)
-    try:
-        engine = create_engine(config.DATABASE_URI, pool_size=10)
-        FlipperBase.metadata.create_all(engine)
-    except SQLAlchemyError:
-        logging.exception("Failed to initialize database:")
-        return
+    engine = create_engine(config.DATABASE_URI, pool_size=10)
+    FlipperBase.metadata.create_all(engine)
     Session = scoped_session(sessionmaker(bind=engine))
     listen(engine, "engine_connect", ping_engine)
 
