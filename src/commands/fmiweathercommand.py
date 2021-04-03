@@ -250,7 +250,10 @@ class FmiWeatherCommand(Command):
             weather_data_string = None
         
         if forecast.get('country') == "Suomi":
-            location = "{} {}".format(forecast.get('region'), forecast.get('name'))
+            if forecast.get('region') == "Suomi":
+                location = forecast.get('name')
+            else:
+                location = "{} {}".format(forecast.get('region'), forecast.get('name'))
         else:
             location = "{} ({})".format(
                 forecast.get('name'),
