@@ -9,6 +9,7 @@ from services import database
 class User(database.FlipperBase):
     nick = Column(Text, nullable=False)
     alias_of = Column(Integer, ForeignKey('user.id'), nullable=True)
+    location = Column(Text, nullable=True)
 
     @classmethod
     def get_or_create(cls, user_nick):
@@ -21,3 +22,8 @@ class User(database.FlipperBase):
                 session.add(user)
                 session.commit()
             return user
+
+    def set_location(self, lat, long):
+        with database.get_session() as session:
+            self.location = "{},{}".format(lat, long)
+            session.commit()
