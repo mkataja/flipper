@@ -172,6 +172,23 @@ class FmiWeatherCommand(Command):
             speed_color = None
         speed_string = color(locale.format("%.1f", speed), speed_color)
         return "{}tuulta {} m/s".format(direction, speed_string)
+    
+    def _get_precipitation_1h(self, data):
+        if data.get('Precipitation1h') == None:
+            return None
+        precipitation_1h = float(data.get('Precipitation1h'))
+        if data.get('PoP') == None or data.get('PoP') == 'nan':
+            probability_str = ""
+        else:
+            probability = int(data.get('PoP'))
+            if probability < 10:
+                probability_rounded = "<10"
+            elif probability > 90:
+                probability_rounded = ">90"
+            else:
+                probability_rounded = round(probability / 10) * 10
+            probability_str = " (sateen todennäköisyys {}%)".format(probability_rounded)
+        return "Tunnin sademäärä {}mm{}".format(precipitation_1h, probability_str)
 
     def _get_cloud_cover(self, data):
         if data.get('TotalCloudCover') == 'nan':
@@ -224,6 +241,7 @@ class FmiWeatherCommand(Command):
         weather_data = [
             self._get_temperature(forecast),
             self._get_wind(forecast),
+            self._get_precipitation_1h(forecast)
         ]
         weather_data = [wd for wd in weather_data if wd]
         if len(weather_data) > 0:
