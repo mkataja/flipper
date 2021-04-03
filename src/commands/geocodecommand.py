@@ -17,5 +17,8 @@ class GeocodeCommand(Command):
             return
         latdd, longdd = coordinates
 
-        message.reply_to("{}; {}".format(geocoding.lat_to_human(latdd),
-                                         geocoding.long_to_human(longdd)))
+        message.reply_to("{}; {} ({},{})".format(
+            geocoding.lat_to_human(latdd),
+            geocoding.long_to_human(longdd),
+            latdd,
+            longdd))
