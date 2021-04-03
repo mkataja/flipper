@@ -7,6 +7,7 @@ from time import sleep
 import urllib.request, urllib.error, urllib.parse
 
 from commands.command import Command
+from models.user import User
 import config
 from lib import geocoding
 from lib.irc_colors import Color, color
@@ -305,7 +306,11 @@ class FmiWeatherCommand(Command):
 
     def handle(self, message):
         if not message.params:
-            location = config.LOCATION
+            user = User.get_or_create(message.sender)
+            if user and user.location:
+                location = user.location
+            else:
+                location = config.LOCATION
         else:
             address = message.params
             coordinates = geocoding.geocode(address)
