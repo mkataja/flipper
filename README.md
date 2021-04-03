@@ -15,10 +15,6 @@ Requirements
 
     pip install -r requirements.txt
 
-You also need a driver for your database of choice. For PostgreSQL:
-
-    pip install psycopg2
-
 ### Optional dependencies
 
 * [Data files](../../../flipper_data) for importer scripts and talkcommand.
