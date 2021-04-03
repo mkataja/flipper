@@ -113,7 +113,7 @@ class FmiWeatherCommand(Command):
     }
 
     def _get_weather_data(self, location):
-        url = ('http://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
+        url = ('https://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
                .format(urllib.parse.quote(location)))
         try:
             reply = urllib.request.urlopen(url, timeout=3).read().decode()
