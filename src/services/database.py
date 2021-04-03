@@ -6,9 +6,8 @@ import config
 from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
 from sqlalchemy.event.api import listen
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.declarative.api import declarative_base, declared_attr
+from sqlalchemy.orm import declarative_base, declared_attr
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql import expression

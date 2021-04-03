@@ -1,5 +1,5 @@
 irc ~= 15.0.0
-sqlalchemy ~= 1.1.0
+sqlalchemy ~= 1.4.5
 psycopg2
 pytz
 beautifulsoup4
