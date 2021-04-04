@@ -4,7 +4,9 @@ import locale
 import logging
 import socket
 from time import sleep
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 
 from commands.command import Command
 from models.user import User
@@ -173,7 +175,7 @@ class FmiWeatherCommand(Command):
             speed_color = None
         speed_string = color(data.get('WindSpeedMS'), speed_color)
         return "{}tuulta {} m/s".format(direction, speed_string)
-    
+
     def _get_precipitation_1h(self, data):
         if data.get('Precipitation1h') == None:
             return None
@@ -241,7 +243,8 @@ class FmiWeatherCommand(Command):
         if not weather_conditions:
             weather_conditions = "Tuntematon sääilmiö ({})".format(ws3)
         else:
-            weather_conditions = weather_conditions[:1].upper() + weather_conditions[1:]
+            weather_conditions = weather_conditions[:1].upper(
+            ) + weather_conditions[1:]
 
         weather_data = [
             self._get_temperature(forecast),
@@ -253,12 +256,13 @@ class FmiWeatherCommand(Command):
             weather_data_string = ', '.join(weather_data)
         else:
             weather_data_string = None
-        
+
         if forecast.get('country') == "Suomi":
             if forecast.get('region') == "Suomi":
                 location = forecast.get('name')
             else:
-                location = "{} {}".format(forecast.get('region'), forecast.get('name'))
+                location = "{} {}".format(
+                    forecast.get('region'), forecast.get('name'))
         else:
             location = "{} ({})".format(
                 forecast.get('name'),
