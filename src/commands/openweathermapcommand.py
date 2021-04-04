@@ -9,7 +9,7 @@ import urllib.request, urllib.error, urllib.parse
 import pytz
 
 from commands.command import Command
-from lib import time
+from lib import time_util
 
 
 KELVINTOCELSIUS = -273.15
@@ -167,9 +167,9 @@ class OpenWeatherMapCommand(Command):
                                                      tz=pytz.utc)
             latitude = data.get('coord').get('lat')
             longitude = data.get('coord').get('lon')
-            timezone_id = time.get_geographic_timezone(latitude, longitude)
-            sunrise = time.get_time_in_timezone(sunrise, timezone_id)
-            sunset = time.get_time_in_timezone(sunset, timezone_id)
+            timezone_id = time_util.get_geographic_timezone(latitude, longitude)
+            sunrise = time_util.get_time_in_timezone(sunrise, timezone_id)
+            sunset = time_util.get_time_in_timezone(sunset, timezone_id)
 
         weather_conditions = []
         for w in data.get('weather'):

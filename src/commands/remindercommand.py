@@ -6,6 +6,7 @@ from models.channel import Channel
 from models.reminder import Reminder
 from models.user import User
 from modules.reminder import ReminderModule
+from lib import time_util
 
 
 class ReminderFormatError(ValueError):
@@ -132,14 +133,6 @@ class ReminderCommand(Command):
                              int(data['seconds'] or 0))
         return time
 
-    def _add_years(self, date, years):
-        try:
-            return date.replace(year=date.year + years)
-        except ValueError:
-            return (date +
-                    (datetime.date(date.year + years, 1, 1) -
-                     datetime.date(date.year, 1, 1)))
-
     def _parse_date(self, data, time):
         if data['year']:
             date = datetime.date(int(data['year']),
@@ -150,7 +143,7 @@ class ReminderCommand(Command):
                                  int(data['month']),
                                  int(data['day']))
             if datetime.datetime.combine(date, time) <= datetime.datetime.now():
-                date = self._add_years(date, 1)
+                date = time_util.add_years(date, 1)
         return date
 
     def _parse_datestring(self, datestring):
@@ -159,12 +152,6 @@ class ReminderCommand(Command):
         except KeyError:
             raise(ReminderFormatError("Invalid datestring {}".format(datestring)))
         return datetime.date.today() + datetime.timedelta(days=days)
-
-    def _get_default_date(self, time):
-        if time > datetime.datetime.now().time():
-            return datetime.date.today()
-        else:
-            return datetime.date.today() + datetime.timedelta(days=1)
 
     def _parse_timer(self, data):
         delta = datetime.timedelta(hours=int(data['hours']),
@@ -187,6 +174,6 @@ class ReminderCommand(Command):
         elif data['datestring']:
             date = self._parse_datestring(data['datestring'])
         else:
-            date = self._get_default_date(time)
+            date = time_util.get_upcoming_date_for_time(time)
 
         return datetime.datetime.combine(date, time)

@@ -27,7 +27,7 @@ class ReminderModule(Module):
         if next_reminder is None:
             return
         else:
-            next_reminder = lib.time.get_utc_datetime(next_reminder)
+            next_reminder = lib.time_util.get_utc_datetime(next_reminder)
             if next_reminder < datetime.datetime.now(timezone.utc):
                 logging.warn("Missed reminders!")
         if self.next_reminder is None or next_reminder < self.next_reminder:

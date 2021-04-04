@@ -1,5 +1,6 @@
 import json
 import logging
+import datetime
 import time
 import urllib
 
@@ -53,3 +54,24 @@ def get_geographic_timezone(latitude, longitude, timestamp=int(time.time())):
 
     timezone_id = data.get('timeZoneId')
     return timezone_id
+
+
+def get_upcoming_date_for_time(time):
+    if time > datetime.datetime.now().time():
+        return datetime.date.today()
+    else:
+        return datetime.date.today() + datetime.timedelta(days=1)
+
+
+def get_next_datetime_for_time(time):
+    date = get_upcoming_date_for_time(time)
+    return datetime.datetime.combine(date, time)
+
+
+def add_years(date, years):
+    try:
+        return date.replace(year=date.year + years)
+    except ValueError:
+        return (date +
+                (datetime.date(date.year + years, 1, 1) -
+                 datetime.date(date.year, 1, 1)))
