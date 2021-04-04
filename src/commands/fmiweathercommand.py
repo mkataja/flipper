@@ -164,7 +164,7 @@ class FmiWeatherCommand(Command):
             return weather_conditions[:1].upper() + weather_conditions[1:]
 
     def _color_temperature(self, data, field):
-        if data.get(field) == 'nan':
+        if not data.get(field) or data.get(field) == 'nan':
             return None
         temp = float(data.get(field))
         if temp >= 25:
@@ -268,7 +268,7 @@ class FmiWeatherCommand(Command):
 
         weather_string = "Havainto {} {}.{}{}".format(
             station.get('stationname'),
-            datetime.datetime.strptime(station['time_util'], '%Y%m%d%H%M')
+            datetime.datetime.strptime(station['time'], '%Y%m%d%H%M')
                              .strftime('%d.%m.%Y %H:%M'),
             " {}.".format(weather_conditions) if weather_conditions else "",
             " {}.".format(weather_data_string) if weather_data_string else ""
