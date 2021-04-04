@@ -137,18 +137,30 @@ class FmiWeatherCommand(Command):
         else:
             return weather_conditions[:1].upper() + weather_conditions[1:]
 
-    def _get_temperature(self, data):
-        if data.get('Temperature') == 'nan':
+    def _color_temperature(self, data, field):
+        if data.get(field) == 'nan':
             return None
-        temp = float(data.get('Temperature'))
+        temp = float(data.get(field))
         if temp >= 25:
             temp_color = Color.red
         elif temp > 0:
             temp_color = Color.yellow
         else:
             temp_color = Color.blue
-        temp_string = color(data.get('Temperature'), temp_color)
-        return "Lämpötila {} °C".format(temp_string)
+        return color(data.get(field), temp_color)
+
+    def _get_temperature(self, data):
+        temp = self._color_temperature(data, 'Temperature')
+        if not temp:
+            return None
+
+        feels_like = self._color_temperature(data, 'FeelsLike')
+        if feels_like:
+            feels_like_string = " (tuntuu {} °C)".format(feels_like)
+        else:
+            feels_like_string = ""
+
+        return "Lämpötila {} °C{}".format(temp, feels_like_string)
 
     def _get_humidity(self, data):
         if data.get('Humidity') == 'nan':
