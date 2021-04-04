@@ -128,6 +128,22 @@ class FmiWeatherCommand(Command):
         "NW": "Luoteis",
     }
 
+    warning_texts = {
+        'forestfire': 'metsäpalovaroitus',
+        'freeze': 'pakkasvaroitus',
+        'grassfire': 'ruohikkopalovaara',
+        'icing': 'jäätämisvaroitus',
+        'heat': 'hellevaroitus',
+        'pedestrian': 'jalankulkusää',
+        'wind': 'tuulivaroitus',
+        'rain': 'sadevaroitus',
+        'thunder': 'ukkosvaroitus',
+        'traffic': 'liikennesää',
+        'ultraviolet': 'UV-varoitus',
+        'waterlevel': 'merivedenkorkeusvaroitus',
+        'waveheight': 'aallokkovaroitus',
+    }
+
     def _get_weather_data(self, location):
         url = ('https://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
                .format(urllib.parse.quote(location)))
@@ -320,6 +336,19 @@ class FmiWeatherCommand(Command):
         else:
             return None
 
+    def _get_warnings_string(self, data):
+        if not data['warnings'] or not data['warnings'].values():
+            return ""
+        warnings = next(iter(data['warnings'].values()))
+        if not warnings:
+            return ""
+        warning_texts = [FmiWeatherCommand.warning_texts[w]
+                         for w, present in warnings.items() if present]
+        if not warning_texts:
+            return ""
+        else:
+            return " Varoituksia: {}".format(", ".join(warning_texts))
+
     def _get_forecast_for_time(self, dt, forecasts):
         return min(forecasts, key=lambda f:
                    abs(datetime.datetime.strptime(f['localtime'], '%Y%m%dT%H%M%S') - dt))
@@ -384,9 +413,11 @@ class FmiWeatherCommand(Command):
         weather_string = self._get_weather_string(
             message.commandword, params, data)
         suninfo_string = self._get_suninfo_string(data)
+        warnings_string = self._get_warnings_string(data)
 
         if weather_string:
-            message.reply_to("{}{}".format(weather_string, suninfo_string))
+            message.reply_to("{}{}{}".format(
+                weather_string, suninfo_string, warnings_string))
         else:
             message.reply_to(
                 "Ei säätietoja paikkakunnalle {}".format(params['location']))
