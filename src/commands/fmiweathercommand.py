@@ -7,12 +7,14 @@ from time import sleep
 import urllib.request
 import urllib.error
 import urllib.parse
+import re
 
 from commands.command import Command
 from models.user import User
 import config
 from lib import geocoding
 from lib.irc_colors import Color, color
+from lib import time_util
 
 
 RETRIES = 3
@@ -22,6 +24,14 @@ OBSERVATION_COMMAND = "havainto"
 
 
 class FmiWeatherCommand(Command):
+    helpstr = ("Ennuste: !sää [aika] [paikka] (oletuksena lähin ennuste) "
+               "| Havainto: !havainto [paikka] "
+               "| Aseta oletuspaikka !koti-komennolla")
+
+    cmd_pattern = re.compile(
+        r"^(?:(?P<hours>\d\d)(?::(?P<minutes>\d\d))?)? ?(?P<location>.+?)?$"
+    )
+
     synop_ww_strings = {
         0: "selkeää",
         4: "auerta, savua tai ilmassa leijuvaa pölyä ja näkyvyys vähintään 1 km",
@@ -242,7 +252,7 @@ class FmiWeatherCommand(Command):
 
         weather_string = "Havainto {} {}.{}{}".format(
             station.get('stationname'),
-            datetime.datetime.strptime(station['time'], '%Y%m%d%H%M')
+            datetime.datetime.strptime(station['time_util'], '%Y%m%d%H%M')
                              .strftime('%d.%m.%Y %H:%M'),
             " {}.".format(weather_conditions) if weather_conditions else "",
             " {}.".format(weather_data_string) if weather_data_string else ""
@@ -309,36 +319,55 @@ class FmiWeatherCommand(Command):
             return " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
         else:
             return None
-    
-    def _get_weather_string(self, commandword, data):
-        if commandword == FORECAST_COMMAND:
-            forecasts = data.get('forecasts')
-            if len(forecasts) == 0:
+
+    def _get_forecast_for_time(self, dt, forecasts):
+        return min(forecasts, key=lambda f:
+                   abs(datetime.datetime.strptime(f['localtime'], '%Y%m%dT%H%M%S') - dt))
+
+    def _get_weather_string(self, command, params, data):
+        if command == FORECAST_COMMAND:
+            if len(data.get('forecasts')) == 0:
                 return None
-            newest_forecast = forecasts[0].get('forecast')[0]
-            return self._get_weather_from_forecast(newest_forecast)
-        elif commandword == OBSERVATION_COMMAND:
+            forecasts = data.get('forecasts')[0].get('forecast')
+
+            if params['hours']:
+                time = datetime.time(int(params['hours']),
+                                     int(params['minutes'] or 0))
+                dt = time_util.get_next_datetime_for_time(time)
+                forecast = self._get_forecast_for_time(dt, forecasts)
+            else:
+                forecast = forecasts[0]
+            return self._get_weather_from_forecast(forecast)
+        elif command == OBSERVATION_COMMAND:
             observations = data.get('observations')
             if (observations and len(observations) > 0 and False not in observations.values()):
                 return self._get_weather_from_observations(observations)
             else:
                 return None
 
-    def handle(self, message):
-        if not message.params:
-            user = User.get_or_create(message.sender)
+    def _get_location(self, location_param, sender):
+        if not location_param:
+            user = User.get_or_create(sender)
             if user and user.location:
-                location = user.location
+                return user.location
             else:
-                location = config.LOCATION
+                return config.LOCATION
         else:
-            address = message.params
+            address = location_param
             coordinates = geocoding.geocode(address)
             if coordinates is None:
-                message.reply_to("Sijaintia {} ei ole olemassa"
-                                 .format(address))
-                return
-            location = ",".join(str(c) for c in coordinates)
+                return None
+            return ",".join(str(c) for c in coordinates)
+
+    def handle(self, message):
+        params = [g.groupdict() for g in FmiWeatherCommand.cmd_pattern.finditer(
+            message.params.strip())][0]
+
+        location = self._get_location(params['location'], message.sender)
+        if location is None:
+            message.reply_to(
+                "Sijaintia {} ei ole olemassa".format(params['location']))
+            return
 
         logging.info("Getting weather data in '{}'".format(location))
         for _ in range(RETRIES):
@@ -347,18 +376,17 @@ class FmiWeatherCommand(Command):
                 break
             sleep(0.2)
 
-        if data is None:
-            message.reply_to("Sääpalvelua ei löytynyt :(")
-            return
+        if data is None or data.get('status') != "ok":
+            message.reply_to("Sääpalvelu ei vastaa :(")
+            if data:
+                logging.error(data.get('message'))
 
-        if data.get('status') != "ok":
-            message.reply_to("Kysely epäonnistui: {}"
-                             .format(data.get('message')))
-            return
-
-        weather_string = self._get_weather_string(message.commandword, data)
+        weather_string = self._get_weather_string(
+            message.commandword, params, data)
         suninfo_string = self._get_suninfo_string(data)
+
         if weather_string:
             message.reply_to("{}{}".format(weather_string, suninfo_string))
         else:
-            message.reply_to("Ei säätietoja paikkakunnalle {}".format(address))
+            message.reply_to(
+                "Ei säätietoja paikkakunnalle {}".format(params['location']))
