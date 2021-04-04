@@ -44,7 +44,9 @@ class ReminderModule(Module):
                            .query(Reminder)
                            .filter(Reminder.due < datetime.datetime.now()))
             for reminder in outstanding:
-                self._try_remind(reminder)
+                success = self._try_remind(reminder)
+                if not success:
+                    return
                 if reminder.repeat_count is not None:
                     reminder.repeat_count = reminder.repeat_count - 1
                 if reminder.repeats_left():
@@ -63,6 +65,8 @@ class ReminderModule(Module):
                 target = reminder.user.nick
             message = "{}: {}".format(reminder.user.nick, reminder.message)
             self._bot.privmsg(target, message)
+            return True
         except:
             # This may not fail
             logging.exception("Error while reminding {}".format(reminder.id))
+            return False
