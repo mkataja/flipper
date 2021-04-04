@@ -145,7 +145,7 @@ class FmiWeatherCommand(Command):
             temp_color = Color.yellow
         else:
             temp_color = Color.blue
-        temp_string = color(locale.format("%.1f", temp), temp_color)
+        temp_string = color(data.get('Temperature'), temp_color)
         return "Lämpötila {} °C".format(temp_string)
 
     def _get_humidity(self, data):
@@ -171,13 +171,13 @@ class FmiWeatherCommand(Command):
             speed_color = Color.yellow
         else:
             speed_color = None
-        speed_string = color(locale.format("%.1f", speed), speed_color)
+        speed_string = color(data.get('WindSpeedMS'), speed_color)
         return "{}tuulta {} m/s".format(direction, speed_string)
     
     def _get_precipitation_1h(self, data):
         if data.get('Precipitation1h') == None:
             return None
-        precipitation_1h = float(data.get('Precipitation1h'))
+
         if data.get('PoP') == None or data.get('PoP') == 'nan':
             probability_str = ""
         else:
@@ -188,8 +188,12 @@ class FmiWeatherCommand(Command):
                 probability_rounded = ">90"
             else:
                 probability_rounded = round(probability / 10) * 10
-            probability_str = " (sateen todennäköisyys {}%)".format(probability_rounded)
-        return "Tunnin sademäärä {}mm{}".format(precipitation_1h, probability_str)
+            probability_str = " (sateen todennäköisyys {}%)".format(
+                probability_rounded)
+
+        return "Tunnin sademäärä {}mm{}".format(
+            data.get('Precipitation1h'),
+            probability_str)
 
     def _get_cloud_cover(self, data):
         if data.get('TotalCloudCover') == 'nan':
