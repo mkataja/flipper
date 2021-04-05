@@ -30,6 +30,7 @@ PUBLIC_CMDS = {
     'teach': markovteachcommand.MarkovTeachCommand,
     'muistuta': remindercommand.ReminderCommand,
     'koti': sethomecommand.SetHomeCommand,
+    'colors': colorscommand.ColorsCommand,
 }
 
 PRIVATE_CMDS = {
