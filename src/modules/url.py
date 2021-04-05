@@ -20,12 +20,12 @@ class UrlModule(Module):
         def process_urls(self):
             message = self._event.arguments[0]
 
-            urls = re.findall(web.url_regex, message, re.IGNORECASE)
+            urls = re.findall(web.url_regex, message)
 
             for url in urls:
                 if not url.startswith("http"):
                     url = "http://" + url
-                logging.debug("Found url: {}".format(url))
+                logging.info("Found url: {}".format(url))
                 threading.Thread(target=self._process_url,
                                  args=(url,),
                                  name="UrlProcessor").start()
@@ -51,6 +51,6 @@ class UrlModule(Module):
 
         def _get_short_url_text(self, url):
             short = None
-            if len(url) > 64:
+            if len(url) > 80:
                 short = web.get_short_url(url)
             return short + " " if short is not None else None
