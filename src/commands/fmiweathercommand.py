@@ -209,6 +209,8 @@ class FmiWeatherCommand(Command):
             speed_color = Color.red
         elif speed >= 8:
             speed_color = Color.yellow
+        elif speed >= 5:
+            speed_color = Color.white
         else:
             speed_color = None
         speed_string = color(data.get('WindSpeedMS'), speed_color)
@@ -217,6 +219,21 @@ class FmiWeatherCommand(Command):
     def _get_precipitation_1h(self, data):
         if data.get('Precipitation1h') == None:
             return None
+        
+        amount = float(data.get('Precipitation1h'))
+        if amount >= 6:
+            amount_color = Color.red
+        elif amount >= 3:
+            amount_color = Color.yellow
+        elif amount >= 1.5:
+            amount_color = Color.dblue
+        elif amount >= 0.8:
+            amount_color = Color.blue
+        elif amount >= 0.2:
+            amount_color = Color.dcyan
+        else:
+            amount_color = None
+        amount_str = color(amount, amount_color)
 
         if data.get('PoP') == None or data.get('PoP') == 'nan':
             probability_str = ""
@@ -224,15 +241,24 @@ class FmiWeatherCommand(Command):
             probability = int(data.get('PoP'))
             if probability < 10:
                 probability_rounded = "<10"
+                probability_color = None
             elif probability > 90:
                 probability_rounded = ">90"
+                probability_color = Color.blue
             else:
                 probability_rounded = round(probability / 10) * 10
-            probability_str = " (sateen todennäköisyys {}%)".format(
-                probability_rounded)
+                if probability_rounded >= 70:
+                    probability_color = Color.blue
+                elif probability_rounded >= 30:
+                    probability_color = Color.dcyan
+                else:
+                    probability_color = None
+                
+            probability_str = " (sateen todennäköisyys {} %)".format(
+                color(probability_rounded, probability_color))
 
-        return "Tunnin sademäärä {}mm{}".format(
-            data.get('Precipitation1h'),
+        return "Tunnin sademäärä {} mm{}".format(
+            amount_str,
             probability_str)
 
     def _get_cloud_cover(self, data):
