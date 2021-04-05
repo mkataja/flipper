@@ -68,6 +68,11 @@ def get_next_datetime_for_time(time):
     return datetime.datetime.combine(date, time)
 
 
+def days_until_next_weekday(weekday):
+    today = datetime.date.today()
+    return (weekday - today.isoweekday() - 1) % 7 + 1
+
+
 def add_years(date, years):
     try:
         return date.replace(year=date.year + years)

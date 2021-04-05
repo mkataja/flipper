@@ -7,28 +7,35 @@ from models.reminder import Reminder
 from models.user import User
 from modules.reminder import ReminderModule
 from lib import time_util
+from lib.irc_colors import Color, color
 
 
 class ReminderFormatError(ValueError):
     pass
 
 
-class ReminderCommand(Command):
-    helpstr = ("Käyttö: 16:20[:00]: maksa laskut "
-               "| +00:45: kakut uunista "
-               "| [yli]huomenna[ 15:00]: osta suklaata "
-               "| 19.4.[ 12:00]: muistilappu "
-               "| 21:00 joka [7. ]päivä: nukkumaanmenoaika! "
-               "| yhdistele edellisiä "
-               "| lista "
-               "| peru <ID>")
+# Color a command in helpstr
+def cc(string):
+    return color(string, Color.dgreen)
 
-    # TODO: Repeat count
+
+class ReminderCommand(Command):
+    helpstr = ("Käyttö: " + cc("[päivä] [aika] maksa laskut ") +
+               "| Päivä esim. " + cc("20.4.") + ", " +
+               cc("ylihuomenna") + " tai " + cc("tiistaina") + ", "
+               "aika esim. " + cc("16:20") + " tai " + cc("aamulla ") +
+               "| Ajastin: " + cc("+00:45 kakut uunista ") +
+               "| Toistot: " + cc("21:00 joka [7. ]päivä nukkumaanmenoaika ") +
+               "| " + cc("lista ") +
+               "| " + cc("peru <ID>"))
+
     pattern = re.compile(
-        r"^(?:(?P<datestring>(?:yli)?huomen)(?:na)?|"
+        r"^(?:(?P<datestring>(?:yli)?huomen|"
+        "maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai"
+        ")(?:na)?|"
         "(?:(?P<day>\d\d?)\.(?P<month>\d\d?)\.(?P<year>\d\d\d\d)?)|"
-        "(?P<timer>\+))?\s*"
-        "(?:(?P<timestring>(?:aamu|päivä|iltapäivä|illa|yö|aamuyö))(?:ll[aä]|st[aä])|"
+        "(?P<timer>\+))?[\s-]*"
+        "(?:(?P<timestring>(?:aamu|päivä|iltapäivä|il[lt]a|yö|aamuyö))(?:ll|st|n)[aä]|"
         "(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
         "(?:\s+(?:joka\s+(?:(?P<repeat_n>\d+)\.?\s+)?(?P<repeat_length>päivä|tunti)))?"
         ":?\s+(?P<message>.+)$"
@@ -151,7 +158,17 @@ class ReminderCommand(Command):
 
     def _parse_datestring(self, datestring):
         try:
-            days = {'huomen': 1, 'ylihuomen': 2}[datestring]
+            days = {
+                'huomen': 1,
+                'ylihuomen': 2,
+                'maanantai': time_util.days_until_next_weekday(1),
+                'tiistai': time_util.days_until_next_weekday(2),
+                'keskiviikko': time_util.days_until_next_weekday(3),
+                'torstai': time_util.days_until_next_weekday(4),
+                'perjantai': time_util.days_until_next_weekday(5),
+                'lauantai': time_util.days_until_next_weekday(6),
+                'sunnuntai': time_util.days_until_next_weekday(7)
+            }[datestring]
         except KeyError:
             raise(ReminderFormatError("Invalid datestring {}".format(datestring)))
         return datetime.date.today() + datetime.timedelta(days=days)
@@ -169,6 +186,7 @@ class ReminderCommand(Command):
                 'päivä': 12,
                 'iltapäivä': 15,
                 'illa': 20,
+                'ilta': 20,
                 'yö': 0,
                 'aamuyö': 4
             }[timestring]
