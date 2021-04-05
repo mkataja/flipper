@@ -25,9 +25,11 @@ class ReminderCommand(Command):
 
     # TODO: Repeat count
     pattern = re.compile(
-        r"^(?:(?P<datestring>(?:yli)?huomenna)|"
+        r"^(?:(?P<datestring>(?:yli)?huomen)(?:na)?|"
         "(?:(?P<day>\d\d?)\.(?P<month>\d\d?)\.(?P<year>\d\d\d\d)?)|"
-        "(?P<timer>\+))?\s*(?:(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
+        "(?P<timer>\+))?\s*"
+        "(?:(?P<timestring>(?:aamu|päivä|iltapäivä|illa|yö|aamuyö))(?:ll[aä]|st[aä])|"
+        "(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
         "(?:\s+(?:joka\s+(?:(?P<repeat_n>\d+)\.?\s+)?(?P<repeat_length>päivä|tunti)))?"
         ":?\s+(?P<message>.+)$"
     )
@@ -108,7 +110,8 @@ class ReminderCommand(Command):
                                    repeat_interval, repeat_count)
         message.bot.get_module_instance(ReminderModule).refresh_reminders()
 
-        message.reply_to("Ok, muistutus [{}] {}".format(reminder.id, reminder.due))
+        message.reply_to("Ok, muistutus [{}] {}".format(
+            reminder.id, reminder.due))
 
     def _parse_repeat(self, data):
         if data['repeat_length'] is None:
@@ -148,7 +151,7 @@ class ReminderCommand(Command):
 
     def _parse_datestring(self, datestring):
         try:
-            days = {'huomenna': 1, 'ylihuomenna': 2}[datestring]
+            days = {'huomen': 1, 'ylihuomen': 2}[datestring]
         except KeyError:
             raise(ReminderFormatError("Invalid datestring {}".format(datestring)))
         return datetime.date.today() + datetime.timedelta(days=days)
@@ -159,6 +162,20 @@ class ReminderCommand(Command):
                                    seconds=int(data['seconds'] or 0))
         return datetime.datetime.now() + delta
 
+    def _parse_timestring(self, timestring):
+        try:
+            hour = {
+                'aamu': 8,
+                'päivä': 12,
+                'iltapäivä': 15,
+                'illa': 20,
+                'yö': 0,
+                'aamuyö': 4
+            }[timestring]
+        except KeyError:
+            raise(ReminderFormatError("Invalid timestring {}".format(timestring)))
+        return datetime.time(hour, 0, 0)
+
     def _parse_when(self, data):
         if data['timer']:
             time = self._parse_timer(data)
@@ -166,6 +183,8 @@ class ReminderCommand(Command):
 
         if data['hours']:
             time = self._parse_time(data)
+        elif data['timestring']:
+            time = self._parse_timestring(data['timestring'])
         else:
             time = ReminderCommand.default_time
 
