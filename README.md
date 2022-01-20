@@ -4,9 +4,10 @@ Flipper ircbot
 Requirements
 ------------
 
-* Python 3.5
+* Python 3.7
 * [irc](http://pypi.python.org/pypi/irc) - IRC protocol client library for Python 
 * [SQLAlchemy](http://www.sqlalchemy.org/)
+* [Psycopg](https://www.psycopg.org/docs/)
 * [pytz](http://pytz.sourceforge.net/) - World Timezone Definitions for Python
 * [Beautiful Soup 4](http://www.crummy.com/software/BeautifulSoup/)
 * [Flask](http://flask.pocoo.org/)
