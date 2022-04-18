@@ -4,6 +4,8 @@ import threading
 import config
 from modules.module import Module
 
+REPEAT_LIMIT = 8
+
 
 class RepeatModule(Module):
     last = {}
@@ -13,7 +15,7 @@ class RepeatModule(Module):
         target = event.target.lower()
         message = event.arguments[0].strip()
 
-        if message is None or message.startswith(config.CMD_PREFIX):
+        if message is None or len(message) > REPEAT_LIMIT or message.startswith(config.CMD_PREFIX):
             return
 
         with RepeatModule.updating:
