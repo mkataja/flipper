@@ -2,12 +2,11 @@ import datetime
 import re
 
 from commands.command import Command
-from models.channel import Channel
+from lib import time_util
+from lib.irc_colors import Color, color
 from models.reminder import Reminder
 from models.user import User
 from modules.reminder import ReminderModule
-from lib import time_util
-from lib.irc_colors import Color, color
 
 
 class ReminderFormatError(ValueError):
@@ -59,7 +58,7 @@ class ReminderCommand(Command):
         if message.is_private_message:
             channel_id = None
         else:
-            channel_id = Channel.get_or_create(message.source).id
+            channel_id = message.channel.id
         return user_id, channel_id
 
     def _delete_reminder(self, message, parameters):

@@ -4,6 +4,8 @@ import time
 
 from commands import commandlist
 import config
+from models.channel import Channel
+from models.user import User
 from services.accesscontrol import has_admin_access
 
 
@@ -21,6 +23,9 @@ class Message(object):
         self.source = event.target
         self.content = event.arguments[0]
         self.is_private_message = is_private_message
+
+        self.channel = Channel.get_or_create(self.source)
+        self.user = User.get_or_create(self.sender)
 
         self.command = self._parse_command()
         self.is_command_invocation = (self.command is not None

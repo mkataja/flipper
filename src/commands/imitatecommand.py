@@ -1,7 +1,6 @@
 from commands.command import Command
 from commands.markovcommand import get_markov_command
 from lib.markov_chain import MarkovCorpusException
-from models.channel import Channel
 from models.imitate_corpus import ImitateCorpus
 from models.user import User
 from services import database
@@ -21,10 +20,9 @@ class ImitateCommand(Command):
             self.replytoinvalidparams(message)
             return
 
-        channel = message._event.target.lower()
         nick = params[0].lower()
         with database.get_session() as session:
-            channel = session.query(Channel).filter_by(name=channel).first()
+            channel = message.channel
             user = session.query(User).filter_by(nick=nick).first()
             if not (channel and user):
                 message.reply_to("Ei sanastoa nimimerkille {}".format(nick))
