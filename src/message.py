@@ -40,15 +40,17 @@ class Message(object):
         return desc
 
     def _parse_command(self):
+        cmd_prefixes = [config.CMD_PREFIX, self.channel.alt_cmd_prefix]
+        clean_cmd_prefixes = [re.escape(p) for p in cmd_prefixes if p]
+        cmd_prefix_regex = rf"(?:{'|'.join(clean_cmd_prefixes)})"
         if self.is_private_message:
-            cmd_prefix_regex = re.escape(config.CMD_PREFIX) + "?"
-        else:
-            cmd_prefix_regex = re.escape(config.CMD_PREFIX)
+            cmd_prefix_regex += r"?"
 
         regex = re.compile(r"^({}[:,\s]+|{})(\S*)\s*(.*)"
                            .format(self._connection.get_nickname(),
                                    cmd_prefix_regex),
                            re.IGNORECASE)
+        logging.info(regex)
 
         result = regex.search(self.content)
 

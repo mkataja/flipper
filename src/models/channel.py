@@ -1,3 +1,4 @@
+from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import Text, Boolean
 
@@ -7,6 +8,7 @@ from services import database
 class Channel(database.FlipperBase):
     name = Column(Text, nullable=False)
     autojoin = Column(Boolean, nullable=False, default=False)
+    alt_cmd_prefix = Column(Text, nullable=True, default=Null)
 
     @classmethod
     def get_or_create(cls, channel_name):
