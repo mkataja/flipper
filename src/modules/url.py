@@ -1,5 +1,4 @@
 import logging
-from multiprocessing.pool import ThreadPool
 import re
 import threading
 
@@ -31,26 +30,9 @@ class UrlModule(Module):
                                  name="UrlProcessor").start()
 
         def _process_url(self, url):
-            pool = ThreadPool()
-            title_async = pool.apply_async(web.get_title_text, (url,))
-            short_async = pool.apply_async(self._get_short_url_text, (url,))
-
-            title = title_async.get()
-            short = short_async.get()
-
-            if title and title.lower() in url.lower():
-                title = None
-
-            message = color(short, Color.dgrey) if short else ""
-
+            title = web.get_title_text(url)
             if title:
-                message += "{}".format(color(title, Color.dcyan))
-
-            if message != "":
-                self._bot.privmsg(self._event.target, message)
-
-        def _get_short_url_text(self, url):
-            short = None
-            if len(url) > 80:
-                short = web.get_short_url(url)
-            return short + " " if short is not None else None
+                self._bot.privmsg(
+                    self._event.target,
+                    "{}".format(color(title, Color.dcyan))
+                )

@@ -1,8 +1,6 @@
 import codecs
-import json
 import logging
 import re
-from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
@@ -16,28 +14,6 @@ url_regex = re.compile(
     r'(?::\d+)?(?:(?:[/\\]?)[^ "]*[^ ,;.:">)])?',
     re.IGNORECASE
 )
-
-
-def get_short_url(url):
-    request_url = ("https://www.googleapis.com/urlshortener/v1/url"
-                   "?key=" + config.GOOGLE_API_KEY)
-    request_data = json.dumps({
-        'longUrl': url,
-    }).encode()
-
-    request = Request(request_url, request_data,
-                      headers={'Content-Type': 'application/json'})
-    try:
-        response = urlopen(request)
-    except HTTPError:
-        logging.warning("Getting short url failed for {}".format(url))
-        return None
-
-    data = json.loads(response.read().decode())
-    if data is None:
-        return None
-
-    return data.get('id')
 
 
 def get_title_text(url):
