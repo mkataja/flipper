@@ -1,17 +1,14 @@
 import datetime
-import json
 import locale
+import logging
 import math
-import socket
-import urllib.error
 import urllib.parse
-import urllib.request
-from time import sleep
 
 import pytz
 
 from commands.command import Command
 from lib import time_util
+from lib.http import try_json_request
 
 KELVINTOCELSIUS = -273.15
 RETRIES = 5
@@ -152,11 +149,7 @@ class OpenWeatherMapCommand(Command):
     def _get_weather_data(self, requested_place):
         url = ('http://openweathermap.org/data/2.5/weather?q={}'
                .format(urllib.parse.quote(requested_place)))
-        try:
-            reply = urllib.request.urlopen(url, timeout=3).read().decode()
-            return json.loads(reply)
-        except (urllib.error.HTTPError, socket.timeout):
-            return None
+        return try_json_request(url, retries=RETRIES)
 
     def _get_weather_string(self, data):
         sunrise = None
@@ -206,13 +199,7 @@ class OpenWeatherMapCommand(Command):
         else:
             requested_place = message.params
 
-        data = None
-        for _ in range(RETRIES):
-            data = self._get_weather_data(requested_place)
-            if data is not None:
-                break
-            sleep(0.2)
-
+        data = self._get_weather_data(requested_place)
         if data is None:
             message.reply_to("Sääpalvelua ei löytynyt :(")
             return
@@ -222,7 +209,8 @@ class OpenWeatherMapCommand(Command):
                              .format(requested_place))
             return
         elif 'message' in data:
-            message.reply_to("Virhe: ".format(data.get('message')))
+            logging.error(f"Openweather error: {data.get('message')}")
+            message.reply_to("Virhe :(")
             return
 
         weather_string = self._get_weather_string(data)

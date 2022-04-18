@@ -1,10 +1,9 @@
 import json
 import logging
-import urllib.error
 import urllib.parse
-import urllib.request
 
 import config
+from lib.http import try_json_request
 from models.address_cache_entry import AddressCacheEntry
 from services import database
 
@@ -33,12 +32,7 @@ def geocode(address):
 
     url = ('https://maps.googleapis.com/maps/api/geocode/json?address={}&key={}'
            .format(urllib.parse.quote(address), config.GOOGLE_API_KEY))
-    try:
-        reply = urllib.request.urlopen(url, timeout=3).read().decode()
-    except urllib.error.HTTPError:
-        return None
-
-    data = json.loads(reply)
+    data = try_json_request(url)
     if data is None:
         return None
 

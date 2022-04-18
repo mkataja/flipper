@@ -1,22 +1,17 @@
 import datetime
-import json
 import locale
 import logging
-import socket
-from time import sleep
-import urllib.request
-import urllib.error
-import urllib.parse
 import re
+import urllib.parse
 
-from commands.command import Command
-from models.user import User
 import config
-from lib import geocoding
+from commands.command import Command
+from lib import geocoding, time_util
+from lib.http import try_json_request
 from lib.irc_colors import Color, color
-from lib import time_util
+from models.user import User
 
-RETRIES = 3
+RETRIES = 5
 
 FORECAST_COMMAND = "sää"
 OBSERVATION_COMMAND = "havainto"
@@ -146,11 +141,7 @@ class FmiWeatherCommand(Command):
     def _get_weather_data(self, location):
         url = ('https://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
                .format(urllib.parse.quote(location)))
-        try:
-            reply = urllib.request.urlopen(url, timeout=3).read().decode()
-            return json.loads(reply)
-        except (urllib.error.HTTPError, socket.timeout):
-            return None
+        return try_json_request(url, retries=RETRIES)
 
     def _get_weather_conditions(self, data):
         if data.get('WW_AWS') == 'nan':
@@ -428,12 +419,7 @@ class FmiWeatherCommand(Command):
             return
 
         logging.info("Getting weather data in '{}'".format(location))
-        data = None
-        for _ in range(RETRIES):
-            data = self._get_weather_data(location)
-            if data is not None:
-                break
-            sleep(0.2)
+        data = self._get_weather_data(location)
 
         if data is None or data.get('status') != "ok":
             message.reply_to("Sääpalvelu ei vastaa :(")

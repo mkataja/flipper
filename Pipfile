@@ -10,6 +10,7 @@ psycopg2 = "*"
 pytz = "*"
 beautifulsoup4 = "*"
 Flask = "*"
+urllib3 = "*"
 
 [dev-packages]
 

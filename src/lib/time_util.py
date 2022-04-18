@@ -1,14 +1,12 @@
-import json
-import logging
 import datetime
+import logging
 import time as py_time
-import urllib.error
 import urllib.parse
-import urllib.request
 
 import pytz
 
 import config
+from lib.http import try_json_request
 
 
 def get_utc_datetime(local_naive_datetime):
@@ -41,12 +39,7 @@ def get_geographic_timezone(latitude, longitude, timestamp=int(py_time.time())):
     url = ("https://maps.googleapis.com/maps/api/timezone/json?location={}&timestamp={}&key={}"
            .format(urllib.parse.quote("{},{}".format(latitude, longitude)),
                    timestamp, config.GOOGLE_API_KEY))
-    try:
-        reply = urllib.request.urlopen(url, timeout=3).read().decode()
-    except urllib.error.HTTPError:
-        return None
-
-    data = json.loads(reply)
+    data = try_json_request(url)
     if data is None:
         return None
 
