@@ -33,9 +33,7 @@ class ReminderModule(Module):
         if self.next_reminder is None or next_reminder < self.next_reminder:
             self.next_reminder = next_reminder
             logging.info("Setting next reminder at {}".format(self.next_reminder))
-            self._bot.reactor.execute_at(self.next_reminder,
-                                         self._process_reminders,
-                                         ())
+            self._bot.reactor.scheduler.execute_at(self.next_reminder, self._process_reminders)
 
     def _process_reminders(self):
         self.next_reminder = None

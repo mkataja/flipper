@@ -5,7 +5,6 @@ import logging
 
 import config
 import flipperbot
-import patch
 
 
 def setup_logging():
@@ -26,8 +25,6 @@ def setup_logging():
 
 def main():
     setup_logging()
-
-    patch.patch_irclib()
 
     bot = flipperbot.FlipperBot()
     try:

@@ -103,9 +103,9 @@ class FlipperBot(bot.SingleServerIRCBot):
         super(FlipperBot, self)._on_disconnect(connection, event)
 
     def on_welcome(self, connection, _event):
-        self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY,
-                                   self._keep_alive, ())
-        self.reactor.execute_every(60, self._keep_nick, ())
+        self.reactor.scheduler.execute_every(config.KEEP_ALIVE_FREQUENCY,
+                                             self._keep_alive)
+        self.reactor.scheduler.execute_every(60, self._keep_nick)
 
         for channel in config.CHANNELS:
             connection.join(channel)
