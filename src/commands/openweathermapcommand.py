@@ -6,6 +6,7 @@ import urllib.parse
 
 import pytz
 
+import config
 from commands.command import Command
 from lib import time_util
 from lib.http import try_json_request
@@ -147,8 +148,8 @@ class OpenWeatherMapCommand(Command):
         return temp_diff_string
 
     def _get_weather_data(self, requested_place):
-        url = ('http://openweathermap.org/data/2.5/weather?q={}'
-               .format(urllib.parse.quote(requested_place)))
+        url = ('http://openweathermap.org/data/2.5/weather?q={}&appid={}'
+               .format(urllib.parse.quote(requested_place), config.OPEN_WEATHER_API_KEY))
         return try_json_request(url, retries=RETRIES)
 
     def _get_weather_string(self, data):

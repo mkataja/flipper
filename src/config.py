@@ -42,6 +42,8 @@ WEBUI_ADDRESS = 'http://localhost'
 
 GOOGLE_API_KEY = ""
 
+OPEN_WEATHER_API_KEY = ""
+
 USER_AGENT = "Mozilla/5.0 Bot/42.0"
 
 # Import config_local.py
