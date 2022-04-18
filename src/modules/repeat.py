@@ -1,28 +1,24 @@
 import logging
 import threading
 
-import config
-from modules.module import Module
+from modules.message_handler import MessageHandler
 
 REPEAT_LIMIT = 8
 
 
-class RepeatModule(Module):
+class RepeatModule(MessageHandler):
     last = {}
     updating = threading.Lock()
 
-    def on_pubmsg(self, _connection, event):
-        target = event.target.lower()
-        message = event.arguments[0].strip()
-
-        if message is None or len(message) > REPEAT_LIMIT or message.startswith(config.CMD_PREFIX):
+    def handle(self, message):
+        if not (0 < len(message.content) < REPEAT_LIMIT):
             return
 
         with RepeatModule.updating:
-            last = self.last.get(target, None)
-            logging.debug("Repeat: last: {}, current: {}".format(last, message))
-            if message == last:
-                self._bot.privmsg(target, message)
-                self.last[target] = None
+            last = self.last.get(message.source, None)
+            logging.debug("Repeat: last: {}, current: {}".format(last, message.content))
+            if message.content == last:
+                self.last[message.source] = None
+                message.reply(message.content)
             else:
-                self.last[target] = message
+                self.last[message.source] = message.content

@@ -1,34 +1,26 @@
 import datetime
 
-import config
 from lib import markov_helper
 from models.channel import Channel
 from models.imitate_corpus import ImitateCorpus
 from models.log_entry import LogEntry
 from models.user import User
-from modules.module import Module
+from modules.message_handler import MessageHandler
 from services import database
 
 
-class LoggingModule(Module):
-    def on_privmsg(self, connection, event):
-        self._log(connection, event, is_private_message=True)
+class LoggingModule(MessageHandler):
+    def handle(self, message):
+        self._log(message)
 
-    def on_pubmsg(self, connection, event):
-        self._log(connection, event, is_private_message=False)
-
-    def _log(self, _connection, event, is_private_message):
-        message = event.arguments[0]
-        channel = Channel.get_or_create(event.target)
-        user = User.get_or_create(event.source.nick)
+    def _log(self, message):
+        channel = Channel.get_or_create(message.source)
+        user = User.get_or_create(message.sender)
         timestamp = datetime.datetime.utcnow()
 
-        if message.startswith(config.CMD_PREFIX):
-            return
-
-        self._create_log_entry(channel.id, user.id, timestamp, message)
-        if not is_private_message:
-            self._create_imitate_entry(channel, user, timestamp, message)
+        self._create_log_entry(channel.id, user.id, timestamp, message.content)
+        if not message.is_private_message:
+            self._create_imitate_entry(channel, user, timestamp, message.content)
 
     def _create_log_entry(self, channel_id, user_id, timestamp, message):
         e = LogEntry()

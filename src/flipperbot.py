@@ -44,8 +44,12 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         irc.client.ServerConnection.buffer_class = LenientDecodingLineBuffer
 
-        self._registered_modules = {m.__name__: m(self)
-                                    for m in modules.modulelist.MODULES}
+        self._registered_modules = {
+            m.__name__: m(self) for m in modules.modulelist.MODULES
+        }
+        self._registered_message_handlers = {
+            m.__name__: m() for m in modules.modulelist.MESSAGE_HANDLERS
+        }
 
     def get_module_instance(self, module):
         return self._registered_modules[module.__name__]
@@ -133,8 +137,15 @@ class FlipperBot(bot.SingleServerIRCBot):
     def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
         logging.info("Handling privmsg: {}".format(message))
+
         threading.Thread(target=message.try_run_command,
                          name=message.command_name).start()
+
+        if not message.is_command_invocation:
+            for handler in self._registered_message_handlers.values():
+                threading.Thread(target=handler.handle,
+                                 args=(message,),
+                                 name=handler.__class__.__name__).start()
 
     def privmsg(self, target, message):
         if not self.connection.is_connected():

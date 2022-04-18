@@ -1,11 +1,13 @@
-from modules import *
-
+from modules import firstshout, logging, niiloism, reminder, repeat, url
 
 MODULES = [
-    url.UrlModule,
     firstshout.FirstShoutModule,
+    reminder.ReminderModule,
+]
+
+MESSAGE_HANDLERS = [
+    url.UrlModule,
     repeat.RepeatModule,
     logging.LoggingModule,
     niiloism.NiiloismModule,
-    reminder.ReminderModule,
 ]

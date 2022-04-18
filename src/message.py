@@ -23,6 +23,8 @@ class Message(object):
         self.is_private_message = is_private_message
 
         self.command = self._parse_command()
+        self.is_command_invocation = (self.command is not None
+                                      or self.content.startswith(config.CMD_PREFIX))
 
     @property
     def command_name(self):
