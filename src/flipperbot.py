@@ -145,14 +145,18 @@ class FlipperBot(bot.SingleServerIRCBot):
         message = Message(self, connection, event, is_private_message)
         logging.info("Handling privmsg: {}".format(message))
 
-        threading.Thread(target=message.try_run_command,
-                         name=message.command_name).start()
+        if message.command_name in message.channel.disabled_features:
+            logging.info(f"Command {message.command_name} is disabled on {message.channel.name}")
+        else:
+            threading.Thread(target=message.try_run_command, name=message.command_name).start()
 
         if not message.commandword:
             for handler in self._registered_message_handlers.values():
-                threading.Thread(target=handler.handle,
-                                 args=(message,),
-                                 name=handler.__class__.__name__).start()
+                name = handler.__class__.__name__
+                if name in message.channel.disabled_features:
+                    logging.info(f"Module {name} is disabled on {message.channel.name}")
+                else:
+                    threading.Thread(target=handler.handle, args=(message,), name=name).start()
 
     def privmsg(self, target, message):
         if not self.connection.is_connected():

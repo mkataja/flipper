@@ -1,6 +1,6 @@
 from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import Text, Boolean
+from sqlalchemy.sql.sqltypes import ARRAY, Boolean, Text
 
 from services import database
 
@@ -8,6 +8,7 @@ from services import database
 class Channel(database.FlipperBase):
     name = Column(Text, nullable=False)
     alt_cmd_prefix = Column(Text, nullable=True, default=Null)
+    disabled_features = Column(ARRAY(Text), nullable=False, default=[])
 
     @classmethod
     def get_or_create(cls, channel_name):
