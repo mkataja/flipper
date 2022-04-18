@@ -71,23 +71,15 @@ class Message(object):
             command_start = time.time()
             self.command().handle(self)
             logging.info("Ran command: '{}' (with params: '{}') "
-                         "(took {:.3f} s)"
-                         .format(self.commandword,
-                                 self.params,
-                                 time.time() - command_start))
-        else:
-            raise ("Cannot run unrecognized command: {}"
-                   .format(self.commandword))
+                         "(took {:.3f} s)".format(self.commandword,
+                                                  self.params,
+                                                  time.time() - command_start))
 
     def try_run_command(self):
-        if not self.command:
-            return
         try:
             self.run_command()
         except Exception as e:
-            logging.exception("Exception while running command '{}': {}"
-                              .format(self.command.__name__, e))
-            self.reply_to("Tapahtui virhe. Kerro tästä devaajille.")
+            logging.exception(f"Exception while running command '{self.command.__name__}':")
             raise
 
     def reply_to(self, replytext):

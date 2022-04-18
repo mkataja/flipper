@@ -122,10 +122,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         connection.nick(self.requested_nick + self.nick_tail)
 
     def on_privmsg(self, connection, event):
-        self._handle_message(connection, event, True)
+        self._try_handle_message(connection, event, True)
 
     def on_pubmsg(self, connection, event):
-        self._handle_message(connection, event, False)
+        self._try_handle_message(connection, event, False)
 
     def on_invite(self, connection, event):
         sender = event.source
@@ -133,6 +133,13 @@ class FlipperBot(bot.SingleServerIRCBot):
             return
         channel = event.arguments[0]
         connection.join(channel)
+
+    def _try_handle_message(self, connection, event, is_private_message):
+        try:
+            self._handle_message(connection, event, is_private_message)
+        except Exception as e:
+            logging.exception("Fatal error while handling a message:")
+            self.privmsg(config.SUPERUSER_NICK, f'Fatal on {event.target}: "{e}"')
 
     def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
