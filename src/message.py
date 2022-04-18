@@ -9,9 +9,6 @@ from models.user import User
 
 
 class Message(object):
-    commandword = None
-    params = None
-
     def __init__(self, bot, connection, event, is_private_message):
         self._connection = connection
         self._event = event
@@ -26,9 +23,7 @@ class Message(object):
         self.channel = Channel.get_or_create(self.source)
         self.user = User.get_or_create(self.sender)
 
-        self.command = self._parse_command()
-        self.is_command_invocation = (self.command is not None
-                                      or self.content.startswith(config.CMD_PREFIX))
+        self.commandword, self.params, self.command = self._parse_command()
 
     @property
     def command_name(self):
@@ -58,17 +53,16 @@ class Message(object):
         result = regex.search(self.content)
 
         if result:
-            self.commandword = result.groups()[1].lower()
-            self.params = result.groups()[2]
+            commandword = result.groups()[1].lower()
+            params = result.groups()[2]
             all_commands = commandlist.ALL_CMDS
-            if self.commandword in all_commands:
-                return all_commands[self.commandword]
+            if commandword in all_commands:
+                return commandword, params, all_commands[commandword]
             else:
-                logging.warning("Unrecognized command: {}"
-                                .format(self.commandword))
-                return None
+                logging.warning(f"Unrecognized command: {commandword}")
+                return commandword, params, None
         else:
-            return None
+            return None, None, None
 
     def run_command(self):
         if self.command:

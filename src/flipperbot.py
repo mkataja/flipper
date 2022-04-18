@@ -141,7 +141,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         threading.Thread(target=message.try_run_command,
                          name=message.command_name).start()
 
-        if not message.is_command_invocation:
+        if not message.commandword:
             for handler in self._registered_message_handlers.values():
                 threading.Thread(target=handler.handle,
                                  args=(message,),
