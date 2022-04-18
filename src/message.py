@@ -2,11 +2,10 @@ import logging
 import re
 import time
 
-from commands import commandlist
 import config
+from commands import commandlist
 from models.channel import Channel
 from models.user import User
-from services.accesscontrol import has_admin_access
 
 
 class Message(object):
@@ -44,15 +43,6 @@ class Message(object):
                                   self.content) + \
                (" (private message)" if self.is_private_message else "")
         return desc
-
-    def _get_allowed_commands(self):
-        allowed_commands = commandlist.PUBLIC_CMDS.copy()
-
-        sender = self._event.source
-        if has_admin_access(sender):
-            allowed_commands.update(commandlist.PRIVATE_CMDS)
-
-        return allowed_commands
 
     def _parse_command(self):
         if self.is_private_message:
