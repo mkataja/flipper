@@ -1,6 +1,7 @@
 import json
 import logging
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import config
@@ -23,8 +24,8 @@ def geocode(address):
                 if cache_entry.latitude is None or cache_entry.longitude is None:
                     return None
                 else:
-                    return (cache_entry.latitude, cache_entry.longitude)
-    except:
+                    return cache_entry.latitude, cache_entry.longitude
+    except ValueError:
         # Database not available - no matter
         pass
 
@@ -51,7 +52,7 @@ def geocode(address):
         latitude = None
         longitude = None
     else:
-        logging.warn("Geocoding failed: API returned status {}".format(status))
+        logging.warning("Geocoding failed: API returned status {}".format(status))
         return None
 
     try:
@@ -62,7 +63,7 @@ def geocode(address):
             cache_entry.longitude = longitude
             session.add(cache_entry)
             session.commit()
-    except:
+    except ValueError:
         # Database not available - still no matter
         pass
 
@@ -72,7 +73,7 @@ def geocode(address):
     else:
         logging.info("Geocoded address '{}': {}, {}"
                      .format(address, latitude, longitude))
-        return (latitude, longitude)
+        return latitude, longitude
 
 
 def decdeg_to_dms(dd):
@@ -87,7 +88,7 @@ def decdeg_to_dms(dd):
             minutes = -minutes
         else:
             seconds = -seconds
-    return (degrees, minutes, seconds)
+    return degrees, minutes, seconds
 
 
 def dms_to_human(degrees, minutes, seconds):

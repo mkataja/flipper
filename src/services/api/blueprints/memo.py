@@ -6,7 +6,7 @@ from models.memo import Memo
 from services import database
 
 
-def build_blueprint(bot_callback):
+def build_blueprint(_bot_callback):
     bp = Blueprint('memo', __name__)
 
     @bp.route('/memo', methods=['GET'])

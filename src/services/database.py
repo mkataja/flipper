@@ -40,7 +40,7 @@ def ping_engine(connection, branch):
         # Attempt to execute a dummy query
         connection.scalar(select([1]))
     except exc.DBAPIError as err:
-        logging.warn('SQL engine disconnection detected')
+        logging.warning('SQL engine disconnection detected')
         if err.connection_invalidated:
             logging.info('Attempting to restart SQL engine')
             connection.scalar(select([1]))
@@ -56,21 +56,22 @@ def get_session():
     if not Session:
         raise ValueError("Tried to get a database session "
                          "but database is not initialized")
+    session = None
     try:
         session = Session()
         yield session
     finally:
         # Rollback uncommitted transactions if any:
-        if len(session.transaction._iterate_self_and_parents()) > 0:
+        if session and len(session.transaction._iterate_self_and_parents()) > 0:
             session.rollback()
 
 
-class utcnow(expression.FunctionElement):
+class UtcNow(expression.FunctionElement):
     type = DateTime()
 
 
-@compiles(utcnow, 'postgresql')
-def pg_utcnow(element, compiler, **kw):
+@compiles(UtcNow, 'postgresql')
+def pg_utcnow(_element, _compiler, **_kw):
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
@@ -86,11 +87,11 @@ class FlipperBase(Base):
     def __tablename__(self):
         if self._tablename is None:
             s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', self.__name__)
-            self._tablename = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+            self._tablename = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
         return self._tablename
 
     id = Column(Integer, primary_key=True)
     created_on = Column(DateTime, nullable=False,
-                        default=utcnow())
+                        default=UtcNow())
     updated_on = Column(DateTime, nullable=False,
-                        default=utcnow(), onupdate=utcnow())
+                        default=UtcNow(), onupdate=UtcNow())

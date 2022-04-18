@@ -7,10 +7,8 @@ http://homepages.inf.ed.ac.uk/s0787820/bible/download.php?url=Finnish
 from xml.etree import ElementTree
 
 from lib import markov_helper
-from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
 from models.markov_corpus import MarkovCorpus
 from services import database
-
 
 FILE_PATH = '../data/raamattu.xml'
 CORPUS_NAME = "raamattu"

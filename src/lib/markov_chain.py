@@ -11,7 +11,7 @@ class MarkovCorpusException(ValueError):
     pass
 
 
-class MarkovChain():
+class MarkovChain:
     SECOND_ORDER_MINIMUM_HITS = 2
 
     SENTENCE_LENGTH_MINIMUM = 8
@@ -121,7 +121,7 @@ class MarkovChain():
     def _get_next_word_id(self, s0_id, s1_id, backwards, prefer_nonterminal):
         """
         s0_id -- the nearest search predicate
-        s1_id -- the second nearest search predicate (may be None)
+        s1_id -- the second-nearest search predicate (may be None)
         """
 
         if s0_id is None:
@@ -132,6 +132,9 @@ class MarkovChain():
             filter_expr = filtered_attr is not None
         else:
             filter_expr = filtered_attr is None
+
+        hits = 0
+        candidates = []
 
         if s1_id is not None:
             if backwards:

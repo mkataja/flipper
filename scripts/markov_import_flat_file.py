@@ -1,14 +1,12 @@
 """
-An example importer script for reading a flat file into 
+An example importer script for reading a flat file into
 the Markov chain database. Example file parsed from:
 https://fi.wikiquote.org/wiki/Suomalaisia_sananlaskuja
 """
 
 from lib import markov_helper
-from lib.markov_helper import parse_markov_sentences, insert_markov_sentences
 from models.markov_corpus import MarkovCorpus
 from services import database
-
 
 FILE_PATH = '../data/fi_sayings.txt'
 CORPUS_NAME = "sanonnat"

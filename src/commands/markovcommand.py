@@ -22,6 +22,8 @@ class MarkovCommand(Command):
 
 class AbstractMarkovCommand(Command):
     helpstr = "Käyttö: anna halutessasi avainsanoja"
+    corpus_id = None
+    corpus_name = None
 
     def handle(self, message):
         params = message.params.split()

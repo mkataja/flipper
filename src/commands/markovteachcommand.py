@@ -5,7 +5,6 @@ from lib import markov_helper
 from models.markov_corpus import MarkovCorpus
 from services import database
 
-
 _reserved_words = ['new', 'list']
 
 
@@ -18,7 +17,7 @@ class MarkovTeachCommand(Command):
     def handle(self, message):
         params = message.params.split(maxsplit=1)
         if not (1 <= len(params) <= 2):
-            self.replytoinvalidparams()
+            self.replytoinvalidparams(message)
             return
 
         if params[0].lower() == "new":
@@ -27,6 +26,9 @@ class MarkovTeachCommand(Command):
         elif params[0].lower() == "list":
             self._list_corpuses(message)
         else:
+            if len(params) != 2:
+                self.replytoinvalidparams(message)
+                return
             corpus_name = params[0].lower()
             sentence = params[1]
             self._add_sentence(message, corpus_name, sentence)

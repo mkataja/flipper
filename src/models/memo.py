@@ -24,5 +24,5 @@ class Memo(database.FlipperBase):
         }
 
     def full_info(self):
-        additional_info = {'lines': [l.full_info() for l in self.lines]}
+        additional_info = {'lines': [line.full_info() for line in self.lines]}
         return {**self.basic_info(), **additional_info}

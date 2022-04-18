@@ -53,7 +53,7 @@ class Message(object):
         else:
             cmd_prefix_regex = re.escape(config.CMD_PREFIX)
 
-        regex = re.compile("^({}[:,\s]+|{})([^\s]*)\s*(.*)"
+        regex = re.compile(r"^({}[:,\s]+|{})(\S*)\s*(.*)"
                            .format(self._connection.get_nickname(),
                                    cmd_prefix_regex),
                            re.IGNORECASE)
@@ -67,8 +67,8 @@ class Message(object):
             if self.commandword in all_commands:
                 return all_commands[self.commandword]
             else:
-                logging.warn("Unrecognized command: {}"
-                             .format(self.commandword))
+                logging.warning("Unrecognized command: {}"
+                                .format(self.commandword))
                 return None
         else:
             return None
@@ -91,9 +91,9 @@ class Message(object):
             return
         try:
             self.run_command()
-        except:
-            logging.exception("Exception while running command '{}':"
-                              .format(self.command.__name__))
+        except Exception as e:
+            logging.exception("Exception while running command '{}': {}"
+                              .format(self.command.__name__, e))
             self.reply_to("Tapahtui virhe. Kerro tästä devaajille.")
             raise
 

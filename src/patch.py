@@ -1,6 +1,6 @@
 import logging
 
-import irc
+import irc.client
 
 
 def patch_irclib():
@@ -26,4 +26,5 @@ def patch_client_reactor_sockets():
                 for socket in sockets_orig.fget(self)
                 if socket.fileno() >= 0
             ]
+
     irc.client.Reactor.sockets = sockets_new

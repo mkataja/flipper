@@ -9,7 +9,7 @@ from services.api.blueprints import meta, memo, say
 from services.api.json_encoder import CustomJSONEncoder
 
 
-class HttpApi():
+class HttpApi:
     _blueprints = [meta, memo, say]
 
     def __init__(self, bot_callback):

@@ -4,6 +4,8 @@ import re
 from commands.command import Command, admin_required
 from lib import irc_helpers
 
+channel_name_regex = r"[#!]\w+"
+
 
 class QuitCommand(Command):
     @admin_required
@@ -26,7 +28,7 @@ class HopCommand(Command):
 class JoinCommand(Command):
     @admin_required
     def handle(self, message):
-        if not re.match("(#|!)\w+", message.params):
+        if not re.match(channel_name_regex, message.params):
             self.replytoinvalidparams(message)
             return
 
@@ -36,7 +38,7 @@ class JoinCommand(Command):
 class PartCommand(Command):
     @admin_required
     def handle(self, message):
-        if re.match("(#|!)\w+", message.params):
+        if re.match(channel_name_regex, message.params):
             # Part the given channel
             channel_to_part = message.params
         elif not message.params and not message.is_private_message:

@@ -22,8 +22,8 @@ def cc(string):
 class ReminderCommand(Command):
     helpstr = ("Käyttö: " + cc("[päivä] [aika] maksa laskut ") +
                "| Päivä esim. " + cc("20.4.") + ", " +
-               cc("ylihuomenna") + " tai " + cc("tiistaina") + ", "
-               "aika esim. " + cc("16:20") + " tai " + cc("aamulla ") +
+               cc("ylihuomenna") + " tai " + cc("tiistaina") +
+               ", aika esim. " + cc("16:20") + " tai " + cc("aamulla ") +
                "| Ajastin: " + cc("+00:45 kakut uunista ") +
                "| Toistot: " + cc("21:00 joka [7. ]päivä nukkumaanmenoaika ") +
                "| " + cc("lista ") +
@@ -31,14 +31,14 @@ class ReminderCommand(Command):
 
     pattern = re.compile(
         r"^(?:(?P<datestring>(?:yli)?huomen|"
-        "maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai"
-        ")(?:na)?|"
-        "(?:(?P<day>\d\d?)\.(?P<month>\d\d?)\.(?P<year>\d\d\d\d)?)|"
-        "(?P<timer>\+))?[\s-]*"
-        "(?:(?P<timestring>(?:aamu|päivä|iltapäivä|il[lt]a|yö|aamuyö))(?:ll|st|n)[aä]|"
-        "(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
-        "(?:\s+(?:joka\s+(?:(?P<repeat_n>\d+)\.?\s+)?(?P<repeat_length>päivä|tunti)))?"
-        ":?\s+(?P<message>.+)$"
+        r"maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai"
+        r")(?:na)?|"
+        r"(?:(?P<day>\d\d?)\.(?P<month>\d\d?)\.(?P<year>\d\d\d\d)?)|"
+        r"(?P<timer>\+))?[\s-]*"
+        r"(?:(?P<timestring>(?:aamu|päivä|iltapäivä|il[lt]a|yö|aamuyö))(?:ll|st|n)[aä]|"
+        r"(?P<hours>\d\d?):(?P<minutes>\d\d)(?::(?P<seconds>\d\d))?)?"
+        r"(?:\s+(?:joka\s+(?:(?P<repeat_n>\d+)\.?\s+)?(?P<repeat_length>päivä|tunti)))?"
+        r":?\s+(?P<message>.+)$"
     )
 
     default_time = datetime.time(9, 0, 0)
@@ -122,20 +122,20 @@ class ReminderCommand(Command):
 
     def _parse_repeat(self, data):
         if data['repeat_length'] is None:
-            return (None, None)
+            return None, None
 
         n = int(data['repeat_n'] or 1)
         if n < 1:
-            raise(ReminderFormatError("Repeat n < 1"))
+            raise ReminderFormatError("Repeat n < 1")
 
         try:
             hours = {'tunti': 1, 'päivä': 24}[data['repeat_length']]
             interval = datetime.timedelta(hours=n * hours)
         except KeyError:
-            raise(ReminderFormatError(data['repeat_length']))
+            raise ReminderFormatError(data['repeat_length'])
 
         count = None
-        return (interval, count)
+        return interval, count
 
     def _parse_time(self, data):
         time = datetime.time(int(data['hours']),
@@ -170,7 +170,7 @@ class ReminderCommand(Command):
                 'sunnuntai': time_util.days_until_next_weekday(7)
             }[datestring]
         except KeyError:
-            raise(ReminderFormatError("Invalid datestring {}".format(datestring)))
+            raise ReminderFormatError("Invalid datestring {}".format(datestring))
         return datetime.date.today() + datetime.timedelta(days=days)
 
     def _parse_timer(self, data):
@@ -191,7 +191,7 @@ class ReminderCommand(Command):
                 'aamuyö': 4
             }[timestring]
         except KeyError:
-            raise(ReminderFormatError("Invalid timestring {}".format(timestring)))
+            raise ReminderFormatError("Invalid timestring {}".format(timestring))
         return datetime.time(hour, 0, 0)
 
     def _parse_when(self, data):

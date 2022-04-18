@@ -1,5 +1,3 @@
-import random
-
 from commands.command import Command
 from lib.irc_colors import Color, color
 

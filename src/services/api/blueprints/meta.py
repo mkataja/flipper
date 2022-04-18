@@ -4,7 +4,7 @@ from flask.blueprints import Blueprint
 from services.api.constants import API_APPLICATION_NAME, API_VERSION
 
 
-def build_blueprint(bot_callback):
+def build_blueprint(_bot_callback):
     bp = Blueprint('meta', __name__)
 
     @bp.route('/version')

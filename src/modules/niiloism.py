@@ -3,7 +3,7 @@ from modules.module import Module
 
 
 class NiiloismModule(Module):
-    def on_pubmsg(self, connection, event):
+    def on_pubmsg(self, _connection, event):
         target = event.target.lower()
         message = event.arguments[0].strip()
 

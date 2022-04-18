@@ -17,7 +17,7 @@ class LoggingModule(Module):
     def on_pubmsg(self, connection, event):
         self._log(connection, event, is_private_message=False)
 
-    def _log(self, connection, event, is_private_message):
+    def _log(self, _connection, event, is_private_message):
         message = event.arguments[0]
         channel = Channel.get_or_create(event.target)
         user = User.get_or_create(event.source.nick)

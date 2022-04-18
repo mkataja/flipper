@@ -1,8 +1,10 @@
 import json
 import logging
 import datetime
-import time
-import urllib
+import time as py_time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import pytz
 
@@ -27,7 +29,7 @@ def get_time_in_timezone(time, timezone_id):
     return time.astimezone(timezone)
 
 
-def get_geographic_timezone(latitude, longitude, timestamp=int(time.time())):
+def get_geographic_timezone(latitude, longitude, timestamp=int(py_time.time())):
     """
     Returns the timezone code for the given geographic location. In case
     timestamp is given, it is used to decide between normal and daylight

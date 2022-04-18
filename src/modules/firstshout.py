@@ -6,7 +6,7 @@ from modules.module import Module
 
 
 class FirstShoutModule(Module):
-    def on_welcome(self, connection, event):
+    def on_welcome(self, _connection, _event):
         self._setup_first_new_year()
 
     def _setup_first_new_year(self):

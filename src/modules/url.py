@@ -9,7 +9,7 @@ from modules.module import Module
 
 
 class UrlModule(Module):
-    def on_pubmsg(self, connection, event):
+    def on_pubmsg(self, _connection, event):
         UrlModule.UrlActions(self._bot, event).process_urls()
 
     class UrlActions(object):

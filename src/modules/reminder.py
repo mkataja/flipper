@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy.sql.functions import func
 
-import lib
+import lib.time_util
 from models.reminder import Reminder
 from modules.module import Module
 from services import database
@@ -15,7 +15,7 @@ class ReminderModule(Module):
         super().__init__(bot)
         self.next_reminder = None
 
-    def on_welcome(self, connection, event):
+    def on_welcome(self, _connection, _event):
         self._update_next()
 
     def refresh_reminders(self):
@@ -29,7 +29,7 @@ class ReminderModule(Module):
         else:
             next_reminder = lib.time_util.get_utc_datetime(next_reminder)
             if next_reminder < datetime.datetime.now(timezone.utc):
-                logging.warn("Missed reminders!")
+                logging.warning("Missed reminders!")
         if self.next_reminder is None or next_reminder < self.next_reminder:
             self.next_reminder = next_reminder
             logging.info("Setting next reminder at {}".format(self.next_reminder))
@@ -66,7 +66,7 @@ class ReminderModule(Module):
             message = "{}: {}".format(reminder.user.nick, reminder.message)
             self._bot.privmsg(target, message)
             return True
-        except:
+        except Exception:
             # This may not fail
             logging.exception("Error while reminding {}".format(reminder.id))
             return False

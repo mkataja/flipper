@@ -5,7 +5,7 @@ import threading
 import time
 
 from irc import bot
-import irc
+import irc.client
 from irc.bot import ExponentialBackoff
 
 import config
@@ -50,7 +50,7 @@ class FlipperBot(bot.SingleServerIRCBot):
     def get_module_instance(self, module):
         return self._registered_modules[module.__name__]
 
-    def _sigint_handler(self, signal, frame):
+    def _sigint_handler(self, _signal, _frame):
         if self.connection.is_connected():
             self.connection.quit(irc_helpers.get_quit_message())
         sys.exit()
@@ -102,7 +102,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         super(FlipperBot, self)._on_disconnect(connection, event)
 
-    def on_welcome(self, connection, event):
+    def on_welcome(self, connection, _event):
         self.reactor.execute_every(config.KEEP_ALIVE_FREQUENCY,
                                    self._keep_alive, ())
         self.reactor.execute_every(60, self._keep_nick, ())
@@ -110,10 +110,10 @@ class FlipperBot(bot.SingleServerIRCBot):
         for channel in config.CHANNELS:
             connection.join(channel)
 
-    def on_pong(self, connection, event):
+    def on_pong(self, _connection, _event):
         self.last_pong = time.time()
 
-    def on_nicknameinuse(self, connection, event):
+    def on_nicknameinuse(self, connection, _event):
         self.nick_tail = self.nick_tail + "_"
         connection.nick(self.requested_nick + self.nick_tail)
 

@@ -1,11 +1,10 @@
-'''
+"""
 The purpose of this file is to supply default configuration settings.
 Do not change this file to configure a bot instance. To override
 these settings, create config_local.py and make any configuration
 changes there.
-'''
+"""
 import logging
-
 
 LOG_FILE = '../log/flipper.log'
 LOG_LEVEL = logging.DEBUG

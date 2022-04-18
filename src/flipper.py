@@ -39,5 +39,6 @@ def main():
         logging.debug("Shutting down logging")
         logging.shutdown()
 
+
 if __name__ == '__main__':
     main()

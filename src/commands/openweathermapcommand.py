@@ -3,14 +3,15 @@ import json
 import locale
 import math
 import socket
+import urllib.error
+import urllib.parse
+import urllib.request
 from time import sleep
-import urllib.request, urllib.error, urllib.parse
 
 import pytz
 
 from commands.command import Command
 from lib import time_util
-
 
 KELVINTOCELSIUS = -273.15
 RETRIES = 5
@@ -103,15 +104,15 @@ class OpenWeatherMapCommand(Command):
 
     def _get_wind_word(self, wind_dir):
         return [
-            "Pohjois",
-            "Koillis",
-            "Itä",
-            "Kaakkois",
-            "Etelä",
-            "Lounais",
-            "Länsi",
-            "Luoteis"
-        ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
+                   "Pohjois",
+                   "Koillis",
+                   "Itä",
+                   "Kaakkois",
+                   "Etelä",
+                   "Lounais",
+                   "Länsi",
+                   "Luoteis"
+               ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
 
     def _get_clouds_eights(self, clouds_percentage):
         hour = datetime.datetime.now().hour
@@ -125,7 +126,7 @@ class OpenWeatherMapCommand(Command):
             return "{}/8".format(clouds)
 
     def _get_weather_conditions(self, weather_conditions):
-        if weather_conditions != []:
+        if weather_conditions:
             conditions_string = ', '.join(weather_conditions)
             conditions_string = (conditions_string[:1].upper() +
                                  conditions_string[1:])
@@ -141,7 +142,7 @@ class OpenWeatherMapCommand(Command):
         if temp and temp_min and temp_max and temp_min != temp_max:
             diff_to_min = temp - temp_min
             diff_to_max = temp_max - temp
-            temp_diff = locale.format("%.1f", max(diff_to_min, diff_to_max))
+            temp_diff = locale.format_string("%.1f", max(diff_to_min, diff_to_max))
             temp_diff_string = " (±{} °C)".format(temp_diff)
         else:
             temp_diff_string = ""
@@ -178,19 +179,18 @@ class OpenWeatherMapCommand(Command):
 
         weather_string = (
             "Sää {} {}. {}. Lämpötila {} °C{}, Kosteus {}%, "
-            "Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}"
-            .format(
+            "Ilmanpaine {} hPa, {} {} m/s, Pilvisyys: {}.{}".format(
                 "{} ({})".format(data['name'], data['sys']['country'])
                 if data['name']
                 else data['sys']['country'],
                 datetime.datetime.fromtimestamp(data['dt']).strftime('%d.%m.%Y %H:%M'),
                 self._get_weather_conditions(weather_conditions),
-                locale.format("%.1f", data.get('main').get('temp') + KELVINTOCELSIUS),
+                locale.format_string("%.1f", data.get('main').get('temp') + KELVINTOCELSIUS),
                 self._get_temp_diff(data),
                 data.get('main').get('humidity'),
-                locale.format("%.0f", data.get('main').get('pressure')),
+                locale.format_string("%.0f", data.get('main').get('pressure')),
                 self._get_wind_word(wind_dir=data.get('wind').get('deg')),
-                locale.format("%.1f", data.get('wind').get('speed')),
+                locale.format_string("%.1f", data.get('wind').get('speed')),
                 self._get_clouds_eights(clouds_percentage=data.get('clouds').get('all')),
                 " Aurinko nousee {} ja laskee {}.".format(sunrise.strftime('%H:%M'),
                                                           sunset.strftime('%H:%M'))
@@ -206,6 +206,7 @@ class OpenWeatherMapCommand(Command):
         else:
             requested_place = message.params
 
+        data = None
         for _ in range(RETRIES):
             data = self._get_weather_data(requested_place)
             if data is not None:
