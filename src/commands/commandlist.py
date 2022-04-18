@@ -1,7 +1,14 @@
 # coding=utf-8
 
-from commands import *
-
+from commands import colorscommand, commentcommand, drinkcommand, flipcommand, fmiweathercommand, \
+    geocodecommand, \
+    imitatecommand, \
+    irccommands, \
+    markovcommand, \
+    markovteachcommand, memocommand, mooncommand, \
+    openweathermapcommand, \
+    realweathercommand, remindercommand, rollcommand, sethomecommand, systemcommands, talkcommand, \
+    topcommand
 
 PUBLIC_CMDS = {
     'help': systemcommands.HelpCommand,
