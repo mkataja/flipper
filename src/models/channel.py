@@ -7,7 +7,6 @@ from services import database
 
 class Channel(database.FlipperBase):
     name = Column(Text, nullable=False)
-    autojoin = Column(Boolean, nullable=False, default=False)
     alt_cmd_prefix = Column(Text, nullable=True, default=Null)
 
     @classmethod
