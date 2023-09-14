@@ -9,7 +9,13 @@ DEFAULT_RETRIES = 3
 http = PoolManager()
 
 
-def try_request(url, timeout=DEFAULT_TIMEOUT, retries=DEFAULT_RETRIES, headers=None):
+def try_request(
+        url,
+        timeout=DEFAULT_TIMEOUT,
+        retries=DEFAULT_RETRIES,
+        headers=None,
+        log_exception=True
+):
     retries = Retry(connect=retries, read=retries, redirect=5, backoff_factor=0.1)
     try:
         response = http.request(
@@ -21,7 +27,8 @@ def try_request(url, timeout=DEFAULT_TIMEOUT, retries=DEFAULT_RETRIES, headers=N
         )
         return response.data
     except Exception:
-        logging.exception(f"GET failed: {url}")
+        logger = logging.exception if log_exception else logging.warning
+        logger(f"GET failed: {url}")
         return None
 
 

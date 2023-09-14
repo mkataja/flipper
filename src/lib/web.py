@@ -18,7 +18,7 @@ url_regex = re.compile(
 
 def get_title_text(url):
     try:
-        markup = try_request(url, headers={'User-Agent': config.USER_AGENT})
+        markup = try_request(url, headers={'User-Agent': config.USER_AGENT}, log_exception=False)
         webpage = BeautifulSoup(markup, features="html.parser")
     except Exception as e:
         # Doesn't really matter what went wrong, abort in any case
