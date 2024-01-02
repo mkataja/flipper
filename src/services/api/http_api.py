@@ -38,6 +38,10 @@ class HttpApi:
             'debug': False,
             'use_reloader': False,
         }
+        if args['host'] is None or args['port'] is None:
+            logging.error("Cannot start HTTP API: API_HOST or API_PORT not set")
+            return
+
         logging.info("Starting HTTP API in {}:{}"
                      .format(args['host'], args['port']))
         threading.Thread(target=self.app.run,
