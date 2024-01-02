@@ -18,6 +18,14 @@ Flipper ircbot
     pip install -r requirements.txt
 
 
+## Database
+
+A PostgreSQL database is required for most features to fully work. Use the
+included docker compose config for a low effort development database setup:
+
+   docker-compose up -d --force-recreate --renew-anon-volumes postgres
+
+
 ## Configuring
 
 Create a new `config_local.py` by copying the example config:

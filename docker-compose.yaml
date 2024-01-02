@@ -1,0 +1,10 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=flipperdev
+      - POSTGRES_PASSWORD=KvwD3xV9Fyi3wFk3
+      - POSTGRES_DB=flipperdev
+    ports:
+      - 50420:5432/tcp

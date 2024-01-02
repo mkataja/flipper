@@ -26,7 +26,7 @@ TIMEZONE = "Europe/Helsinki"
 
 LOCATION = "60.17,24.94"  # Helsinki, Finland
 
-DATABASE_URI = "postgresql://user:password@host:port/databasename"
+DATABASE_URI = "postgresql://flipperdev:KvwD3xV9Fyi3wFk3@localhost:50420/flipperdev"
 
 # Or set to None to run without database:
 #DATABASE_URI = None
