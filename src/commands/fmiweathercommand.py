@@ -260,6 +260,12 @@ class FmiWeatherCommand(Command):
         else:
             return "Pilvisyys: taivas ei näkyvissä"
 
+    def _get_snow_depth(self, data):
+        if data.get('SnowDepth') == 'nan':
+            return None
+        snow_depth = int(float(data.get('SnowDepth')))
+        return "Lumensyvyys {} cm".format(snow_depth)
+
     def _get_weather_from_observations(self, observations):
         stations = list(observations.values())[0]
         synop_stations = [s for s in stations if s.get('WW_AWS') != 'nan']
@@ -275,6 +281,7 @@ class FmiWeatherCommand(Command):
             self._get_pressure(station),
             self._get_wind(station),
             self._get_cloud_cover(station),
+            self._get_snow_depth(station)
         ]
         weather_data = [wd for wd in weather_data if wd]
         if len(weather_data) > 0:
