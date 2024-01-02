@@ -1,13 +1,12 @@
-from sqlalchemy.sql.elements import Null
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import ARRAY, Boolean, Text
+from sqlalchemy.sql.sqltypes import ARRAY, Text
 
 from services import database
 
 
 class Channel(database.FlipperBase):
     name = Column(Text, nullable=False)
-    alt_cmd_prefix = Column(Text, nullable=True, default=Null)
+    alt_cmd_prefix = Column(Text, nullable=True, default=None)
     disabled_features = Column(ARRAY(Text), nullable=False, default=[])
 
     @classmethod
