@@ -1,0 +1,26 @@
+services:
+  flipper:
+    container_name: flipper
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        FLIPPER_UID: "${FLIPPER_UID:-missing}"
+        FLIPPER_GID: "${FLIPPER_GID:-missing}"
+    image: flipper:latest
+    hostname: flipper
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: "${FLIPPER_UID:-missing}:${FLIPPER_GID:-missing}"
+    volumes:
+      - type: bind
+        bind:
+          create_host_path: false
+        source: /home/otus/python/flipper/log/
+        target: /app/log/
+      - type: bind
+        bind:
+          create_host_path: false
+        source: /home/otus/python/flipper/data/
+        target: /app/data/
