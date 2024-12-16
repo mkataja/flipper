@@ -16,7 +16,6 @@ from message import Message
 import modules.modulelist
 from services import database
 from services.accesscontrol import has_admin_access
-from services.api.http_api import HttpApi
 
 
 class FlipperBot(bot.SingleServerIRCBot):
@@ -24,9 +23,6 @@ class FlipperBot(bot.SingleServerIRCBot):
         signal.signal(signal.SIGINT, self._sigint_handler)
 
         database.initialize()
-
-        self.http_api = HttpApi(self)
-        self.http_api.listen()
 
         self.last_pong = None
         self.requested_nick = config.NICK
