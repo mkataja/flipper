@@ -29,7 +29,7 @@ def setup_logging():
     logging.basicConfig(level=config.LOG_LEVEL)
     root_logger = logging.getLogger()
 
-    file_handler = TimedRotatingFileHandler(config.LOG_FILE, when='midnight', interval=30, backupCount=120)
+    file_handler = TimedRotatingFileHandler(config.LOG_FILE, when='d', interval=30, backupCount=120)
     file_handler.rotator = log_rotator
     file_handler.namer = log_namer
     file_handler.setFormatter(log_formatter)
