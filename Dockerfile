@@ -31,4 +31,4 @@ RUN addgroup --gid $FLIPPER_GID flipper && \
 USER flipper
 
 WORKDIR /app/src
-ENTRYPOINT './flipper.py'
+ENTRYPOINT ["python", "flipper.py"]
