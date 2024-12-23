@@ -20,7 +20,8 @@ from services.accesscontrol import has_admin_access
 
 class FlipperBot(bot.SingleServerIRCBot):
     def __init__(self):
-        signal.signal(signal.SIGINT, self._sigint_handler)
+        signal.signal(signal.SIGINT, self._terminate_handler)
+        signal.signal(signal.SIGTERM, self._terminate_handler)
 
         database.initialize()
 
@@ -50,7 +51,7 @@ class FlipperBot(bot.SingleServerIRCBot):
     def get_module_instance(self, module):
         return self._registered_modules[module.__name__]
 
-    def _sigint_handler(self, _signal, _frame):
+    def _terminate_handler(self, _signal, _frame):
         if self.connection.is_connected():
             self.connection.quit(irc_helpers.get_quit_message())
         sys.exit()
