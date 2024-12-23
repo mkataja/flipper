@@ -10,6 +10,7 @@ services:
     image: flipper:latest
     hostname: flipper
     restart: unless-stopped
+    stop_grace_period: 1m
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # Above doesn't seem to work?? So using below:
