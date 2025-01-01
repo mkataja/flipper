@@ -98,8 +98,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         self.nick_tail = ""
 
         logging.info("Disconnected: unloading delayed commands")
-        with self.reactor.mutex:
-            self.reactor.delayed_commands = []
+        self.reactor.scheduler.clear()
 
         super(FlipperBot, self)._on_disconnect(connection, event)
 
