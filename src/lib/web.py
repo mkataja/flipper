@@ -10,7 +10,7 @@ from lib.http import try_request
 url_regex = re.compile(
     r'(?:https?://)?'
     r'(?:(?:\d+\.\d+\.\d+\.\d+)'
-    r'|(?:[\w-]+\.)+[\w-]+)'
+    r'|(?:[a-z_-]+\.)+[a-z_-]+)'
     r'(?::\d+)?(?:(?:[/\\]?)[^ "]*[^ ,;.:">)])?',
     re.IGNORECASE
 )
