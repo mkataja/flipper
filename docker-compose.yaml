@@ -16,6 +16,8 @@ services:
     # Above doesn't seem to work?? So using below:
     network_mode: host
     user: "${FLIPPER_UID:-missing}:${FLIPPER_GID:-missing}"
+    environment:
+      - TZ=Europe/Helsinki
     volumes:
       - type: bind
         bind:
