@@ -40,7 +40,9 @@ class ReminderModule(Module):
             outstanding = (session
                            .query(Reminder)
                            .filter(Reminder.due < datetime.now()))
+            logging.info("Processing {} outstanding reminders".format(outstanding.count()))
             for reminder in outstanding:
+                logging.info("Processing reminder {} due at {}".format(reminder.id, reminder.due))
                 success = self._try_remind(reminder)
                 if not success:
                     return
