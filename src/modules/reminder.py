@@ -1,5 +1,4 @@
-from datetime import timezone
-import datetime
+from datetime import datetime, timezone
 import logging
 
 from sqlalchemy.sql.functions import func
@@ -28,7 +27,7 @@ class ReminderModule(Module):
             return
         else:
             next_reminder = lib.time_util.get_utc_datetime(next_reminder)
-            if next_reminder < datetime.datetime.now(timezone.utc):
+            if next_reminder < datetime.now(timezone.utc):
                 logging.warning("Missed reminders!")
         if self.next_reminder is None or next_reminder < self.next_reminder:
             self.next_reminder = next_reminder
@@ -40,7 +39,7 @@ class ReminderModule(Module):
         with database.get_session() as session:
             outstanding = (session
                            .query(Reminder)
-                           .filter(Reminder.due < datetime.datetime.now()))
+                           .filter(Reminder.due < datetime.now()))
             for reminder in outstanding:
                 success = self._try_remind(reminder)
                 if not success:
