@@ -8,6 +8,7 @@ def admin_required(fn):
     """
     Decorator used to restrict running certain commands to admins only
     """
+
     def decorated_handle(self, message):
         sender = message._event.source
         if not has_admin_access(sender):

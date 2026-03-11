@@ -102,15 +102,15 @@ class OpenWeatherMapCommand(Command):
 
     def _get_wind_word(self, wind_dir):
         return [
-                   "Pohjois",
-                   "Koillis",
-                   "Itä",
-                   "Kaakkois",
-                   "Etelä",
-                   "Lounais",
-                   "Länsi",
-                   "Luoteis"
-               ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
+            "Pohjois",
+            "Koillis",
+            "Itä",
+            "Kaakkois",
+            "Etelä",
+            "Lounais",
+            "Länsi",
+            "Luoteis"
+        ][int(math.floor((wind_dir + (360 / 8) / 2) % 360) / (360 / 8))] + "tuulta"
 
     def _get_clouds_eights(self, clouds_percentage):
         hour = datetime.datetime.now().hour
