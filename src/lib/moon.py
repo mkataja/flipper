@@ -20,88 +20,9 @@ http://www.fourmilab.ch/
 """
 
 from datetime import datetime
-from math import sin, cos, floor, sqrt, pi, tan, atan, modf
+from math import sin, cos
 
-
-class AstronomicalConstants:
-    # JDN stands for Julian Day Number
-    # Angles here are in degrees
-
-    # 1980 January 0.0 in JDN
-    # XXX: DateTime(1980).jdn yields 2444239.5 -- which one is right?
-    epoch = 2444238.5
-
-    # Ecliptic longitude of the Sun at epoch 1980.0
-    ecliptic_longitude_epoch = 278.833540
-
-    # Ecliptic longitude of the Sun at perigee
-    ecliptic_longitude_perigee = 282.596403
-
-    # Eccentricity of Earth's orbit
-    eccentricity = 0.016718
-
-    # Semi-major axis of Earth's orbit, in kilometers
-    sun_smaxis = 1.49585e8
-
-    # Sun's angular size, in degrees, at semi-major axis distance
-    sun_angular_size_smaxis = 0.533128
-
-    # # Elements of the Moon's orbit, epoch 1980.0
-
-    # Moon's mean longitude at the epoch
-    moon_mean_longitude_epoch = 64.975464
-    # Mean longitude of the perigee at the epoch
-    moon_mean_perigee_epoch = 349.383063
-
-    # Mean longitude of the node at the epoch
-    node_mean_longitude_epoch = 151.950429
-
-    # Inclination of the Moon's orbit
-    moon_inclination = 5.145396
-
-    # Eccentricity of the Moon's orbit
-    moon_eccentricity = 0.054900
-
-    # Moon's angular size at distance a from Earth
-    moon_angular_size = 0.5181
-
-    # Semi-mojor axis of the Moon's orbit, in kilometers
-    moon_smaxis = 384401.0
-    # Parallax at a distance a from Earth
-    moon_parallax = 0.9507
-
-    # Synodic month (new Moon to new Moon), in days
-    synodic_month = 29.53058868
-
-    # Base date for E. W. Brown's numbered series of lunations (1923 January 16)
-    lunations_base = 2423436.0
-
-    # # Properties of the Earth
-    earth_radius = 6378.16
-
-c = AstronomicalConstants()
-
-
-# Little handy mathematical functions:
-
-def fixangle(angle):
-    return angle - 360.0 * floor(angle / 360.0)
-
-
-def torad(degrees):
-    return degrees * pi / 180.0
-
-
-def todeg(radians):
-    return radians * 180.0 / pi
-
-
-def dsin(degrees):
-    return sin(torad(degrees))
-
-
-def dcos(degrees):
-    return cos(torad(degrees))
+from lib.astro import c, fixangle, torad, todeg, julian_day, sun_ecliptic_longitude
 
 
 def phase(phase_date=datetime.now()):
@@ -117,41 +38,14 @@ def phase(phase_date=datetime.now()):
     angular diameter subtended by the Moon as seen by an observer at
     the centre of the Earth."""
 
-    # Calculation of the Sun's position
+    jd = julian_day(phase_date)
+    day = jd - c.epoch
 
-    # date within the epoch
-    year = int(phase_date.year)
-    month = int(phase_date.month)
-    day = int(phase_date.day)
-
-    a = modf((month - 14) / 12.0)[1]
-    jd = modf((1461 * (year + 4800 + a)) / 4.0)[1]
-    jd += modf((367 * (month - 2 - 12 * a)) / 12.0)[1]
-    x = modf((year + 4900 + a) / 100.0)[1]
-    jd -= modf((3 * x) / 4.0)[1]
-    jd += day - 2432075.5  # was 32075; add 2400000.5
-
-    day = 2400000.5 + jd - c.epoch
-
-    # Mean anomaly of the Sun
-    N = fixangle((360 / 365.2422) * day)
-    # Convert from perigee coordinates to epoch 1980
-    M = fixangle(N + c.ecliptic_longitude_epoch - c.ecliptic_longitude_perigee)
-
-    # Solve Kepler's equation
-    Ec = kepler(M, c.eccentricity)
-    Ec = sqrt((1 + c.eccentricity) / (1 - c.eccentricity)) * tan(Ec / 2.0)
-    # True anomaly
-    Ec = 2 * todeg(atan(Ec))
-    # Suns's geometric ecliptic longuitude
-    lambda_sun = fixangle(Ec + c.ecliptic_longitude_perigee)
-
-    # Orbital distance factor
-    F = ((1 + c.eccentricity * cos(torad(Ec))) / (1 - c.eccentricity ** 2))
-
-    # Distance to Sun in km
-    sun_dist = c.sun_smaxis / F
-    sun_angular_diameter = F * c.sun_angular_size_smaxis
+    sun = sun_ecliptic_longitude(jd)
+    lambda_sun = sun['lambda_sun']
+    M = sun['M']
+    sun_dist = sun['sun_dist']
+    sun_angular_diameter = sun['sun_angular_diameter']
 
     ########
     #
@@ -218,20 +112,3 @@ def phase(phase_date=datetime.now()):
         'sun_distance': sun_dist,
         'sun_angular_diameter': sun_angular_diameter
     }
-
-
-def kepler(m, ecc):
-    """Solve the equation of Kepler."""
-
-    epsilon = 1e-6
-
-    m = torad(m)
-    e = m
-    while 1:
-        delta = e - ecc * sin(e) - m
-        e = e - delta / (1.0 - ecc * cos(e))
-
-        if abs(delta) <= epsilon:
-            break
-
-    return e
