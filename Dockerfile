@@ -23,7 +23,7 @@ RUN pip install pipenv && \
     apt-get autoremove -y
 
 
-FROM build as runtime
+FROM build AS runtime
 
 RUN addgroup --gid $FLIPPER_GID flipper && \
     adduser --disabled-login --disabled-password --uid $FLIPPER_UID --gid $FLIPPER_GID flipper

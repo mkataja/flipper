@@ -5,9 +5,9 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        FLIPPER_UID: "${FLIPPER_UID:-missing}"
-        FLIPPER_GID: "${FLIPPER_GID:-missing}"
-    image: flipper:latest
+        FLIPPER_UID: "${FLIPPER_UID:-envmissing}"
+        FLIPPER_GID: "${FLIPPER_GID:-envmissing}"
+    image: "flipper:${IMAGE_TAG:-latest}"
     hostname: flipper
     restart: unless-stopped
     stop_grace_period: 1m
@@ -15,17 +15,17 @@ services:
       - "host.docker.internal:host-gateway"
     # Above doesn't seem to work?? So using below:
     network_mode: host
-    user: "${FLIPPER_UID:-missing}:${FLIPPER_GID:-missing}"
+    user: "${FLIPPER_UID:-argmissing}:${FLIPPER_GID:-argmissing}"
     environment:
       - TZ=Europe/Helsinki
     volumes:
       - type: bind
         bind:
           create_host_path: false
-        source: /home/otus/python/flipper/log/
+        source: ./log/
         target: /app/log/
       - type: bind
         bind:
           create_host_path: false
-        source: /home/otus/python/flipper/data/
+        source: ./data/
         target: /app/data/
