@@ -30,6 +30,9 @@ class ImitateCommand(Command):
             corpus_id = (session.query(ImitateCorpus.corpus_id)
                          .filter_by(channel_id=channel.id, user_id=user.id)
                          .scalar())
+            if not corpus_id:
+                message.reply_to(f"Ei sanastoa nimimerkille {nick}")
+                return
 
         seed = params[1] if len(params) > 1 else ''
         message.params = seed
