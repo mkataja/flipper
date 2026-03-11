@@ -7,11 +7,11 @@ from config_local.py will be loaded automatically.
 SERVER = "irc.ircnet.org"
 
 # Alternative ircnet servers to try:
-#SERVER = "irc.cs.tut.fi"
 #SERVER = "irc.cs.hut.fi"
 #SERVER = "hub.cc.tut.fi"
-#SERVER = "irc.opoy.fi"
+#SERVER = "openirc.snt.utwente.nl"
 #SERVER = "irc.portlane.se"
+#SERVER = "irc.swepipe.net"
 
 NICK = "flipperdev"
 REALNAME = NICK
