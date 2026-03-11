@@ -68,6 +68,9 @@ class AstronomicalConstants:
 
 c = AstronomicalConstants()
 
+# Obliquity of the ecliptic (mean, J2000.0)
+OBLIQUITY = 23.4397
+
 
 def fixangle(angle):
     """Normalize angle to 0-360 degrees."""
@@ -103,6 +106,16 @@ def kepler(m, ecc):
     return e
 
 
+def greenwich_mean_sidereal_time(jd):
+    """Greenwich Mean Sidereal Time in degrees for a given Julian Day."""
+    T = (jd - 2451545.0) / 36525.0
+    gmst = (280.46061837
+            + 360.98564736629 * (jd - 2451545.0)
+            + 0.000387933 * T ** 2
+            - T ** 3 / 38710000.0)
+    return fixangle(gmst)
+
+
 def julian_day(dt):
     """Convert a date to Julian Day Number.
 
@@ -121,6 +134,13 @@ def julian_day(dt):
     jd += day - 2432075.5  # was 32075; add 2400000.5
 
     return 2400000.5 + jd
+
+
+def julian_day_precise(dt):
+    """Convert a datetime to Julian Day Number including time of day."""
+    jd_noon = julian_day(dt)
+    hours = dt.hour + dt.minute / 60.0 + dt.second / 3600.0
+    return jd_noon + (hours - 12.0) / 24.0
 
 
 def sun_ecliptic_longitude(jd):

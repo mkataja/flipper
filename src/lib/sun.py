@@ -10,28 +10,18 @@ from datetime import datetime, timedelta
 from math import acos, asin, atan2
 
 from lib.astro import (
+    OBLIQUITY,
     dcos,
     dsin,
     fixangle,
+    greenwich_mean_sidereal_time,
     julian_day,
     sun_ecliptic_longitude,
     todeg,
 )
 
-OBLIQUITY = 23.4397
-
 # Accounts for atmospheric refraction (~0.567°) and solar disc radius (~0.266°)
 SUN_RISE_SET_ALTITUDE = -0.833
-
-
-def _greenwich_mean_sidereal_time(jd):
-    """Greenwich Mean Sidereal Time in degrees for a given Julian Day."""
-    T = (jd - 2451545.0) / 36525.0
-    gmst = (280.46061837
-            + 360.98564736629 * (jd - 2451545.0)
-            + 0.000387933 * T ** 2
-            - T ** 3 / 38710000.0)
-    return fixangle(gmst)
 
 
 def sun_times(dt, lat, lon):
@@ -61,7 +51,7 @@ def sun_times(dt, lat, lon):
     ra = todeg(atan2(dcos(OBLIQUITY) * dsin(lambda_sun), dcos(lambda_sun)))
     ra = fixangle(ra)
 
-    gmst = _greenwich_mean_sidereal_time(jd)
+    gmst = greenwich_mean_sidereal_time(jd)
 
     # Hour angle of the sun at the moment corresponding to this JD (noon UT)
     lst = fixangle(gmst + lon)
