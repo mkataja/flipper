@@ -31,7 +31,7 @@ def _parse_markov_sentences(input_text):
 def _insert_markov_sentences(sentences, corpus_id, text_identifier):
     with database.get_session() as session:
         for i, sentence in enumerate(sentences):
-            sentence_identifier = '{}_{}'.format(text_identifier, i)
+            sentence_identifier = f'{text_identifier}_{i}'
             word_ids = [MarkovWord.get_or_create(word) for word in sentence]
             for previous, current, following in previous_and_next(word_ids):
                 entry = MarkovEntry()

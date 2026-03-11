@@ -1,6 +1,6 @@
+import json
 import logging
 import urllib
-import json
 
 from commands.command import Command
 
@@ -11,9 +11,9 @@ class DrinkCommand(Command):
     # Checks whether the given alcohol volume is valid: only numbers and %, delimiter is either . or ,
     def __volts(self, s):
         #if ( "," in s or "." in s):
-        t = s.replace( u'\u0025',u'').replace( u'\u002E',u'').replace(u'\u002C', u'')#s.translate(None, '.,%')
+        t = s.replace( '\u0025','').replace( '\u002E','').replace('\u002C', '')#s.translate(None, '.,%')
         if ( t.isdigit() ):
-            return float( s.replace( u'\u0025',u'').replace(u'\u002C', u'.') )#s.translate(None, '%'))
+            return float( s.replace( '\u0025','').replace('\u002C', '.') )#s.translate(None, '%'))
         return False
 
     # Checks wheter the given alcohol volume is valid
@@ -40,7 +40,7 @@ class DrinkCommand(Command):
             elif ( 'pinta' in words[0].casefold() or 'laatta' in words[0].casefold() ):
                 values['cmd'] = 'vomit'
             else:
-                msg = 'Tuntematon komento!' 
+                msg = 'Tuntematon komento!'
         elif ( ipt >= 2): # if !juo number number 0.....n words, the basic case
             name = "Alkoholijuoma"
             if (ipt > 2):
@@ -49,7 +49,7 @@ class DrinkCommand(Command):
                 values['cmd'] = 'drink'
                 values['volts'] = self.__volts(words[0])/100.0
                 values['volume'] = int(words[1])/1000.0
-                values['name'] = name+" "+words[0].replace(u'\u002C',u'.').replace(u'\u0025',u'')+"% "+str(words[1])+"ml"
+                values['name'] = name+" "+words[0].replace('\u002C','.').replace('\u0025','')+"% "+str(words[1])+"ml"
             else:
                 msg = "Virheelliset parametrit!"# Syötä !juo [vahvuus(%)] [tilavuus(ml)] [nimi], esim. !juo 4.8 330 olut"
         else:
@@ -64,7 +64,7 @@ class DrinkCommand(Command):
                 response = urllib.request.urlopen(req, timeout=3)
                 message.reply_to( json.loads(response.read().decode('utf-8')) )
             except urllib.error.HTTPError as error:
-                logging.error("DrinkCommand: {}".format(error))
+                logging.error(f"DrinkCommand: {error}")
                 message.reply_to("Nyt jokin meni pieleen palvelun päässä :(")
             except urllib.error.URLError:
                 message.reply_to("Juomapalvelu ei vastannut ennen aikakatkaisua :(")

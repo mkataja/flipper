@@ -45,13 +45,12 @@ class MarkovTeachCommand(Command):
 
     def _add_corpus(self, message, corpus_name):
         if not corpus_name.isalpha() or corpus_name in _reserved_words:
-            message.reply_to(("Nimeä '{}' ei voi käyttää".format(corpus_name)))
+            message.reply_to(f"Nimeä '{corpus_name}' ei voi käyttää")
             return
         with database.get_session() as session:
             corpus = session.query(MarkovCorpus).filter_by(name=corpus_name).first()
             if corpus is not None:
-                message.reply_to("Aineisto '{}' on jo olemassa"
-                                 .format(corpus_name))
+                message.reply_to(f"Aineisto '{corpus_name}' on jo olemassa")
                 return
             MarkovCorpus.create(corpus_name, True)
             message.reply_to("Ok")
@@ -66,7 +65,7 @@ class MarkovTeachCommand(Command):
             else:
                 message.reply_to("Aineistoa ei ole")
                 return
-            text_identifier = "{}_{}".format(message.sender, datetime.datetime.utcnow())
+            text_identifier = f"{message.sender}_{datetime.datetime.utcnow()}"
             markov_helper.insert_text(sentence, corpus.id, text_identifier)
             session.commit()
             message.reply_to("Ok")

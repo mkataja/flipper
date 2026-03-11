@@ -1,5 +1,5 @@
 from commands.command import Command
-from lib.markov_chain import MarkovCorpusException, MarkovChain
+from lib.markov_chain import MarkovChain, MarkovCorpusException
 from models.markov_corpus import MarkovCorpus
 from services import database
 
@@ -36,8 +36,7 @@ class AbstractMarkovCommand(Command):
                 corpus_id = (session.query(MarkovCorpus.id)
                              .filter_by(name=self.corpus_name).scalar())
                 if not corpus_id:
-                    message.reply_to("Sanastoa {} ei löydy"
-                                     .format(self.corpus_name))
+                    message.reply_to(f"Sanastoa {self.corpus_name} ei löydy")
                     return
             try:
                 markov = MarkovChain(session, corpus_id)
@@ -55,6 +54,5 @@ def get_markov_command(corpus_id=None, corpus_name=None):
     if corpus_id and corpus_name:
         raise ValueError("Both corpus_id and corpus_name given "
                          "(only one argument allowed)")
-    class_name = '{}MarkovCommand'.format(corpus_name or 'Id{}'
-                                          .format(corpus_id))
+    class_name = '{}MarkovCommand'.format(corpus_name or f'Id{corpus_id}')
     return type(class_name, (AbstractMarkovCommand,), locals())

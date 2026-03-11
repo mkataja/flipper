@@ -96,4 +96,4 @@ class OpCommand(Command):
             message.reply_to("Komento käytettävissä vain kanavilla")
             return
         message.bot.connection.mode(message.source,
-                                    "+o {}".format(message.params))
+                                    f"+o {message.params}")

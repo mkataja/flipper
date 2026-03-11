@@ -2,7 +2,7 @@ import datetime
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Text, Integer, DateTime, Interval
+from sqlalchemy.sql.sqltypes import DateTime, Integer, Interval, Text
 
 from models.channel import Channel
 from models.user import User
@@ -33,7 +33,7 @@ class Reminder(database.FlipperBase):
     def short_string(self):
         message = (self.message[:12] + '...') if len(self.message) > 15 else self.message
         repeats = '(R)' if self.repeat_interval else ''
-        return "[{}] {}{} {}".format(self.id, self.due, repeats, message)
+        return f"[{self.id}] {self.due}{repeats} {message}"
 
     @classmethod
     def create(cls, user_id, channel_id, due, message, repeat_interval, repeat_count):

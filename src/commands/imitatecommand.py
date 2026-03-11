@@ -25,7 +25,7 @@ class ImitateCommand(Command):
             channel = message.channel
             user = session.query(User).filter_by(nick=nick).first()
             if not (channel and user):
-                message.reply_to("Ei sanastoa nimimerkille {}".format(nick))
+                message.reply_to(f"Ei sanastoa nimimerkille {nick}")
                 return
             corpus_id = (session.query(ImitateCorpus.corpus_id)
                          .filter_by(channel_id=channel.id, user_id=user.id)
@@ -37,4 +37,4 @@ class ImitateCommand(Command):
         try:
             command.handle(message)
         except MarkovCorpusException:
-            message.reply_to("Ei sanastoa nimimerkille {}".format(nick))
+            message.reply_to(f"Ei sanastoa nimimerkille {nick}")

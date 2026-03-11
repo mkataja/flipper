@@ -121,7 +121,7 @@ class OpenWeatherMapCommand(Command):
             clouds = math.ceil(clouds_percentage / 100.0 * 8)
             if clouds == 8 and clouds_percentage < 100:
                 clouds = 7
-            return "{}/8".format(clouds)
+            return f"{clouds}/8"
 
     def _get_weather_conditions(self, weather_conditions):
         if weather_conditions:
@@ -141,15 +141,14 @@ class OpenWeatherMapCommand(Command):
             diff_to_min = temp - temp_min
             diff_to_max = temp_max - temp
             temp_diff = locale.format_string("%.1f", max(diff_to_min, diff_to_max))
-            temp_diff_string = " (±{} °C)".format(temp_diff)
+            temp_diff_string = f" (±{temp_diff} °C)"
         else:
             temp_diff_string = ""
 
         return temp_diff_string
 
     def _get_weather_data(self, requested_place):
-        url = ('http://openweathermap.org/data/2.5/weather?q={}&appid={}'
-               .format(urllib.parse.quote(requested_place), config.OPEN_WEATHER_API_KEY))
+        url = f'http://openweathermap.org/data/2.5/weather?q={urllib.parse.quote(requested_place)}&appid={config.OPEN_WEATHER_API_KEY}'
         return try_json_request(url, retries=RETRIES)
 
     def _get_weather_string(self, data):
@@ -206,8 +205,7 @@ class OpenWeatherMapCommand(Command):
             return
 
         if data.get('cod') == "404":
-            message.reply_to("Paikkakunnalla {} ei ole säätä"
-                             .format(requested_place))
+            message.reply_to(f"Paikkakunnalla {requested_place} ei ole säätä")
             return
         elif 'message' in data:
             logging.error(f"Openweather error: {data.get('message')}")

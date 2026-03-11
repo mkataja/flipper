@@ -1,5 +1,5 @@
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import Text, Float
+from sqlalchemy.sql.sqltypes import Float, Text
 
 from services import database
 

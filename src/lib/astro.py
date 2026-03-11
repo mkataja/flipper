@@ -6,7 +6,7 @@ by Peter Duffett-Smith, Second Edition, as used in John Walker's
 moontool.c ("A Moon for the Sun").
 """
 
-from math import sin, cos, floor, sqrt, pi, tan, atan, modf
+from math import atan, cos, floor, modf, pi, sin, sqrt, tan
 
 
 class AstronomicalConstants:

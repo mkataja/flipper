@@ -16,7 +16,7 @@ class RepeatModule(MessageHandler):
 
         with RepeatModule.updating:
             last = self.last.get(message.source, None)
-            logging.debug("Repeat: last: {}, current: {}".format(last, message.content))
+            logging.debug(f"Repeat: last: {last}, current: {message.content}")
             if message.content == last:
                 self.last[message.source] = None
                 message.reply(message.content)

@@ -1,4 +1,4 @@
-from enum import unique, Enum
+from enum import Enum, unique
 
 
 @unique
@@ -31,13 +31,11 @@ class ControlCode(Enum):
 def color(string, fg_color, bg_color=None):
     if fg_color is None:
         return string
-    color_code = "{}{}".format(ControlCode.color.value, fg_color.value)
+    color_code = f"{ControlCode.color.value}{fg_color.value}"
     if bg_color:
-        color_code = "{},{}".format(color_code, bg_color.value)
-    return "{}{}{}".format(color_code, string, ControlCode.reset.value)
+        color_code = f"{color_code},{bg_color.value}"
+    return f"{color_code}{string}{ControlCode.reset.value}"
 
 
 def bold(string):
-    return "{}{}{}".format(ControlCode.bold.value,
-                           string,
-                           ControlCode.reset.value)
+    return f"{ControlCode.bold.value}{string}{ControlCode.reset.value}"

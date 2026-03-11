@@ -1,4 +1,4 @@
-from itertools import tee, chain, islice
+from itertools import chain, islice, tee
 
 
 def previous_and_next(iterable):

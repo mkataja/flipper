@@ -1,10 +1,10 @@
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Text, Integer
+from sqlalchemy.sql.sqltypes import Integer, Text
 
 from services import database
 
-
 # TODO: Keep track of current nick?
+
 
 class User(database.FlipperBase):
     nick = Column(Text, nullable=False)
@@ -25,5 +25,5 @@ class User(database.FlipperBase):
 
     def set_location(self, lat, long):
         with database.get_session() as session:
-            self.location = "{},{}".format(lat, long)
+            self.location = f"{lat},{long}"
             session.commit()

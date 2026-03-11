@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-import gzip
 import faulthandler
+import gzip
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import os
 import shutil
+from logging.handlers import TimedRotatingFileHandler
 
 import config
 import flipperbot
@@ -16,9 +16,8 @@ def log_namer(name):
 
 
 def log_rotator(source, dest):
-    with open(source, 'rb') as f_in:
-        with gzip.open(dest, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+    with open(source, 'rb') as f_in, gzip.open(dest, 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
     os.remove(source)
 
 

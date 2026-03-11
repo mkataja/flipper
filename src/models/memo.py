@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import Column, UniqueConstraint, ForeignKey
-from sqlalchemy.sql.sqltypes import Text, Integer
+from sqlalchemy.sql.schema import Column, ForeignKey, UniqueConstraint
+from sqlalchemy.sql.sqltypes import Integer, Text
 
 from models.user import User
 from services import database

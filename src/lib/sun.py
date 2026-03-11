@@ -7,11 +7,15 @@ and hour angle calculations for the Sun.
 """
 
 from datetime import datetime, timedelta
-from math import asin, acos, atan2
+from math import acos, asin, atan2
 
 from lib.astro import (
-    fixangle, torad, todeg, dsin, dcos,
-    julian_day, sun_ecliptic_longitude,
+    dcos,
+    dsin,
+    fixangle,
+    julian_day,
+    sun_ecliptic_longitude,
+    todeg,
 )
 
 OBLIQUITY = 23.4397
@@ -72,9 +76,7 @@ def sun_times(dt, lat, lon):
     cos_omega = ((dsin(SUN_RISE_SET_ALTITUDE) - dsin(lat) * dsin(decl))
                  / (dcos(lat) * dcos(decl)))
 
-    if cos_omega > 1.0:
-        return {'sunrise': None, 'sunset': None}
-    elif cos_omega < -1.0:
+    if cos_omega > 1.0 or cos_omega < -1.0:
         return {'sunrise': None, 'sunset': None}
 
     omega_hours = todeg(acos(cos_omega)) / 15.0

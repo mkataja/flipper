@@ -25,8 +25,7 @@ class MarkovChain:
         self.corpus = (self.session.query(MarkovEntry)
                        .filter_by(corpus_id=corpus_id))
         if self.corpus.count() == 0:
-            raise MarkovCorpusException("Corpus id {} is empty"
-                                        .format(corpus_id))
+            raise MarkovCorpusException(f"Corpus id {corpus_id} is empty")
 
     def get_sentence(self, seed_words):
         """
@@ -44,8 +43,7 @@ class MarkovChain:
 
         sentence_max_length = self._get_sentence_max_length() + len(seed_ids)
 
-        logging.debug("Markov: Creating sentence with max_length {}"
-                      .format(sentence_max_length))
+        logging.debug(f"Markov: Creating sentence with max_length {sentence_max_length}")
 
         word_ids = filter(None, self._extend_sentence(seed_ids,
                                                       sentence_max_length))
@@ -85,8 +83,7 @@ class MarkovChain:
 
     def _extend_sentence(self, sentence, max_length):
         if len(sentence) >= max_length:
-            logging.debug("Markov: Terminating: sentence length at maximum ({}/{})"
-                          .format(len(sentence), max_length))
+            logging.debug(f"Markov: Terminating: sentence length at maximum ({len(sentence)}/{max_length})")
             return sentence
 
         if sentence[0] is None and sentence[-1] is None:

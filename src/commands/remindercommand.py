@@ -99,7 +99,7 @@ class ReminderCommand(Command):
         due = due.replace(microsecond=0)
 
         if due <= datetime.datetime.now():
-            message.reply_to("{} meni jo!".format(due))
+            message.reply_to(f"{due} meni jo!")
             return
 
         try:
@@ -116,8 +116,7 @@ class ReminderCommand(Command):
                                    repeat_interval, repeat_count)
         message.bot.get_module_instance(ReminderModule).refresh_reminders()
 
-        message.reply_to("Ok, muistutus [{}] {}".format(
-            reminder.id, reminder.due))
+        message.reply_to(f"Ok, muistutus [{reminder.id}] {reminder.due}")
 
     def _parse_repeat(self, data):
         if data['repeat_length'] is None:
@@ -169,7 +168,7 @@ class ReminderCommand(Command):
                 'sunnuntai': time_util.days_until_next_weekday(7)
             }[datestring]
         except KeyError:
-            raise ReminderFormatError("Invalid datestring {}".format(datestring))
+            raise ReminderFormatError(f"Invalid datestring {datestring}")
         return datetime.date.today() + datetime.timedelta(days=days)
 
     def _parse_timer(self, data):
@@ -190,7 +189,7 @@ class ReminderCommand(Command):
                 'aamuyö': 4
             }[timestring]
         except KeyError:
-            raise ReminderFormatError("Invalid timestring {}".format(timestring))
+            raise ReminderFormatError(f"Invalid timestring {timestring}")
         return datetime.time(hour, 0, 0)
 
     def _parse_when(self, data):

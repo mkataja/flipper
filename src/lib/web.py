@@ -22,11 +22,10 @@ def get_title_text(url):
         webpage = BeautifulSoup(markup, features="html.parser")
     except Exception as e:
         # Doesn't really matter what went wrong, abort in any case
-        logging.warning("Getting url title failed for {} ({})"
-                        .format(url, str(e)))
+        logging.warning(f"Getting url title failed for {url} ({str(e)})")
         return None
     if not webpage or not webpage.title or not webpage.title.string:
-        logging.info("No title found for {}".format(url))
+        logging.info(f"No title found for {url}")
         return None
     title = webpage.title.string.strip()
     if re.search(r'\\\\u\d*', title):

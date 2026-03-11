@@ -33,11 +33,10 @@ def get_geographic_timezone(latitude, longitude, timestamp=int(py_time.time())):
     timestamp is given, it is used to decide between normal and daylight
     saving time. The default is to use the current timestamp to decide.
     """
-    logging.info("Getting timezone for lat: {}, long: {}, at: {}"
-                 .format(latitude, longitude, timestamp))
+    logging.info(f"Getting timezone for lat: {latitude}, long: {longitude}, at: {timestamp}")
 
     url = ("https://maps.googleapis.com/maps/api/timezone/json?location={}&timestamp={}&key={}"
-           .format(urllib.parse.quote("{},{}".format(latitude, longitude)),
+           .format(urllib.parse.quote(f"{latitude},{longitude}"),
                    timestamp, config.GOOGLE_API_KEY))
     data = try_json_request(url)
     if data is None:

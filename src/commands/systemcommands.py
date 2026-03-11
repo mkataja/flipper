@@ -14,7 +14,7 @@ class HelpCommand(Command):
             command = ALL_CMDS[message.params]
             message.reply_to(command.helpstr)
         else:
-            message.reply_to("Tuntematon komento '{}'".format(message.params))
+            message.reply_to(f"Tuntematon komento '{message.params}'")
 
 
 class ListCommand(Command):

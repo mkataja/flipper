@@ -20,8 +20,7 @@ class MoonCommand(Command):
         result = moon.phase(date)
         illuminated = result['illuminated']
         phase = phase_string(result['phase'])
-        message.reply_to("Kuun vaihe: {} ({:.1%})".format(
-            phase, illuminated))
+        message.reply_to(f"Kuun vaihe: {phase} ({illuminated:.1%})")
 
 
 def phase_string(p):

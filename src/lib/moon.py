@@ -20,9 +20,9 @@ http://www.fourmilab.ch/
 """
 
 from datetime import datetime
-from math import sin, cos
+from math import cos, sin
 
-from lib.astro import c, fixangle, torad, todeg, julian_day, sun_ecliptic_longitude
+from lib.astro import c, fixangle, julian_day, sun_ecliptic_longitude, torad
 
 
 def phase(phase_date=datetime.now()):

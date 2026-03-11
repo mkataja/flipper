@@ -1,5 +1,5 @@
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Text, DateTime, Integer
+from sqlalchemy.sql.sqltypes import DateTime, Integer, Text
 
 from models.channel import Channel
 from models.user import User

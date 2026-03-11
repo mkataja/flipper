@@ -2,7 +2,7 @@ import logging
 import re
 
 from lib import web
-from lib.irc_colors import color, Color
+from lib.irc_colors import Color, color
 from modules.message_handler import MessageHandler
 
 
@@ -16,7 +16,7 @@ class UrlModule(MessageHandler):
         for url in urls:
             if not url.startswith("http"):
                 url = "http://" + url
-            logging.info("Found url: {}".format(url))
+            logging.info(f"Found url: {url}")
             title = web.get_title_text(url)
             if title:
-                message.reply("{}".format(color(title, Color.dcyan)))
+                message.reply(f"{color(title, Color.dcyan)}")

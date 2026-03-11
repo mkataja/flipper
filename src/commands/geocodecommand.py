@@ -13,12 +13,8 @@ class GeocodeCommand(Command):
         address = message.params
         coordinates = geocoding.geocode(address)
         if coordinates is None:
-            message.reply_to("Sijaintia {} ei ole olemassa".format(address))
+            message.reply_to(f"Sijaintia {address} ei ole olemassa")
             return
         latdd, longdd = coordinates
 
-        message.reply_to("{}; {} ({},{})".format(
-            geocoding.lat_to_human(latdd),
-            geocoding.long_to_human(longdd),
-            latdd,
-            longdd))
+        message.reply_to(f"{geocoding.lat_to_human(latdd)}; {geocoding.long_to_human(longdd)} ({latdd},{longdd})")

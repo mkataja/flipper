@@ -8,7 +8,7 @@ from models.channel import Channel
 from models.user import User
 
 
-class Message(object):
+class Message:
     def __init__(self, bot, connection, event, is_private_message):
         self._connection = connection
         self._event = event
@@ -33,9 +33,7 @@ class Message(object):
             return "UnrecognizedCommand"
 
     def __str__(self):
-        desc = "{}@{}: {}".format(self.sender,
-                                  self.source,
-                                  self.content) + \
+        desc = f"{self.sender}@{self.source}: {self.content}" + \
                (" (private message)" if self.is_private_message else "")
         return desc
 
@@ -46,9 +44,7 @@ class Message(object):
         if self.is_private_message:
             cmd_prefix_regex += r"?"
 
-        regex = re.compile(r"^({}[:,\s]+|{})(\S*)\s*(.*)"
-                           .format(self._connection.get_nickname(),
-                                   cmd_prefix_regex),
+        regex = re.compile(rf"^({self._connection.get_nickname()}[:,\s]+|{cmd_prefix_regex})(\S*)\s*(.*)",
                            re.IGNORECASE)
         logging.info(regex)
 
@@ -70,15 +66,13 @@ class Message(object):
         if self.command:
             command_start = time.time()
             self.command().handle(self)
-            logging.info("Ran command: '{}' (with params: '{}') "
-                         "(took {:.3f} s)".format(self.commandword,
-                                                  self.params,
-                                                  time.time() - command_start))
+            logging.info(f"Ran command: '{self.commandword}' (with params: '{self.params}') "
+                         f"(took {time.time() - command_start:.3f} s)")
 
     def try_run_command(self):
         try:
             self.run_command()
-        except Exception as e:
+        except Exception:
             logging.exception(f"Exception while running command '{self.command.__name__}':")
             raise
 

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Text, Integer
+from sqlalchemy.sql.sqltypes import Integer, Text
 
 from models.memo import Memo
 from models.user import User

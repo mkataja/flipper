@@ -38,7 +38,7 @@ class RollCommand(Command):
             return
 
         if not 1 < num_faces <= 10000:
-            message.reply_to("Nigga please, {}...".format(num_faces))
+            message.reply_to(f"Nigga please, {num_faces}...")
             return
 
         rolls = [random.randint(1, num_faces) for _ in range(num_dice)]
@@ -48,9 +48,9 @@ class RollCommand(Command):
                              .format(", ".join(map(str, rolls)),
                                      sum(rolls)))
         elif num_dice == 1:
-            message.reply_to("Heitit: {}".format(rolls[0]))
+            message.reply_to(f"Heitit: {rolls[0]}")
         else:
             for roll in rolls:
-                message.reply_to("Heitit: {}...".format(roll))
+                message.reply_to(f"Heitit: {roll}...")
                 time.sleep(2)
-            message.reply_to("Heittojen summa: {}".format(sum(rolls)))
+            message.reply_to(f"Heittojen summa: {sum(rolls)}")

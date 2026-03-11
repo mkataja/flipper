@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
 
 from sqlalchemy.sql.functions import func
 
@@ -31,7 +31,7 @@ class ReminderModule(Module):
                 logging.warning("Missed reminders!")
         if self.next_reminder is None or next_reminder < self.next_reminder:
             self.next_reminder = next_reminder
-            logging.info("Setting next reminder at {}".format(self.next_reminder))
+            logging.info(f"Setting next reminder at {self.next_reminder}")
             self._bot.reactor.scheduler.execute_at(self.next_reminder, self._process_reminders)
 
     def _process_reminders(self):
@@ -40,9 +40,9 @@ class ReminderModule(Module):
             outstanding = (session
                            .query(Reminder)
                            .filter(Reminder.due < datetime.now()))
-            logging.info("Processing {} outstanding reminders".format(outstanding.count()))
+            logging.info(f"Processing {outstanding.count()} outstanding reminders")
             for reminder in outstanding:
-                logging.info("Processing reminder {} due at {}".format(reminder.id, reminder.due))
+                logging.info(f"Processing reminder {reminder.id} due at {reminder.due}")
                 success = self._try_remind(reminder)
                 if not success:
                     return
@@ -62,10 +62,10 @@ class ReminderModule(Module):
                 target = channel.name
             else:
                 target = reminder.user.nick
-            message = "{}: {}".format(reminder.user.nick, reminder.message)
+            message = f"{reminder.user.nick}: {reminder.message}"
             self._bot.privmsg(target, message)
             return True
         except Exception:
             # This may not fail
-            logging.exception("Error while reminding {}".format(reminder.id))
+            logging.exception(f"Error while reminding {reminder.id}")
             return False

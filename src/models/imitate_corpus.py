@@ -20,7 +20,7 @@ class ImitateCorpus(database.FlipperBase):
                          .scalar())
             if not corpus_id:
                 markov_corpus = MarkovCorpus()
-                markov_corpus.name = "_imitate_{}>{}".format(channel.name, user.nick)
+                markov_corpus.name = f"_imitate_{channel.name}>{user.nick}"
                 session.add(markov_corpus)
                 session.flush()
 

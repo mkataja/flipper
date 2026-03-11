@@ -14,7 +14,7 @@ class SetHomeCommand(Command):
         address = message.params
         coordinates = geocoding.geocode(address)
         if coordinates is None:
-            message.reply_to("Sijaintia {} ei ole olemassa".format(address))
+            message.reply_to(f"Sijaintia {address} ei ole olemassa")
             return
         latdd, longdd = coordinates
         user = User.get_or_create(message.sender)

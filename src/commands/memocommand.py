@@ -28,7 +28,7 @@ class MemoCommand(Command):
             self._get_memo(message, parameters)
         else:
             self._add_line(message, parameters)
-    
+
     def _public_url(self, memo_name):
         return reduce(urljoin, [config.WEBUI_ADDRESS, 'memo/', memo_name])
 
@@ -37,27 +37,27 @@ class MemoCommand(Command):
         with database.get_session() as session:
             memo = session.query(Memo).filter_by(name=memo_name).first()
             if memo is None:
-                message.reply_to("Memoa '{}' ei löydy".format(memo_name))
+                message.reply_to(f"Memoa '{memo_name}' ei löydy")
                 return
             url = self._public_url(memo_name)
-            message.reply_to("{}".format(url))
+            message.reply_to(f"{url}")
 
     def _new_memo(self, message, parameters):
         memo_name = parameters[1].lower().strip()
         if not memo_name.isalnum() or memo_name in self.reserved_words:
-            message.reply_to("Nimeä '{}' ei voi käyttää".format(memo_name))
+            message.reply_to(f"Nimeä '{memo_name}' ei voi käyttää")
             return
         with database.get_session() as session:
             memo = session.query(Memo).filter_by(name=memo_name).first()
             if memo is not None:
-                message.reply_to("Memo '{}' on jo olemassa".format(memo_name))
+                message.reply_to(f"Memo '{memo_name}' on jo olemassa")
                 return
             memo = Memo()
             memo.created_by_user = User.get_or_create(message.sender)
             memo.name = memo_name
             session.add(memo)
             session.commit()
-            message.reply_to("Memo '{}' luotu".format(memo_name))
+            message.reply_to(f"Memo '{memo_name}' luotu")
 
     def _list_memos(self, message):
         with database.get_session() as session:
@@ -72,7 +72,7 @@ class MemoCommand(Command):
         with database.get_session() as session:
             memo = session.query(Memo).filter_by(name=memo_name).first()
             if memo is None:
-                message.reply_to("Memoa '{}' ei löydy".format(memo_name))
+                message.reply_to(f"Memoa '{memo_name}' ei löydy")
                 return
             memo_line = MemoLine()
             memo_line.memo = memo
@@ -81,4 +81,4 @@ class MemoCommand(Command):
             session.add(memo_line)
             session.commit()
             url = self._public_url(memo_name)
-            message.reply_to("Lisätty ({})".format(url))
+            message.reply_to(f"Lisätty ({url})")

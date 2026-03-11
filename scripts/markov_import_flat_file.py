@@ -18,5 +18,5 @@ with database.get_session() as session:
 
 with open(FILE_PATH) as file:
     for i, line in enumerate(file.readlines()):
-        text_identifier = '{}_{}'.format(CORPUS_NAME, i)
+        text_identifier = f'{CORPUS_NAME}_{i}'
         markov_helper.insert_text(line, corpus_id, text_identifier)

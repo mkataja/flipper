@@ -26,9 +26,7 @@ class TalkCommand(Command):
         cursor = db.cursor, d = 'next' or 'prev', word = source
         """
         try:
-            cursor.execute(
-                'SELECT id, first, last, next, prev FROM words WHERE id="{key}"'
-                .format(key=word))
+            cursor.execute(f'SELECT id, first, last, next, prev FROM words WHERE id="{word}"')
             freqs = []
             words = []
             wordsum = 0
@@ -45,9 +43,7 @@ class TalkCommand(Command):
                     for i in range(0, len(freqs)):
                         if (rando < freqs[i]):
                             cont = True
-                            cursor.execute(
-                                'SELECT id, first, last FROM words WHERE id="{key}"'
-                                .format(key=words[i]))
+                            cursor.execute(f'SELECT id, first, last FROM words WHERE id="{words[i]}"')
                             cont = self._continue_link(cursor, d)
                             return [words[i], cont]
             return ['', False]

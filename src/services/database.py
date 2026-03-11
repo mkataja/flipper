@@ -2,7 +2,6 @@ import contextlib
 import logging
 import re
 
-import config
 from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
 from sqlalchemy.event.api import listen
@@ -13,7 +12,9 @@ from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql import expression
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.schema import Column
-from sqlalchemy.sql.sqltypes import Integer, DateTime
+from sqlalchemy.sql.sqltypes import DateTime, Integer
+
+import config
 
 
 def initialize():

@@ -4,16 +4,15 @@ import sys
 import threading
 import time
 
-from irc import bot
 import irc.client
+from irc import bot
 from irc.bot import ExponentialBackoff
+from jaraco.stream.buffer import LenientDecodingLineBuffer
 
 import config
-from jaraco.stream.buffer import LenientDecodingLineBuffer
-from lib import irc_helpers
-from lib import string_helpers
-from message import Message
 import modules.modulelist
+from lib import irc_helpers, string_helpers
+from message import Message
 from services import database
 from services.accesscontrol import has_admin_access
 
@@ -72,8 +71,7 @@ class FlipperBot(bot.SingleServerIRCBot):
             return
 
         current_time = time.time()
-        logging.debug("Last pong at {}, current time {}"
-                      .format(self.last_pong, current_time))
+        logging.debug(f"Last pong at {self.last_pong}, current time {current_time}")
         if (self.last_pong is not None and
                 current_time > self.last_pong + config.KEEP_ALIVE_TIMEOUT):
             self.last_pong = None
@@ -89,8 +87,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
         if self.nick_tail != "":
             self.nick_tail = ""
-            logging.info("Trying to change nick from {} to {}".format(
-                self.connection.get_nickname(), self.requested_nick))
+            logging.info(f"Trying to change nick from {self.connection.get_nickname()} to {self.requested_nick}")
             self.set_nick(self.requested_nick)
 
     def _on_disconnect(self, connection, event):
@@ -100,7 +97,7 @@ class FlipperBot(bot.SingleServerIRCBot):
         logging.info("Disconnected: unloading delayed commands")
         self.reactor.scheduler.queue = []
 
-        super(FlipperBot, self)._on_disconnect(connection, event)
+        super()._on_disconnect(connection, event)
 
     def on_welcome(self, connection, _event):
         self.reactor.scheduler.execute_every(config.KEEP_ALIVE_FREQUENCY,
@@ -143,7 +140,7 @@ class FlipperBot(bot.SingleServerIRCBot):
 
     def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)
-        logging.info("Handling privmsg: {}".format(message))
+        logging.info(f"Handling privmsg: {message}")
 
         if message.command_name in message.channel.disabled_features:
             logging.info(f"Command {message.command_name} is disabled on {message.channel.name}")

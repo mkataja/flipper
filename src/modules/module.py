@@ -1,7 +1,7 @@
 import logging
 
 
-class Module(object):
+class Module:
     def __init__(self, bot):
-        logging.info("Initializing module {}".format(self.__class__.__name__))
+        logging.info(f"Initializing module {self.__class__.__name__}")
         self._bot = bot

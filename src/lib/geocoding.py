@@ -1,4 +1,3 @@
-import json
 import logging
 import urllib.parse
 
@@ -16,10 +15,7 @@ def geocode(address):
             cache_entry = (session.query(AddressCacheEntry)
                            .filter_by(address=address).first())
             if cache_entry:
-                logging.info("Found address in cache: '{}' ({}, {})"
-                             .format(address,
-                                     cache_entry.latitude,
-                                     cache_entry.longitude))
+                logging.info(f"Found address in cache: '{address}' ({cache_entry.latitude}, {cache_entry.longitude})")
                 if cache_entry.latitude is None or cache_entry.longitude is None:
                     return None
                 else:
@@ -28,10 +24,9 @@ def geocode(address):
         # Database not available - no matter
         pass
 
-    logging.info("Geocoding '{}'".format(address))
+    logging.info(f"Geocoding '{address}'")
 
-    url = ('https://maps.googleapis.com/maps/api/geocode/json?address={}&key={}'
-           .format(urllib.parse.quote(address), config.GOOGLE_API_KEY))
+    url = f'https://maps.googleapis.com/maps/api/geocode/json?address={urllib.parse.quote(address)}&key={config.GOOGLE_API_KEY}'
     data = try_json_request(url)
     if data is None:
         return None
@@ -46,7 +41,7 @@ def geocode(address):
         latitude = None
         longitude = None
     else:
-        logging.warning("Geocoding failed: API returned status {}".format(status))
+        logging.warning(f"Geocoding failed: API returned status {status}")
         return None
 
     try:
@@ -62,11 +57,10 @@ def geocode(address):
         pass
 
     if latitude is None or longitude is None:
-        logging.info("No geocode match for address '{}'".format(address))
+        logging.info(f"No geocode match for address '{address}'")
         return None
     else:
-        logging.info("Geocoded address '{}': {}, {}"
-                     .format(address, latitude, longitude))
+        logging.info(f"Geocoded address '{address}': {latitude}, {longitude}")
         return latitude, longitude
 
 
@@ -86,16 +80,16 @@ def decdeg_to_dms(dd):
 
 
 def dms_to_human(degrees, minutes, seconds):
-    return "{}°{}'{}\"".format(int(degrees), int(minutes), round(seconds, 4))
+    return f"{int(degrees)}°{int(minutes)}'{round(seconds, 4)}\""
 
 
 def lat_to_human(dd):
     degrees, minutes, seconds = decdeg_to_dms(dd)
     s = 'N' if degrees >= 0 else 'S'
-    return "{} {}".format(dms_to_human(abs(degrees), minutes, seconds), s)
+    return f"{dms_to_human(abs(degrees), minutes, seconds)} {s}"
 
 
 def long_to_human(dd):
     degrees, minutes, seconds = decdeg_to_dms(dd)
     s = 'E' if degrees >= 0 else 'W'
-    return "{} {}".format(dms_to_human(abs(degrees), minutes, seconds), s)
+    return f"{dms_to_human(abs(degrees), minutes, seconds)} {s}"

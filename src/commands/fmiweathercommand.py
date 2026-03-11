@@ -162,18 +162,17 @@ class FmiWeatherCommand(Command):
         url_params.update(location_params)
         if extra:
             url_params.update(extra)
-        return "{}?{}".format(FMI_WFS_BASE, urllib.parse.urlencode(url_params))
+        return f"{FMI_WFS_BASE}?{urllib.parse.urlencode(url_params)}"
 
     @staticmethod
     def _latlon_params(latlon):
-        return {'latlon': '{},{}'.format(latlon[0], latlon[1])}
+        return {'latlon': f'{latlon[0]},{latlon[1]}'}
 
     @staticmethod
     def _bbox_params(latlon, margin=0.3):
         """Bounding box around coordinates (for APIs that don't support latlon)."""
         lat, lon = latlon
-        return {'bbox': '{},{},{},{}'.format(
-            lon - margin, lat - margin, lon + margin, lat + margin)}
+        return {'bbox': f'{lon - margin},{lat - margin},{lon + margin},{lat + margin}'}
 
     def _parse_multipointcoverage(self, xml_text):
         """Parse a WFS multipointcoverage XML response.
@@ -191,7 +190,7 @@ class FmiWeatherCommand(Command):
         if 'ExceptionReport' in root.tag:
             return None
 
-        member = root.find('{}member'.format(WFS_NS))
+        member = root.find(f'{WFS_NS}member')
         if member is None:
             return None
 
@@ -199,19 +198,19 @@ class FmiWeatherCommand(Command):
         region = None
         country = None
 
-        for name_elem in root.iter('{}name'.format(GML_NS)):
+        for name_elem in root.iter(f'{GML_NS}name'):
             cs = name_elem.get('codeSpace', '')
             if 'locationcode/name' in cs:
                 location_name = name_elem.text
                 break
 
-        for elem in root.iter('{}region'.format(TARGET_NS)):
+        for elem in root.iter(f'{TARGET_NS}region'):
             region = elem.text.strip() if elem.text else None
-        for elem in root.iter('{}country'.format(TARGET_NS)):
+        for elem in root.iter(f'{TARGET_NS}country'):
             country = elem.text.strip() if elem.text else None
 
         lat, lon = None, None
-        pos_elem = root.find('.//{}pos'.format(GML_NS))
+        pos_elem = root.find(f'.//{GML_NS}pos')
         if pos_elem is not None and pos_elem.text:
             parts = pos_elem.text.strip().split()
             if len(parts) >= 2:
@@ -219,7 +218,7 @@ class FmiWeatherCommand(Command):
 
         timestamps = []
         position_coords = []
-        positions_elem = root.find('.//{}positions'.format(GMLCOV_NS))
+        positions_elem = root.find(f'.//{GMLCOV_NS}positions')
         if positions_elem is not None and positions_elem.text:
             for line in positions_elem.text.strip().split('\n'):
                 parts = line.strip().split()
@@ -231,14 +230,14 @@ class FmiWeatherCommand(Command):
                         (float(parts[0]), float(parts[1])))
 
         param_names = []
-        for field in root.iter('{}field'.format(SWE_NS)):
+        for field in root.iter(f'{SWE_NS}field'):
             name = field.get('name')
             if name:
                 param_names.append(name)
 
         all_values = []
         tuple_list = root.find(
-            './/{}doubleOrNilReasonTupleList'.format(GML_NS))
+            f'.//{GML_NS}doubleOrNilReasonTupleList')
         if tuple_list is not None and tuple_list.text:
             for line in tuple_list.text.strip().split('\n'):
                 values = line.strip().split()
@@ -386,21 +385,21 @@ class FmiWeatherCommand(Command):
             temp_color = Color.yellow
         else:
             temp_color = Color.blue
-        return color("{:.0f}".format(temp), temp_color)
+        return color(f"{temp:.0f}", temp_color)
 
     def _format_temperature(self, temp, feels_like):
         colored_temp = self._color_temp_value(temp)
         if colored_temp is None:
             return None
-        parts = "Lämpötila {} °C".format(colored_temp)
+        parts = f"Lämpötila {colored_temp} °C"
         if feels_like is not None and abs(feels_like - temp) >= 1.0:
-            parts += " (tuntuu {} °C)".format(self._color_temp_value(feels_like))
+            parts += f" (tuntuu {self._color_temp_value(feels_like)} °C)"
         return parts
 
     def _format_humidity(self, rh):
         if rh is None:
             return None
-        return "Kosteus {}%".format(int(rh))
+        return f"Kosteus {int(rh)}%"
 
     def _format_pressure(self, pressure):
         if pressure is None:
@@ -422,11 +421,11 @@ class FmiWeatherCommand(Command):
             speed_color = Color.white
         else:
             speed_color = None
-        speed_str = color("{:.0f}".format(speed), speed_color)
+        speed_str = color(f"{speed:.0f}", speed_color)
 
-        result = "{}tuulta {} m/s".format(direction_str, speed_str)
+        result = f"{direction_str}tuulta {speed_str} m/s"
         if gust is not None and gust > speed + 2:
-            result += " (puuska {:.0f}) m/s".format(gust)
+            result += f" (puuska {gust:.0f} m/s)"
         return result
 
     def _format_precipitation(self, amount, pop=None):
@@ -444,7 +443,7 @@ class FmiWeatherCommand(Command):
             amount_color = Color.dcyan
         else:
             amount_color = None
-        amount_str = color("{:.1f}".format(amount), amount_color)
+        amount_str = color(f"{amount:.1f}", amount_color)
 
         pop_str = ""
         if pop is not None:
@@ -463,23 +462,22 @@ class FmiWeatherCommand(Command):
                     pop_color = Color.dcyan
                 else:
                     pop_color = None
-            pop_str = " (sateen todennäköisyys {} %)".format(
-                color(pop_rounded, pop_color))
+            pop_str = f" (sateen todennäköisyys {color(pop_rounded, pop_color)} %)"
 
-        return "Tunnin sademäärä {} mm{}".format(amount_str, pop_str)
+        return f"Tunnin sademäärä {amount_str} mm{pop_str}"
 
     def _format_cloud_cover(self, cover):
         if cover is None:
             return None
         cover_int = int(cover)
         if cover_int <= 8:
-            return "Pilvisyys: {}/8".format(cover_int)
+            return f"Pilvisyys: {cover_int}/8"
         return "Pilvisyys: taivas ei näkyvissä"
 
     def _format_snow_depth(self, depth):
         if depth is None or depth <= 0:
             return None
-        return "Lumensyvyys {} cm".format(int(depth))
+        return f"Lumensyvyys {int(depth)} cm"
 
     @staticmethod
     def _capitalize(s):
@@ -514,7 +512,7 @@ class FmiWeatherCommand(Command):
             if conditions:
                 conditions = self._capitalize(conditions)
             elif int(wawa) != 0:
-                conditions = "Tuntematon sääilmiö ({})".format(int(wawa))
+                conditions = f"Tuntematon sääilmiö ({int(wawa)})"
 
         weather_data = [
             self._format_temperature(obs.get('t2m'), None),
@@ -530,7 +528,7 @@ class FmiWeatherCommand(Command):
         weather_string = "Havainto {} {}.{}{}".format(
             parsed['location_name'] or "?",
             time_str,
-            " {}.".format(conditions) if conditions else "",
+            f" {conditions}." if conditions else "",
             " {}.".format(', '.join(weather_data)) if weather_data else ""
         )
         return weather_string
@@ -542,9 +540,9 @@ class FmiWeatherCommand(Command):
         country = parsed.get('country')
         region = parsed.get('region')
         if country and country != 'Finland':
-            return "{} ({})".format(name, country)
+            return f"{name} ({country})"
         if region and region != 'Finland' and region != name:
-            return "{} {}".format(region, name)
+            return f"{region} {name}"
         return name
 
     def _format_forecast(self, parsed, forecast_idx):
@@ -563,7 +561,7 @@ class FmiWeatherCommand(Command):
             if conditions:
                 conditions = self._capitalize(conditions)
             else:
-                conditions = "Tuntematon sääilmiö ({})".format(ws3_int)
+                conditions = f"Tuntematon sääilmiö ({ws3_int})"
 
         temp = row.get('Temperature')
         wind_speed = row.get('WindSpeedMS')
@@ -581,7 +579,7 @@ class FmiWeatherCommand(Command):
 
         weather_string = "Ennuste {} {}.{}{}".format(
             location, time_str,
-            " {}.".format(conditions) if conditions else "",
+            f" {conditions}." if conditions else "",
             " {}.".format(', '.join(weather_data)) if weather_data else ""
         )
         return weather_string
@@ -602,7 +600,7 @@ class FmiWeatherCommand(Command):
         if sunrise and sunset:
             sr = self._utc_to_local(sunrise).strftime('%H:%M')
             ss = self._utc_to_local(sunset).strftime('%H:%M')
-            return " Aurinko nousee {} ja laskee {}.".format(sr, ss)
+            return f" Aurinko nousee {sr} ja laskee {ss}."
         return ""
 
     # ---- Location resolution ----
@@ -651,7 +649,7 @@ class FmiWeatherCommand(Command):
 
         lat, lon, place_name = loc
         latlon = (lat, lon)
-        logging.info("Getting weather data for ({}, {})".format(lat, lon))
+        logging.info(f"Getting weather data for ({lat}, {lon})")
 
         if message.commandword == OBSERVATION_COMMAND:
             parsed = self._fetch_observations(latlon, place_name)
@@ -672,7 +670,7 @@ class FmiWeatherCommand(Command):
                 sun_string = self._format_sun_times(
                     parsed, parsed['timestamps'][-1])
 
-            message.reply_to("{}{}".format(weather_string, sun_string))
+            message.reply_to(f"{weather_string}{sun_string}")
 
         elif message.commandword in (FORECAST_COMMAND, ALT_FORECAST_COMMAND):
             parsed = self._fetch_forecast(latlon, place_name)
@@ -688,4 +686,4 @@ class FmiWeatherCommand(Command):
             sun_string = self._format_sun_times(
                 parsed, parsed['timestamps'][idx])
 
-            message.reply_to("{}{}".format(weather_string, sun_string))
+            message.reply_to(f"{weather_string}{sun_string}")

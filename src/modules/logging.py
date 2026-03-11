@@ -30,5 +30,5 @@ class LoggingModule(MessageHandler):
 
     def _create_imitate_entry(self, channel, user, timestamp, message):
         corpus_id = ImitateCorpus.get_or_create(channel, user)
-        text_identifier = '{}_{}'.format(channel.name, timestamp.isoformat())
+        text_identifier = f'{channel.name}_{timestamp.isoformat()}'
         markov_helper.insert_text(message, corpus_id, text_identifier)

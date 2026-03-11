@@ -15,7 +15,7 @@ class FirstShoutModule(Module):
         new_year_first = datetime.datetime(next_year, 1, 1, 0, 0, 2)
         next_shout = lib.time_util.get_utc_datetime(new_year_first)
 
-        logging.info("Setting new year EKA shout at {}".format(next_shout))
+        logging.info(f"Setting new year EKA shout at {next_shout}")
         self._bot.reactor.scheduler.execute_at(next_shout,
                                                self._message_first_new_year)
 

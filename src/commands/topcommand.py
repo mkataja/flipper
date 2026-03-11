@@ -23,4 +23,4 @@ class TopCommand(Command):
             message.reply_to(msg)
         except urllib.error.HTTPError as error:
             logging.error('Error in TopCommand: ' + str(error))
-            message.reply_to(u'Ei yhteyttä palvelimeen! :(')
+            message.reply_to('Ei yhteyttä palvelimeen! :(')
