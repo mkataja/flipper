@@ -1,20 +1,45 @@
 import datetime
 import locale
 import logging
+import math
 import re
 import urllib.parse
+import xml.etree.ElementTree as ET
+
+import pytz
 
 import config
 from commands.command import Command
 from lib import geocoding, time_util
-from lib.http import try_json_request
+from lib.http import try_text_request
 from lib.irc_colors import Color, color
+from lib.sun import sun_times
 from models.user import User
 
 RETRIES = 5
 
 FORECAST_COMMAND = "sää"
 OBSERVATION_COMMAND = "havainto"
+
+FMI_WFS_BASE = "http://opendata.fmi.fi/wfs"
+
+OBSERVATION_PARAMS = (
+    "t2m,ws_10min,wd_10min,wg_10min,rh,r_1h,snow_aws,p_sea,n_man,wawa"
+)
+SCANDINAVIA_FORECAST_PARAMS = (
+    "Temperature,DewPoint,Humidity,WindSpeedMS,WindDirection,"
+    "HourlyMaximumGust,Precipitation1h,PoP,WeatherSymbol3,"
+    "TotalCloudCover,Pressure"
+)
+ECMWF_FORECAST_PARAMS = (
+    "Temperature,Humidity,Pressure,WindUMS,WindVMS,Precipitation1h"
+)
+
+GML_NS = "{http://www.opengis.net/gml/3.2}"
+GMLCOV_NS = "{http://www.opengis.net/gmlcov/1.0}"
+SWE_NS = "{http://www.opengis.net/swe/2.0}"
+WFS_NS = "{http://www.opengis.net/wfs/2.0}"
+TARGET_NS = "{http://xml.fmi.fi/namespace/om/atmosphericfeatures/1.1}"
 
 
 class FmiWeatherCommand(Command):
@@ -122,79 +147,272 @@ class FmiWeatherCommand(Command):
         "NW": "Luoteis",
     }
 
-    warning_texts = {
-        'forestfire': 'metsäpalovaroitus',
-        'freeze': 'pakkasvaroitus',
-        'grassfire': 'ruohikkopalovaara',
-        'icing': 'jäätämisvaroitus',
-        'heat': 'hellevaroitus',
-        'pedestrian': 'jalankulkusää',
-        'wind': 'tuulivaroitus',
-        'rain': 'sadevaroitus',
-        'thunder': 'ukkosvaroitus',
-        'traffic': 'liikennesää',
-        'ultraviolet': 'UV-varoitus',
-        'waterlevel': 'merivedenkorkeusvaroitus',
-        'waveheight': 'aallokkovaroitus',
-    }
+    # ---- API helpers ----
 
-    def _get_weather_data(self, location):
-        url = ('https://m.fmi.fi/mobile/interfaces/weatherdata.php?locations={}'
-               .format(urllib.parse.quote(location)))
-        return try_json_request(url, retries=RETRIES)
+    def _build_wfs_url(self, stored_query, params, location_params,
+                       extra=None):
+        url_params = {
+            'service': 'WFS',
+            'version': '2.0.0',
+            'request': 'getFeature',
+            'storedquery_id': stored_query,
+            'parameters': params,
+        }
+        url_params.update(location_params)
+        if extra:
+            url_params.update(extra)
+        return "{}?{}".format(FMI_WFS_BASE, urllib.parse.urlencode(url_params))
 
-    def _get_weather_conditions(self, data):
-        if data.get('WW_AWS') == 'nan':
+    @staticmethod
+    def _latlon_params(latlon):
+        return {'latlon': '{},{}'.format(latlon[0], latlon[1])}
+
+    @staticmethod
+    def _bbox_params(latlon, margin=0.3):
+        """Bounding box around coordinates (for APIs that don't support latlon)."""
+        lat, lon = latlon
+        return {'bbox': '{},{},{},{}'.format(
+            lon - margin, lat - margin, lon + margin, lat + margin)}
+
+    def _parse_multipointcoverage(self, xml_text):
+        """Parse a WFS multipointcoverage XML response.
+
+        Returns dict with location_name, region, country, lat, lon,
+        timestamps (UTC datetimes), params (list), data (list of dicts).
+        Returns None on error or empty response.
+        """
+        try:
+            root = ET.fromstring(xml_text)
+        except ET.ParseError:
+            logging.exception("Failed to parse WFS XML")
             return None
-        synop_ww = int(float(data.get('WW_AWS')))
-        weather_conditions = self.synop_ww_strings.get(synop_ww)
-        if not weather_conditions:
-            return "Tuntematon sääilmiö ({})".format(synop_ww)
+
+        if 'ExceptionReport' in root.tag:
+            return None
+
+        member = root.find('{}member'.format(WFS_NS))
+        if member is None:
+            return None
+
+        location_name = None
+        region = None
+        country = None
+
+        for name_elem in root.iter('{}name'.format(GML_NS)):
+            cs = name_elem.get('codeSpace', '')
+            if 'locationcode/name' in cs:
+                location_name = name_elem.text
+                break
+
+        for elem in root.iter('{}region'.format(TARGET_NS)):
+            region = elem.text.strip() if elem.text else None
+        for elem in root.iter('{}country'.format(TARGET_NS)):
+            country = elem.text.strip() if elem.text else None
+
+        lat, lon = None, None
+        pos_elem = root.find('.//{}pos'.format(GML_NS))
+        if pos_elem is not None and pos_elem.text:
+            parts = pos_elem.text.strip().split()
+            if len(parts) >= 2:
+                lat, lon = float(parts[0]), float(parts[1])
+
+        timestamps = []
+        position_coords = []
+        positions_elem = root.find('.//{}positions'.format(GMLCOV_NS))
+        if positions_elem is not None and positions_elem.text:
+            for line in positions_elem.text.strip().split('\n'):
+                parts = line.strip().split()
+                if len(parts) >= 3:
+                    ts = (datetime.datetime(1970, 1, 1)
+                          + datetime.timedelta(seconds=int(parts[2])))
+                    timestamps.append(ts)
+                    position_coords.append(
+                        (float(parts[0]), float(parts[1])))
+
+        param_names = []
+        for field in root.iter('{}field'.format(SWE_NS)):
+            name = field.get('name')
+            if name:
+                param_names.append(name)
+
+        all_values = []
+        tuple_list = root.find(
+            './/{}doubleOrNilReasonTupleList'.format(GML_NS))
+        if tuple_list is not None and tuple_list.text:
+            for line in tuple_list.text.strip().split('\n'):
+                values = line.strip().split()
+                row = {}
+                for i, param in enumerate(param_names):
+                    if i < len(values):
+                        val = values[i]
+                        if val == 'NaN':
+                            row[param] = None
+                        else:
+                            try:
+                                row[param] = float(val)
+                            except ValueError:
+                                row[param] = None
+                    else:
+                        row[param] = None
+                all_values.append(row)
+
+        if not timestamps or not all_values:
+            return None
+
+        # With bbox queries, multiple stations may be returned.
+        # Filter to only the first station's data (stations are grouped).
+        first_coord = position_coords[0] if position_coords else None
+        data = []
+        filtered_timestamps = []
+        for i, row in enumerate(all_values):
+            if i < len(position_coords) \
+                    and position_coords[i] == first_coord:
+                data.append(row)
+                filtered_timestamps.append(timestamps[i])
+        timestamps = filtered_timestamps or timestamps
+
+        return {
+            'location_name': location_name,
+            'region': region,
+            'country': country,
+            'lat': lat,
+            'lon': lon,
+            'timestamps': timestamps,
+            'params': param_names,
+            'data': data,
+        }
+
+    # ---- Data fetching ----
+
+    def _fetch_observations(self, latlon, place_name=None):
+        if place_name:
+            loc = {'place': place_name}
         else:
-            return weather_conditions[:1].upper() + weather_conditions[1:]
-
-    def _color_temperature(self, data, field):
-        if not data.get(field) or data.get(field) == 'nan':
+            loc = self._bbox_params(latlon)
+        url = self._build_wfs_url(
+            'fmi::observations::weather::multipointcoverage',
+            OBSERVATION_PARAMS, loc,
+            {'timestep': '60', 'maxlocations': '1'}
+        )
+        xml_text = try_text_request(url, retries=RETRIES)
+        if xml_text is None:
             return None
-        temp = float(data.get(field))
+        return self._parse_multipointcoverage(xml_text)
+
+    def _fetch_forecast(self, latlon, place_name=None):
+        """Try Edited Scandinavia first (PoP), fall back to ECMWF (global)."""
+        if place_name:
+            loc = {'place': place_name}
+        else:
+            loc = self._latlon_params(latlon)
+        url = self._build_wfs_url(
+            'fmi::forecast::edited::weather::scandinavia::point'
+            '::multipointcoverage',
+            SCANDINAVIA_FORECAST_PARAMS, loc,
+            {'timestep': '60'}
+        )
+        xml_text = try_text_request(url, retries=RETRIES)
+        if xml_text is not None:
+            result = self._parse_multipointcoverage(xml_text)
+            if result is not None:
+                result['model'] = 'scandinavia'
+                return result
+
+        logging.info("Scandinavia forecast unavailable, trying ECMWF")
+        url = self._build_wfs_url(
+            'ecmwf::forecast::surface::point::multipointcoverage',
+            ECMWF_FORECAST_PARAMS, loc,
+            {'timestep': '360'}
+        )
+        xml_text = try_text_request(url, retries=RETRIES)
+        if xml_text is None:
+            return None
+
+        result = self._parse_multipointcoverage(xml_text)
+        if result is not None:
+            result['model'] = 'ecmwf'
+            for row in result['data']:
+                u = row.get('WindUMS')
+                v = row.get('WindVMS')
+                if u is not None and v is not None:
+                    row['WindSpeedMS'] = math.sqrt(u ** 2 + v ** 2)
+                    row['WindDirection'] = math.degrees(
+                        math.atan2(-u, -v)) % 360
+                else:
+                    row['WindSpeedMS'] = None
+                    row['WindDirection'] = None
+        return result
+
+    # ---- Computation helpers ----
+
+    @staticmethod
+    def _degrees_to_compass(degrees):
+        if degrees is None:
+            return None
+        directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+        return directions[round(degrees / 45) % 8]
+
+    @staticmethod
+    def _compute_feels_like(temp, wind_speed, humidity):
+        if temp is None or wind_speed is None:
+            return None
+        wind_kmh = wind_speed * 3.6
+        if temp <= 10 and wind_kmh > 4.8:
+            return (13.12 + 0.6215 * temp
+                    - 11.37 * wind_kmh ** 0.16
+                    + 0.3965 * temp * wind_kmh ** 0.16)
+        elif temp >= 27 and humidity is not None:
+            return (-8.785 + 1.611 * temp + 2.339 * humidity
+                    - 0.1461 * temp * humidity - 0.01231 * temp ** 2
+                    - 0.01642 * humidity ** 2
+                    + 0.002212 * temp ** 2 * humidity
+                    + 0.0007255 * temp * humidity ** 2
+                    - 0.000003582 * temp ** 2 * humidity ** 2)
+        return temp
+
+    def _utc_to_local(self, utc_dt):
+        tz = pytz.timezone(config.TIMEZONE)
+        return utc_dt.replace(tzinfo=pytz.utc).astimezone(tz)
+
+    # ---- Formatting helpers ----
+
+    def _color_temp_value(self, temp):
+        if temp is None:
+            return None
         if temp >= 25:
             temp_color = Color.red
         elif temp > 0:
             temp_color = Color.yellow
         else:
             temp_color = Color.blue
-        return color(data.get(field), temp_color)
+        return color("{:.0f}".format(temp), temp_color)
 
-    def _get_temperature(self, data):
-        temp = self._color_temperature(data, 'Temperature')
-        if not temp:
+    def _format_temperature(self, temp, feels_like):
+        colored_temp = self._color_temp_value(temp)
+        if colored_temp is None:
             return None
+        parts = "Lämpötila {} °C".format(colored_temp)
+        if feels_like is not None and abs(feels_like - temp) >= 1.0:
+            parts += " (tuntuu {} °C)".format(self._color_temp_value(feels_like))
+        return parts
 
-        feels_like = self._color_temperature(data, 'FeelsLike')
-        if feels_like:
-            feels_like_string = " (tuntuu {} °C)".format(feels_like)
-        else:
-            feels_like_string = ""
-
-        return "Lämpötila {} °C{}".format(temp, feels_like_string)
-
-    def _get_humidity(self, data):
-        if data.get('Humidity') == 'nan':
+    def _format_humidity(self, rh):
+        if rh is None:
             return None
-        humidity = int(float(data.get('Humidity')))
-        return "Kosteus {}%".format(humidity)
+        return "Kosteus {}%".format(int(rh))
 
-    def _get_pressure(self, data):
-        if data.get('Pressure') == 'nan':
+    def _format_pressure(self, pressure):
+        if pressure is None:
             return None
-        pressure = locale.format_string("%.0f", float(data.get('Pressure')))
-        return "Ilmanpaine {} hPa".format(pressure)
+        return "Ilmanpaine {} hPa".format(
+            locale.format_string("%.0f", pressure))
 
-    def _get_wind(self, data):
-        if data.get('WindCompass8') == 'nan' or data.get('WindSpeedMS') == 'nan':
+    def _format_wind(self, direction_deg, speed, gust=None):
+        if speed is None:
             return None
-        direction = self.wind_directions.get(data.get('WindCompass8'))
-        speed = float(data.get('WindSpeedMS'))
+        compass = self._degrees_to_compass(direction_deg)
+        direction_str = self.wind_directions.get(compass, '')
+
         if speed >= 14:
             speed_color = Color.red
         elif speed >= 8:
@@ -203,14 +421,16 @@ class FmiWeatherCommand(Command):
             speed_color = Color.white
         else:
             speed_color = None
-        speed_string = color(data.get('WindSpeedMS'), speed_color)
-        return "{}tuulta {} m/s".format(direction, speed_string)
+        speed_str = color("{:.0f}".format(speed), speed_color)
 
-    def _get_precipitation_1h(self, data):
-        if data.get('Precipitation1h') is None:
+        result = "{}tuulta {} m/s".format(direction_str, speed_str)
+        if gust is not None and gust > speed + 2:
+            result += " (puuska {:.0f}) m/s".format(gust)
+        return result
+
+    def _format_precipitation(self, amount, pop=None):
+        if amount is None:
             return None
-
-        amount = float(data.get('Precipitation1h'))
         if amount >= 6:
             amount_color = Color.red
         elif amount >= 3:
@@ -223,224 +443,248 @@ class FmiWeatherCommand(Command):
             amount_color = Color.dcyan
         else:
             amount_color = None
-        amount_str = color(amount, amount_color)
+        amount_str = color("{:.1f}".format(amount), amount_color)
 
-        if data.get('PoP') is None or data.get('PoP') == 'nan':
-            probability_str = ""
-        else:
-            probability = int(data.get('PoP'))
-            if probability < 10:
-                probability_rounded = "<10"
-                probability_color = None
-            elif probability > 90:
-                probability_rounded = ">90"
-                probability_color = Color.blue
+        pop_str = ""
+        if pop is not None:
+            pop_int = int(pop)
+            if pop_int < 10:
+                pop_rounded = "<10"
+                pop_color = None
+            elif pop_int > 90:
+                pop_rounded = ">90"
+                pop_color = Color.blue
             else:
-                probability_rounded = round(probability / 10) * 10
-                if probability_rounded >= 70:
-                    probability_color = Color.blue
-                elif probability_rounded >= 30:
-                    probability_color = Color.dcyan
+                pop_rounded = round(pop_int / 10) * 10
+                if pop_rounded >= 70:
+                    pop_color = Color.blue
+                elif pop_rounded >= 30:
+                    pop_color = Color.dcyan
                 else:
-                    probability_color = None
+                    pop_color = None
+            pop_str = " (sateen todennäköisyys {} %)".format(
+                color(pop_rounded, pop_color))
 
-            probability_str = " (sateen todennäköisyys {} %)".format(
-                color(probability_rounded, probability_color))
+        return "Tunnin sademäärä {} mm{}".format(amount_str, pop_str)
 
-        return "Tunnin sademäärä {} mm{}".format(
-            amount_str,
-            probability_str)
-
-    def _get_cloud_cover(self, data):
-        if data.get('TotalCloudCover') == 'nan':
+    def _format_cloud_cover(self, cover):
+        if cover is None:
             return None
-        cover = int(float(data.get('TotalCloudCover')))
-        if cover <= 8:
-            return "Pilvisyys: {}/8".format(cover)
-        else:
-            return "Pilvisyys: taivas ei näkyvissä"
+        cover_int = int(cover)
+        if cover_int <= 8:
+            return "Pilvisyys: {}/8".format(cover_int)
+        return "Pilvisyys: taivas ei näkyvissä"
 
-    def _get_snow_depth(self, data):
-        if data.get('SnowDepth') == 'nan':
+    def _format_snow_depth(self, depth):
+        if depth is None or depth <= 0:
             return None
-        snow_depth = int(float(data.get('SnowDepth')))
-        return "Lumensyvyys {} cm".format(snow_depth)
+        return "Lumensyvyys {} cm".format(int(depth))
 
-    def _get_weather_from_observations(self, observations):
-        stations = list(observations.values())[0]
-        synop_stations = [s for s in stations if s.get('WW_AWS') != 'nan']
-        if len(synop_stations) > 0:
-            station = synop_stations[0]
-        else:
-            station = stations[0]
+    @staticmethod
+    def _capitalize(s):
+        if not s:
+            return s
+        return s[0].upper() + s[1:]
 
-        weather_conditions = self._get_weather_conditions(station)
+    # ---- Observation formatting ----
+
+    def _format_observation(self, parsed):
+        data_rows = parsed['data']
+        timestamps = parsed['timestamps']
+
+        # Pick the latest row with a temperature reading
+        obs = None
+        obs_time = None
+        for i in range(len(data_rows) - 1, -1, -1):
+            if data_rows[i].get('t2m') is not None:
+                obs = data_rows[i]
+                obs_time = timestamps[i]
+                break
+        if obs is None:
+            return None
+
+        local_time = self._utc_to_local(obs_time)
+        time_str = local_time.strftime('%d.%m.%Y %H:%M')
+
+        wawa = obs.get('wawa')
+        conditions = None
+        if wawa is not None:
+            conditions = self.synop_ww_strings.get(int(wawa))
+            if conditions:
+                conditions = self._capitalize(conditions)
+            elif int(wawa) != 0:
+                conditions = "Tuntematon sääilmiö ({})".format(int(wawa))
+
         weather_data = [
-            self._get_temperature(station),
-            self._get_humidity(station),
-            self._get_pressure(station),
-            self._get_wind(station),
-            self._get_cloud_cover(station),
-            self._get_snow_depth(station)
+            self._format_temperature(obs.get('t2m'), None),
+            self._format_humidity(obs.get('rh')),
+            self._format_pressure(obs.get('p_sea')),
+            self._format_wind(obs.get('wd_10min'), obs.get('ws_10min'),
+                              obs.get('wg_10min')),
+            self._format_cloud_cover(obs.get('n_man')),
+            self._format_snow_depth(obs.get('snow_aws')),
         ]
         weather_data = [wd for wd in weather_data if wd]
-        if len(weather_data) > 0:
-            weather_data_string = ', '.join(weather_data)
-        else:
-            weather_data_string = None
 
         weather_string = "Havainto {} {}.{}{}".format(
-            station.get('stationname'),
-            datetime.datetime
-                .strptime(station['time'], '%Y%m%d%H%M')
-                .strftime('%d.%m.%Y %H:%M'),
-            " {}.".format(weather_conditions) if weather_conditions else "",
-            " {}.".format(weather_data_string) if weather_data_string else ""
+            parsed['location_name'] or "?",
+            time_str,
+            " {}.".format(conditions) if conditions else "",
+            " {}.".format(', '.join(weather_data)) if weather_data else ""
         )
         return weather_string
 
-    def _get_weather_from_forecast(self, forecast):
-        ws3 = int(forecast.get('WeatherSymbol3'))
-        weather_conditions = self.weather_symbol_3_strings.get(ws3)
-        if not weather_conditions:
-            weather_conditions = "Tuntematon sääilmiö ({})".format(ws3)
-        else:
-            weather_conditions = weather_conditions[:1].upper(
-            ) + weather_conditions[1:]
+    # ---- Forecast formatting ----
+
+    def _format_location_name(self, parsed):
+        name = parsed.get('location_name') or "?"
+        country = parsed.get('country')
+        region = parsed.get('region')
+        if country and country != 'Finland':
+            return "{} ({})".format(name, country)
+        if region and region != 'Finland' and region != name:
+            return "{} {}".format(region, name)
+        return name
+
+    def _format_forecast(self, parsed, forecast_idx):
+        row = parsed['data'][forecast_idx]
+        ts = parsed['timestamps'][forecast_idx]
+
+        local_time = self._utc_to_local(ts)
+        time_str = local_time.strftime('%d.%m.%Y %H:%M')
+        location = self._format_location_name(parsed)
+
+        conditions = None
+        ws3 = row.get('WeatherSymbol3')
+        if ws3 is not None:
+            ws3_int = int(ws3)
+            conditions = self.weather_symbol_3_strings.get(ws3_int)
+            if conditions:
+                conditions = self._capitalize(conditions)
+            else:
+                conditions = "Tuntematon sääilmiö ({})".format(ws3_int)
+
+        temp = row.get('Temperature')
+        wind_speed = row.get('WindSpeedMS')
+        humidity = row.get('Humidity')
+        feels_like = self._compute_feels_like(temp, wind_speed, humidity)
 
         weather_data = [
-            self._get_temperature(forecast),
-            self._get_wind(forecast),
-            self._get_precipitation_1h(forecast)
+            self._format_temperature(temp, feels_like),
+            self._format_wind(row.get('WindDirection'), wind_speed,
+                              row.get('HourlyMaximumGust')),
+            self._format_precipitation(row.get('Precipitation1h'),
+                                       row.get('PoP')),
         ]
         weather_data = [wd for wd in weather_data if wd]
-        if len(weather_data) > 0:
-            weather_data_string = ', '.join(weather_data)
-        else:
-            weather_data_string = None
-
-        if forecast.get('country') == "Suomi":
-            if forecast.get('region') == "Suomi":
-                location = forecast.get('name')
-            else:
-                location = "{} {}".format(
-                    forecast.get('region'), forecast.get('name'))
-        else:
-            location = "{} ({})".format(
-                forecast.get('name'),
-                forecast.get('region'),
-                forecast.get('country')
-            )
 
         weather_string = "Ennuste {} {}.{}{}".format(
-            location,
-            datetime.datetime
-                .strptime(forecast['localtime'], '%Y%m%dT%H%M%S')
-                .strftime('%d.%m.%Y %H:%M'),
-            " {}.".format(weather_conditions) if weather_conditions else "",
-            " {}.".format(weather_data_string) if weather_data_string else ""
+            location, time_str,
+            " {}.".format(conditions) if conditions else "",
+            " {}.".format(', '.join(weather_data)) if weather_data else ""
         )
         return weather_string
 
-    def _get_suninfo_string(self, data):
-        sunrise = None
-        sunset = None
-        suninfo_data = data.get('suninfo')
-        if suninfo_data:
-            suninfo = list(suninfo_data.values())[0]
-            if suninfo.get('sunrisetoday') == '1' and suninfo.get('sunsettoday') == '1':
-                sunrise = datetime.datetime.strptime(suninfo['sunrise'],
-                                                     '%Y%m%dT%H%M%S')
-                sunrise = sunrise.strftime('%H:%M')
-                sunset = datetime.datetime.strptime(suninfo['sunset'],
-                                                    '%Y%m%dT%H%M%S')
-                sunset = sunset.strftime('%H:%M')
+    # ---- Sunrise/sunset ----
+
+    def _format_sun_times(self, parsed, forecast_ts):
+        lat = parsed.get('lat')
+        lon = parsed.get('lon')
+        if lat is None or lon is None:
+            return ""
+
+        local_ts = self._utc_to_local(forecast_ts)
+        result = sun_times(local_ts.date(), lat, lon)
+        sunrise = result.get('sunrise')
+        sunset = result.get('sunset')
 
         if sunrise and sunset:
-            return " Aurinko nousee {} ja laskee {}.".format(sunrise, sunset)
-        else:
-            return None
+            sr = self._utc_to_local(sunrise).strftime('%H:%M')
+            ss = self._utc_to_local(sunset).strftime('%H:%M')
+            return " Aurinko nousee {} ja laskee {}.".format(sr, ss)
+        return ""
 
-    def _get_warnings_string(self, data):
-        if not data['warnings'] or not data['warnings'].values():
-            return ""
-        warnings = next(iter(data['warnings'].values()))
-        if not warnings:
-            return ""
-        warning_texts = [FmiWeatherCommand.warning_texts[w]
-                         for w, present in warnings.items() if present]
-        if not warning_texts:
-            return ""
-        else:
-            return " Varoituksia: {}".format(", ".join(warning_texts))
-
-    def _get_forecast_for_time(self, dt, forecasts):
-        return min(
-            forecasts,
-            key=lambda f: abs(datetime.datetime.strptime(f['localtime'], '%Y%m%dT%H%M%S') - dt)
-        )
-
-    def _get_weather_string(self, command, params, data):
-        if command == FORECAST_COMMAND:
-            if len(data.get('forecasts')) == 0:
-                return None
-            forecasts = data.get('forecasts')[0].get('forecast')
-
-            if params['hours']:
-                time = datetime.time(int(params['hours']),
-                                     int(params['minutes'] or 0))
-                dt = time_util.get_next_datetime_for_time(time)
-                forecast = self._get_forecast_for_time(dt, forecasts)
-            else:
-                forecast = forecasts[0]
-            return self._get_weather_from_forecast(forecast)
-        elif command == OBSERVATION_COMMAND:
-            observations = data.get('observations')
-            if observations and len(observations) > 0 and False not in observations.values():
-                return self._get_weather_from_observations(observations)
-            else:
-                return None
+    # ---- Location resolution ----
 
     def _get_location(self, location_param, sender):
+        """Resolve location to (lat, lon, place_name_or_none) or None."""
         if not location_param:
             user = User.get_or_create(sender)
             if user and user.location:
-                return user.location
+                loc_str = user.location
             else:
-                return config.LOCATION
-        else:
-            address = location_param
-            coordinates = geocoding.geocode(address)
-            if coordinates is None:
-                return None
-            return ",".join(str(c) for c in coordinates)
+                loc_str = config.LOCATION
+            parts = loc_str.split(',')
+            return float(parts[0]), float(parts[1]), None
+
+        coordinates = geocoding.geocode(location_param)
+        if coordinates is None:
+            return None
+        return coordinates[0], coordinates[1], location_param
+
+    # ---- Main handler ----
+
+    def _find_forecast_index(self, timestamps, params):
+        if params['hours']:
+            target_time = datetime.time(
+                int(params['hours']), int(params['minutes'] or 0))
+            target_dt = time_util.get_next_datetime_for_time(target_time)
+            target_utc = time_util.get_utc_datetime(target_dt)
+            target_utc = target_utc.replace(tzinfo=None)
+            return min(
+                range(len(timestamps)),
+                key=lambda i: abs(timestamps[i] - target_utc)
+            )
+        return 0
 
     def handle(self, message):
-        params = [g.groupdict() for g in FmiWeatherCommand.cmd_pattern.finditer(
-            message.params.strip())][0]
+        matches = FmiWeatherCommand.cmd_pattern.finditer(
+            message.params.strip())
+        params = [g.groupdict() for g in matches][0]
 
-        location = self._get_location(params['location'], message.sender)
-        if location is None:
+        loc = self._get_location(params['location'], message.sender)
+        if loc is None:
             message.reply_to(
                 "Sijaintia {} ei ole olemassa".format(params['location']))
             return
 
-        logging.info("Getting weather data in '{}'".format(location))
-        data = self._get_weather_data(location)
+        lat, lon, place_name = loc
+        latlon = (lat, lon)
+        logging.info("Getting weather data for ({}, {})".format(lat, lon))
 
-        if data is None or data.get('status') != "ok":
-            message.reply_to("Sääpalvelu ei vastaa :(")
-            if data:
-                logging.error(data.get('message'))
+        if message.commandword == OBSERVATION_COMMAND:
+            parsed = self._fetch_observations(latlon, place_name)
+            if parsed is None:
+                message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
+                    params['location'] or "?"))
+                return
 
-        weather_string = self._get_weather_string(
-            message.commandword, params, data)
-        suninfo_string = self._get_suninfo_string(data)
-        warnings_string = self._get_warnings_string(data)
+            weather_string = self._format_observation(parsed)
+            if weather_string is None:
+                message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
+                    params['location'] or "?"))
+                return
 
-        if weather_string:
-            message.reply_to("{}{}{}".format(
-                weather_string, suninfo_string, warnings_string))
-        else:
-            message.reply_to(
-                "Ei säätietoja paikkakunnalle {}".format(params['location']))
+            sun_string = ""
+            if parsed.get('lat') and parsed.get('lon') \
+                    and parsed['timestamps']:
+                sun_string = self._format_sun_times(
+                    parsed, parsed['timestamps'][-1])
+
+            message.reply_to("{}{}".format(weather_string, sun_string))
+
+        elif message.commandword == FORECAST_COMMAND:
+            parsed = self._fetch_forecast(latlon, place_name)
+            if parsed is None:
+                message.reply_to(
+                    "Ei ennustetietoja paikkakunnalle {}".format(
+                        params['location'] or "?"))
+                return
+
+            idx = self._find_forecast_index(
+                parsed['timestamps'], params)
+            weather_string = self._format_forecast(parsed, idx)
+            sun_string = self._format_sun_times(
+                parsed, parsed['timestamps'][idx])
+
+            message.reply_to("{}{}".format(weather_string, sun_string))
