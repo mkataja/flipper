@@ -6,9 +6,3 @@ src/config_local.py
 
 # Data directory
 data/
-
-# Log directory
-log/
-
-# Virtualenv
-venv/
