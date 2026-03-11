@@ -10,7 +10,6 @@ Flipper ircbot
 * [Psycopg](https://www.psycopg.org/docs/)
 * [pytz](http://pytz.sourceforge.net/) - World Timezone Definitions for Python
 * [Beautiful Soup 4](http://www.crummy.com/software/BeautifulSoup/)
-* [Flask](http://flask.pocoo.org/)
 
 
 ### Installing with pip

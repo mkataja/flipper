@@ -9,7 +9,6 @@ SQLAlchemy = "~=1.4.5"
 psycopg2 = "*"
 pytz = "*"
 beautifulsoup4 = "*"
-Flask = "*"
 urllib3 = "*"
 
 [dev-packages]
