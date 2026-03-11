@@ -19,7 +19,7 @@ def _parse_markov_sentences(input_text):
     Parses the input into properly sanitized sentences compliant with
     the bot's Markov chain implementation.
     """
-    input_text = re.sub(url_regex, '', input_text, re.IGNORECASE)
+    input_text = re.sub(url_regex, '', input_text)
     input_text = re.sub(r'[^ .!?\w-]', '', input_text)
     input_text = input_text.lower()
     sentences = [[w for w in s.split() if _is_valid_word(w)]

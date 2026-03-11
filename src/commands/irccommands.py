@@ -65,7 +65,7 @@ class SayCommand(Command):
         text = params[1]
 
         if target[0] == '!':
-            channels = [k for k in message.bot.channels.keys()
+            channels = [k for k in message.bot.channels
                         if k.endswith(target[1:]) and k[0] == '!']
             if len(channels) == 1:
                 target = channels[0]

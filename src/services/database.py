@@ -18,7 +18,7 @@ import config
 
 
 def initialize():
-    global Session
+    global Session  # noqa: PLW0603
     Session = None
     if not config.DATABASE_URI:
         logging.error("Cannot initialize the database service: "

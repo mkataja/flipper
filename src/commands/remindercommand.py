@@ -129,8 +129,8 @@ class ReminderCommand(Command):
         try:
             hours = {'tunti': 1, 'päivä': 24}[data['repeat_length']]
             interval = datetime.timedelta(hours=n * hours)
-        except KeyError:
-            raise ReminderFormatError(data['repeat_length'])
+        except KeyError as e:
+            raise ReminderFormatError(data['repeat_length']) from e
 
         count = None
         return interval, count
@@ -167,8 +167,8 @@ class ReminderCommand(Command):
                 'lauantai': time_util.days_until_next_weekday(6),
                 'sunnuntai': time_util.days_until_next_weekday(7)
             }[datestring]
-        except KeyError:
-            raise ReminderFormatError(f"Invalid datestring {datestring}")
+        except KeyError as e:
+            raise ReminderFormatError(f"Invalid datestring {datestring}") from e
         return datetime.date.today() + datetime.timedelta(days=days)
 
     def _parse_timer(self, data):
@@ -188,8 +188,8 @@ class ReminderCommand(Command):
                 'yö': 0,
                 'aamuyö': 4
             }[timestring]
-        except KeyError:
-            raise ReminderFormatError(f"Invalid timestring {timestring}")
+        except KeyError as e:
+            raise ReminderFormatError(f"Invalid timestring {timestring}") from e
         return datetime.time(hour, 0, 0)
 
     def _parse_when(self, data):

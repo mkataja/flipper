@@ -5,9 +5,7 @@ import os
 def should_be_imported(file):
     if not os.path.isfile(file):
         return False
-    if os.path.basename(file)[:-3] in ['__init__', 'command', 'commandlist']:
-        return False
-    return True
+    return os.path.basename(file)[:-3] not in ['__init__', 'command', 'commandlist']
 
 
 modules = glob.glob(os.path.dirname(__file__) + "/*.py")

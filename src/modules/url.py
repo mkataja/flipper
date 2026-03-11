@@ -14,9 +14,8 @@ class UrlModule(MessageHandler):
         urls = re.findall(web.url_regex, message.content)
 
         for url in urls:
-            if not url.startswith("http"):
-                url = "http://" + url
-            logging.info(f"Found url: {url}")
-            title = web.get_title_text(url)
+            full_url = url if url.startswith("http") else "http://" + url
+            logging.info(f"Found url: {full_url}")
+            title = web.get_title_text(full_url)
             if title:
                 message.reply(f"{color(title, Color.dcyan)}")

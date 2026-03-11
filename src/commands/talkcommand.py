@@ -69,7 +69,7 @@ class TalkCommand(Command):
                 break
 
         count = 0
-        while (count < 8 and w[1] == True):
+        while (count < 8 and w[1]):
             count += 1
             w = self._get_word(cursor, d, w[0])
             if (len(w[0]) > 0):

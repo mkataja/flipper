@@ -25,7 +25,7 @@ from math import cos, sin
 from lib.astro import c, fixangle, julian_day, sun_ecliptic_longitude, torad
 
 
-def phase(phase_date=datetime.now()):
+def phase(phase_date=None):
     """Calculate phase of moon as a fraction:
 
     The argument is the time for which the phase is requested,
@@ -38,6 +38,8 @@ def phase(phase_date=datetime.now()):
     angular diameter subtended by the Moon as seen by an observer at
     the centre of the Earth."""
 
+    if phase_date is None:
+        phase_date = datetime.now()
     jd = julian_day(phase_date)
     day = jd - c.epoch
 

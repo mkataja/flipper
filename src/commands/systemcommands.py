@@ -9,7 +9,7 @@ class HelpCommand(Command):
             self.replytoinvalidparams(message)
             return
 
-        from commands.commandlist import ALL_CMDS
+        from commands.commandlist import ALL_CMDS  # noqa: PLC0415
         if message.params in ALL_CMDS:
             command = ALL_CMDS[message.params]
             message.reply_to(command.helpstr)
@@ -19,6 +19,6 @@ class HelpCommand(Command):
 
 class ListCommand(Command):
     def handle(self, message):
-        from commands.commandlist import ALL_CMDS
+        from commands.commandlist import ALL_CMDS  # noqa: PLC0415
         message.reply_to("Komennot: {}"
                          .format(', '.join(sorted(ALL_CMDS.keys()))))

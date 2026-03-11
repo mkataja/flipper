@@ -27,12 +27,14 @@ def get_time_in_timezone(time, timezone_id):
     return time.astimezone(timezone)
 
 
-def get_geographic_timezone(latitude, longitude, timestamp=int(py_time.time())):
+def get_geographic_timezone(latitude, longitude, timestamp=None):
     """
     Returns the timezone code for the given geographic location. In case
     timestamp is given, it is used to decide between normal and daylight
     saving time. The default is to use the current timestamp to decide.
     """
+    if timestamp is None:
+        timestamp = int(py_time.time())
     logging.info(f"Getting timezone for lat: {latitude}, long: {longitude}, at: {timestamp}")
 
     url = ("https://maps.googleapis.com/maps/api/timezone/json?location={}&timestamp={}&key={}"
