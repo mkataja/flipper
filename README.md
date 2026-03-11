@@ -55,6 +55,17 @@ Run the main entrypoint from the `src` directory:
     pipenv run ./flipper.py
 
 
+## Linting
+
+Ruff is used for static analysis. Run the linter from the project root:
+
+    pipenv run ruff check src/ scripts/
+
+Auto-fix safe issues:
+
+    pipenv run ruff check src/ scripts/ --fix
+
+
 ## Optional dependencies
 
 * [Data files](../../../flipper_data) for importer scripts and talkcommand.
