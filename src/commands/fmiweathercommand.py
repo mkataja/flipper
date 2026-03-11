@@ -600,7 +600,11 @@ class FmiWeatherCommand(Command):
         if sunrise and sunset:
             sr = self._utc_to_local(sunrise).strftime('%H:%M')
             ss = self._utc_to_local(sunset).strftime('%H:%M')
-            return f" Aurinko nousee {sr} ja laskee {ss}."
+            day_seconds = int((sunset - sunrise).total_seconds())
+            day_h = day_seconds // 3600
+            day_m = (day_seconds % 3600) // 60
+            return (f" Aurinko nousee {sr} ja laskee {ss}"
+                    f" (päivän pituus {day_h} h {day_m:02d} min).")
         return ""
 
     # ---- Location resolution ----
