@@ -32,6 +32,17 @@ def try_request(
         return None
 
 
+def try_text_request(url, timeout=DEFAULT_TIMEOUT, retries=DEFAULT_RETRIES, encoding='utf-8'):
+    data = try_request(url, timeout, retries)
+    if data is None:
+        return None
+    try:
+        return data.decode(encoding)
+    except Exception:
+        logging.exception(f"Decoding text failed from {url}")
+        return None
+
+
 def try_json_request(url, timeout=DEFAULT_TIMEOUT, retries=DEFAULT_RETRIES):
     data = try_request(url, timeout, retries)
     try:
