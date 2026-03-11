@@ -15,7 +15,8 @@ Flipper ircbot
 
 ### Installing with pip
 
-    pip install -r requirements.txt
+    pip install pipenv
+    pipenv install
 
 
 ## Database
@@ -52,7 +53,7 @@ Required by some features, will run fine without setting these:
 Run the main entrypoint from the `src` directory:
 
     cd src
-    ./flipper.py
+    pipenv run ./flipper.py
 
 
 ## Optional dependencies
