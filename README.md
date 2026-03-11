@@ -55,7 +55,12 @@ Run the main entrypoint from the `src` directory:
     pipenv run ./flipper.py
 
 
-## Linting
+## Formatting and linting
+
+To keep changes minimal over the originally non-autoformatted code, autopep8 is 
+used for linting. Run the formatter from the project root:
+
+    pipenv run autopep8 --in-place --recursive src/ scripts/
 
 Ruff is used for static analysis. Run the linter from the project root:
 
