@@ -19,6 +19,7 @@ from models.user import User
 RETRIES = 5
 
 FORECAST_COMMAND = "sää"
+ALT_FORECAST_COMMAND = "ennuste"
 OBSERVATION_COMMAND = "havainto"
 
 FMI_WFS_BASE = "http://opendata.fmi.fi/wfs"
@@ -673,7 +674,7 @@ class FmiWeatherCommand(Command):
 
             message.reply_to("{}{}".format(weather_string, sun_string))
 
-        elif message.commandword == FORECAST_COMMAND:
+        elif message.commandword in (FORECAST_COMMAND, ALT_FORECAST_COMMAND):
             parsed = self._fetch_forecast(latlon, place_name)
             if parsed is None:
                 message.reply_to(
