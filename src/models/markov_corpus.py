@@ -26,4 +26,4 @@ class MarkovCorpus(database.FlipperBase):
             corpus.user_submittable = user_submittable
             session.add(corpus)
             session.commit()
-            return corpus
+            return corpus.id
