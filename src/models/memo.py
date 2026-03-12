@@ -14,7 +14,7 @@ class Memo(database.FlipperBase):
 
     UniqueConstraint(name)
 
-    lines = relationship('MemoLine', order_by='MemoLine.created_on')
+    lines = relationship('MemoLine', order_by='MemoLine.created_on', back_populates='memo')
 
     def basic_info(self):
         return {

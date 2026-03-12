@@ -12,7 +12,7 @@ class MemoLine(database.FlipperBase):
     created_by_user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     content = Column(Text, nullable=False)
 
-    memo = relationship(Memo)
+    memo = relationship(Memo, back_populates='lines')
     created_by_user = relationship(User)
 
     def full_info(self):
