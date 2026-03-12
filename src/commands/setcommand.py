@@ -18,6 +18,28 @@ def setting_result(success: bool, response: str) -> SettingResult:
 SettingHandler = Callable[[Command, Any, str], SettingResult]
 
 
+BOOL_ALIASES: dict[str, bool] = {
+    "true": True,
+    "false": False,
+    "on": True,
+    "off": False,
+    "yes": True,
+    "no": False,
+    "päälle": True,
+    "pois": False,
+    "kyllä": True,
+    "ei": False,
+}
+
+
+def parse_bool(value: str) -> bool | str:
+    normalized = (value or "").strip().lower()
+    result = BOOL_ALIASES.get(normalized)
+    if result is None:
+        raise ValueError("sallitut arvot ovat: " + "/".join(BOOL_ALIASES.keys()))
+    return result
+
+
 def handle_set_home(command: Command, message: Any, address: str) -> SettingResult:
     if not address:
         return setting_result(False, "koti-asetukselle pitää antaa paikka")
@@ -31,8 +53,21 @@ def handle_set_home(command: Command, message: Any, address: str) -> SettingResu
     return setting_result(True, "uusi kotisijainti asetettu")
 
 
+def handle_set_emoji(command: Command, message: Any, raw_value: str) -> SettingResult:
+    try:
+        enabled = parse_bool(raw_value)
+    except ValueError as e:
+        return setting_result(False, str(e))
+
+    user = User.get_or_create(message.sender)
+    user.set_emoji_enabled(enabled)
+    state = "käytössä" if enabled else "pois käytöstä"
+    return setting_result(True, f"emojit {state}")
+
+
 SETTINGS: dict[str, SettingHandler] = {
     "koti": handle_set_home,
+    "emoji": handle_set_emoji,
 }
 
 
