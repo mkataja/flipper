@@ -18,6 +18,7 @@ from commands import (
     setcommand,
     systemcommands,
     talkcommand,
+    timecommand,
     topcommand,
 )
 
@@ -35,6 +36,7 @@ PUBLIC_CMDS = {
     'roll': rollcommand.RollCommand,
     'moon': mooncommand.MoonCommand,
     'kuu': mooncommand.MoonCommand,
+    'aika': timecommand.TimeCommand,
     'puhu': talkcommand.TalkCommand,
     'markov': markovcommand.MarkovCommand,
     'pyhä': markovcommand.get_markov_command(corpus_name='raamattu'),
