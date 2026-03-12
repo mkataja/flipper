@@ -353,7 +353,7 @@ class FmiWeatherCommand(Command):
 
     # ---- Observation formatting ----
 
-    def _format_observation(self, parsed):
+    def _format_observation(self, parsed, resolved_name=None):
         data_rows = parsed['data']
         timestamps = parsed['timestamps']
 
@@ -392,7 +392,7 @@ class FmiWeatherCommand(Command):
         weather_data = [wd for wd in weather_data if wd]
 
         weather_string = "Havainto {} {}.{}{}".format(
-            parsed['location_name'] or "?",
+            self._format_location_name(parsed, resolved_name),
             time_str,
             f" {conditions}." if conditions else "",
             " {}.".format(', '.join(weather_data)) if weather_data else ""
@@ -401,7 +401,7 @@ class FmiWeatherCommand(Command):
 
     # ---- Forecast formatting ----
 
-    def _format_location_name(self, parsed):
+    def _format_location_name(self, parsed, resolved_name=None):
         name = parsed.get('location_name') or "?"
         country = parsed.get('country')
         region = parsed.get('region')
@@ -412,17 +412,22 @@ class FmiWeatherCommand(Command):
             location = name
 
         if country and country != 'Finland':
-            return f"{location} ({country})"
+            # FMI API response placenames are good in finland, but outside Finland it's better to
+            # rely on geocoding result's resolved name if available:
+            if resolved_name:
+                return resolved_name
+            else:
+                return f"{location} ({country})"
         else:
             return location
 
-    def _format_forecast(self, parsed, forecast_idx):
+    def _format_forecast(self, parsed, forecast_idx, resolved_name=None):
         row = parsed['data'][forecast_idx]
         ts = parsed['timestamps'][forecast_idx]
 
         local_time = self._utc_to_local(ts)
         time_str = local_time.strftime('%d.%m.%Y %H:%M')
-        location = self._format_location_name(parsed)
+        location = self._format_location_name(parsed, resolved_name)
 
         conditions = None
         ws3 = row.get('WeatherSymbol3')
@@ -491,9 +496,9 @@ class FmiWeatherCommand(Command):
 
         return f"{hour_label} {' '.join(parts)}"
 
-    def _format_forecast_range(self, parsed, range_hours):
+    def _format_forecast_range(self, parsed, range_hours, resolved_name=None):
         """Assemble up to range_hours of hourly forecast into one compact IRC line."""
-        location = self._format_location_name(parsed)
+        location = self._format_location_name(parsed, resolved_name)
         now_utc = datetime.datetime.utcnow()
 
         hour_strings = []
@@ -559,21 +564,21 @@ class FmiWeatherCommand(Command):
 
         lat = loc.latitude
         lon = loc.longitude
-        latlon = (lat, lon)
+        resolved_name = loc.resolved_name if loc.source == 'geocode' else None
         logging.info(f"Getting {range_hours}h range forecast for ({lat}, {lon})")
 
         now_utc = datetime.datetime.utcnow().replace(
             minute=0, second=0, microsecond=0)
         end_utc = now_utc + datetime.timedelta(hours=range_hours)
 
-        parsed = fmi.fetch_forecast(latlon, starttime=now_utc, endtime=end_utc)
+        parsed = fmi.fetch_forecast((lat, lon), starttime=now_utc, endtime=end_utc)
         if parsed is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
                     location_param or "?"))
             return
 
-        result = self._format_forecast_range(parsed, range_hours)
+        result = self._format_forecast_range(parsed, range_hours, resolved_name)
         if result is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
@@ -625,17 +630,13 @@ class FmiWeatherCommand(Command):
 
         lat = loc.latitude
         lon = loc.longitude
-        latlon = (lat, lon)
+        resolved_name = loc.resolved_name if loc.source == 'geocode' else None
         logging.info(f"Getting weather data for ({lat}, {lon})")
 
         if message.commandword == OBSERVATION_COMMAND:
-            parsed = fmi.fetch_observations(latlon)
-            if parsed is None:
-                message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
-                    params['location'] or "?"))
-                return
+            parsed = fmi.fetch_observations((lat, lon))
+            weather_string = self._format_observation(parsed, resolved_name) if parsed else None
 
-            weather_string = self._format_observation(parsed)
             if weather_string is None:
                 message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
                     params['location'] or "?"))
@@ -650,7 +651,7 @@ class FmiWeatherCommand(Command):
             message.reply_to(f"{weather_string}{sun_string}")
 
         elif message.commandword in (FORECAST_COMMAND, RANGE_FORECAST_COMMAND):
-            parsed = fmi.fetch_forecast(latlon)
+            parsed = fmi.fetch_forecast((lat, lon))
             if parsed is None:
                 message.reply_to(
                     "Ei ennustetietoja paikkakunnalle {}".format(
@@ -659,7 +660,7 @@ class FmiWeatherCommand(Command):
 
             idx = self._find_forecast_index(
                 parsed['timestamps'], params)
-            weather_string = self._format_forecast(parsed, idx)
+            weather_string = self._format_forecast(parsed, idx, resolved_name)
             sun_string = self._format_sun_times(
                 parsed, parsed['timestamps'][idx])
 
