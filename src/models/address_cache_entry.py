@@ -9,3 +9,4 @@ class AddressCacheEntry(database.FlipperBase):
     # Nullable to support failed geocoding results:
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    resolved_name = Column(Text, nullable=True)

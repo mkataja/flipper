@@ -83,6 +83,13 @@ Auto-fix safe issues:
     pipenv run ruff check src/ scripts/ --fix
 
 
+## Running unit tests
+
+Run tests from the project root with pipenv:
+
+    pipenv run python -m unittest discover -s tests -q
+
+
 ## Optional dependencies
 
 * [Data files](../../../flipper_data) for importer scripts and talkcommand.

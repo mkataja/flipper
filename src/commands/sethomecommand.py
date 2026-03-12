@@ -16,7 +16,8 @@ class SetHomeCommand(Command):
         if coordinates is None:
             message.reply_to(f"Sijaintia {address} ei ole olemassa")
             return
-        latdd, longdd = coordinates
+        latdd = coordinates.latitude
+        longdd = coordinates.longitude
         user = User.get_or_create(message.sender)
         user.set_location(latdd, longdd)
         message.reply_to("Uusi kotisijainti asetettu")

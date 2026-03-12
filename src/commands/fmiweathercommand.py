@@ -557,7 +557,8 @@ class FmiWeatherCommand(Command):
                 f"Sijaintia {location_param} ei ole olemassa")
             return
 
-        lat, lon = loc
+        lat = loc.latitude
+        lon = loc.longitude
         latlon = (lat, lon)
         logging.info(f"Getting {range_hours}h range forecast for ({lat}, {lon})")
 
@@ -622,7 +623,8 @@ class FmiWeatherCommand(Command):
                 "Sijaintia {} ei ole olemassa".format(params['location']))
             return
 
-        lat, lon = loc
+        lat = loc.latitude
+        lon = loc.longitude
         latlon = (lat, lon)
         logging.info(f"Getting weather data for ({lat}, {lon})")
 

@@ -15,6 +15,11 @@ class GeocodeCommand(Command):
         if coordinates is None:
             message.reply_to(f"Sijaintia {address} ei ole olemassa")
             return
-        latdd, longdd = coordinates
+        latdd = coordinates.latitude
+        longdd = coordinates.longitude
+        resolved_name = coordinates.resolved_name
 
-        message.reply_to(f"{geocoding.lat_to_human(latdd)}; {geocoding.long_to_human(longdd)} ({latdd},{longdd})")
+        message.reply_to(
+            f"{resolved_name}: {geocoding.lat_to_human(latdd)}; "
+            f"{geocoding.long_to_human(longdd)} ({latdd},{longdd})"
+        )

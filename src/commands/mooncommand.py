@@ -30,7 +30,8 @@ class MoonCommand(Command):
             message.reply_to(f"Sijaintia {location_str} ei löydy")
             return
 
-        lat, lon = loc
+        lat = loc.latitude
+        lon = loc.longitude
         logging.info(f"Getting moon data for ({lat}, {lon})")
 
         result = moon.phase(date)
