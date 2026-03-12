@@ -11,6 +11,7 @@ pytz = "*"
 beautifulsoup4 = "*"
 urllib3 = "*"
 alembic = "*"
+timezonefinder = "*"
 
 [dev-packages]
 ruff = "*"

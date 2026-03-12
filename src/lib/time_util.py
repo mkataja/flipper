@@ -1,12 +1,12 @@
 import datetime
 import logging
-import time as py_time
-import urllib.parse
 
 import pytz
+from timezonefinder import TimezoneFinder
 
 import config
-from lib.http import try_json_request
+
+_TIMEZONE_FINDER = TimezoneFinder()
 
 
 def get_utc_datetime(local_naive_datetime):
@@ -29,26 +29,26 @@ def get_time_in_timezone(time, timezone_id):
 
 def get_geographic_timezone(latitude, longitude, timestamp=None):
     """
-    Returns the timezone code for the given geographic location. In case
-    timestamp is given, it is used to decide between normal and daylight
-    saving time. The default is to use the current timestamp to decide.
+    Returns timezone id for the given geographic location (offline lookup).
+
+    The timestamp argument is accepted for backwards compatibility but is not
+    needed for coordinate-to-timezone resolution.
     """
-    if timestamp is None:
-        timestamp = int(py_time.time())
-    logging.info(f"Getting timezone for lat: {latitude}, long: {longitude}, at: {timestamp}")
-
-    url = ("https://maps.googleapis.com/maps/api/timezone/json?location={}&timestamp={}&key={}"
-           .format(urllib.parse.quote(f"{latitude},{longitude}"),
-                   timestamp, config.GOOGLE_API_KEY))
-    data = try_json_request(url)
-    if data is None:
+    _ = timestamp
+    if latitude is None or longitude is None:
         return None
-
-    status = data.get('status')
-    if status is None or status != 'OK':
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
         return None
-
-    timezone_id = data.get('timeZoneId')
+    timezone_id = _TIMEZONE_FINDER.timezone_at(lat=latitude, lng=longitude)
+    if timezone_id is None:
+        logging.warning(
+            f"Timezone lookup failed for coordinates lat={latitude}, lon={longitude}"
+        )
+        return None
+    logging.info(f"Resolved timezone '{timezone_id}' for lat={latitude}, lon={longitude}")
     return timezone_id
 
 
