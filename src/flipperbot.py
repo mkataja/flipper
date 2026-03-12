@@ -158,7 +158,20 @@ class FlipperBot(bot.SingleServerIRCBot):
         if not self.connection.is_connected():
             logging.error("Tried to send privmsg while disconnected: aborting")
             return
-        self.connection.privmsg(target, string_helpers.sanitize(message))
+        sanitized_message = string_helpers.sanitize(message)
+        line_limit_bytes = irc_helpers.get_server_line_limit_bytes(self.connection)
+        max_text_bytes = irc_helpers.get_max_privmsg_text_bytes(target, line_limit_bytes)
+        max_chunks = max(1, getattr(config, "MAX_PRIVMSG_CHUNKS", 2))
+        chunks, was_truncated = irc_helpers.split_privmsg_text_limited(
+            sanitized_message, max_text_bytes, max_chunks)
+        if was_truncated:
+            logging.error(
+                "Truncated outgoing message to %d chunk(s) for target %s",
+                max_chunks,
+                target,
+            )
+        for chunk in chunks:
+            self.connection.privmsg(target, chunk)
 
     def set_nick(self, nick):
         self.requested_nick = nick
