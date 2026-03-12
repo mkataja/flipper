@@ -2,6 +2,7 @@ from sqlalchemy.sql import expression
 from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer, Text
 
+from lib.number_format import format_decimal_degrees
 from services import database
 
 # TODO: Keep track of current nick?
@@ -29,7 +30,10 @@ class User(database.FlipperBase):
 
     def set_location(self, lat, long):
         with database.get_session() as session:
-            self.location = f"{lat},{long}"
+            self.location = (
+                f"{format_decimal_degrees(lat)},"
+                f"{format_decimal_degrees(long)}"
+            )
             session.commit()
 
     def set_emoji_enabled(self, enabled):

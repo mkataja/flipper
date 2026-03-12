@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import config
 from lib.http import try_json_request
+from lib.number_format import format_coordinate_pair
 from models.address_cache_entry import AddressCacheEntry
 from models.user import User
 from services import database
@@ -280,7 +281,7 @@ def resolve_location(location_str, sending_user=None):
                 return LocationResolution(
                     latitude=latitude,
                     longitude=longitude,
-                    resolved_name=f"{latitude},{longitude}",
+                    resolved_name=format_coordinate_pair(latitude, longitude),
                     source='user_home',
                 )
         except Exception:
@@ -292,7 +293,7 @@ def resolve_location(location_str, sending_user=None):
     return LocationResolution(
         latitude=latitude,
         longitude=longitude,
-        resolved_name=f"{latitude},{longitude}",
+        resolved_name=format_coordinate_pair(latitude, longitude),
         source='config_default',
     )
 

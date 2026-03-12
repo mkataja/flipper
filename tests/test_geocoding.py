@@ -43,10 +43,20 @@ services_module.database = database_module
 sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 
-from lib import geocoding  # noqa: E402
+from lib import geocoding, number_format  # noqa: E402
 
 
 class GeocodingNameCleanupTest(unittest.TestCase):
+    def test_format_decimal_degrees_truncates_float_artifacts(self):
+        formatted = number_format.format_decimal_degrees(58.46091560000001)
+        self.assertEqual(formatted, "58.460915")
+
+    def test_format_coordinate_pair_truncates_to_six_decimals(self):
+        formatted = number_format.format_coordinate_pair(
+            58.46091560000001, 6.544376199999999
+        )
+        self.assertEqual(formatted, "58.460915,6.544376")
+
     def test_geocode_url_uses_finnish_by_default(self):
         url = geocoding._build_geocode_url("helsinki")
         self.assertIn("language=fi", url)

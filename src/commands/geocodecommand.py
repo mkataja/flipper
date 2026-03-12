@@ -1,5 +1,5 @@
 from commands.command import Command
-from lib import geocoding
+from lib import geocoding, number_format
 
 
 class GeocodeCommand(Command):
@@ -21,5 +21,6 @@ class GeocodeCommand(Command):
 
         message.reply_to(
             f"{resolved_name}: {geocoding.lat_to_human(latdd)}; "
-            f"{geocoding.long_to_human(longdd)} ({latdd},{longdd})"
+            f"{geocoding.long_to_human(longdd)} "
+            f"({number_format.format_coordinate_pair(latdd, longdd)})"
         )
