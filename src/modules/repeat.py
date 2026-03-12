@@ -7,7 +7,7 @@ REPEAT_LIMIT = 8
 
 
 class RepeatModule(MessageHandler):
-    last = {}
+    last: dict[str, str | None] = {}
     updating = threading.Lock()
 
     def handle(self, message):

@@ -87,9 +87,11 @@ class TalkCommand(Command):
             cursor.execute('SELECT id, first FROM words')
             allr = cursor.fetchall()
             r = len(allr)
-            ret = ['lol', 0]
+            if r == 0:
+                return 'Errori :D (sanasto puuttuu?)'
+            ret: tuple[str, int] = ('lol', 0)
             while (ret[1] < 20):
-                ret = allr[random.randint(0, r)]
+                ret = allr[random.randint(0, r - 1)]
             return self._get_sentence(cursor, 'next', ret[0])
         except sqlite3.Error as e:
             logging.error('Error in talkcommand: ' + str(e))

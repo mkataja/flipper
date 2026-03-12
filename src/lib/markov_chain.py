@@ -1,5 +1,6 @@
 import logging
 from random import randrange
+from typing import Any
 
 from sqlalchemy.sql.functions import func
 
@@ -131,7 +132,7 @@ class MarkovChain:
             filter_expr = filtered_attr is None
 
         hits = 0
-        candidates = []
+        candidates: Any = self.corpus
 
         if s1_id is not None:
             if backwards:
@@ -165,6 +166,8 @@ class MarkovChain:
                 return None
 
         selection = candidates.offset(randrange(hits)).first()
+        if selection is None:
+            return None
         if backwards:
             next_word_id = selection.prev2_id
         else:

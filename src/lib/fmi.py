@@ -120,7 +120,7 @@ def parse_multipointcoverage(xml_text):
     if tuple_list is not None and tuple_list.text:
         for line in tuple_list.text.strip().split('\n'):
             values = line.strip().split()
-            row = {}
+            row: dict[str, float | None] = {}
             for i, param in enumerate(param_names):
                 if i < len(values):
                     val = values[i]

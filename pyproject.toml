@@ -33,3 +33,11 @@ known-first-party = [
     "modules",
     "services",
 ]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/"]
+follow_imports = "skip"
+disable_error_code = ["import-untyped"]
+check_untyped_defs = true
+warn_return_any = true

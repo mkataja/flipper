@@ -316,24 +316,25 @@ class FmiWeatherCommand(Command):
             return None
         amount_str = self._color_precip_value(amount)
 
-        pop_str = ""
-        if pop is not None:
-            pop_int = int(pop)
-            if pop_int < 10:
-                pop_rounded = "<10"
+        if pop is None:
+            pop_str = ""
+        else:
+            pop_rounded = round(int(pop) / 10) * 10
+            if pop_rounded < 10:
+                pop_text = "<10"
                 pop_color = None
-            elif pop_int > 90:
-                pop_rounded = ">90"
+            elif pop_rounded > 90:
+                pop_text = ">90"
                 pop_color = Color.blue
             else:
-                pop_rounded = round(pop_int / 10) * 10
+                pop_text = str(pop_rounded)
                 if pop_rounded >= 70:
                     pop_color = Color.blue
                 elif pop_rounded >= 30:
                     pop_color = Color.dcyan
                 else:
                     pop_color = None
-            pop_str = f" (sateen todennäköisyys {color(pop_rounded, pop_color)} %)"
+            pop_str = f" (sateen todennäköisyys {color(pop_text, pop_color)} %)"
 
         return f"Tunnin sademäärä {amount_str} mm{pop_str}"
 

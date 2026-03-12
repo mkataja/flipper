@@ -20,7 +20,7 @@ KEEP_ALIVE_TIMEOUT = 60
 NICK = ""
 REALNAME = NICK
 
-CHANNELS = []
+CHANNELS: list[str] = []
 
 CMD_PREFIX = "!"
 
@@ -34,7 +34,7 @@ LOCATION = "0,0"
 
 DATABASE_URI = ""
 
-API_HOST = '127.0.0.1'
+API_HOST: str | None = '127.0.0.1'
 API_PORT = 6420
 API_HOSTNAME = 'localhost'
 

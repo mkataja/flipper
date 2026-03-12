@@ -70,17 +70,21 @@ Commands are invoked just like in IRC but without the command prefix. E.g.:
 ## Formatting and linting
 
 To keep changes minimal over the originally non-autoformatted code, autopep8 is 
-used for linting. Run the formatter from the project root:
+used for linting:
 
     pipenv run autopep8 --in-place --recursive src/ scripts/
 
-Ruff is used for static analysis. Run the linter from the project root:
+Ruff is used for static analysis. Auto-fix safe issues:
 
-    pipenv run ruff check src/ scripts/
+    pipenv run ruff --fix check src/ scripts/
 
-Auto-fix safe issues:
+Mypy is used for type checking:
 
-    pipenv run ruff check src/ scripts/ --fix
+    pipenv run mypy
+
+Run format + lint + type-check in one go:
+
+    pipenv run autopep8 --in-place --recursive src/ scripts/ && pipenv run ruff check --fix src/ scripts/ && pipenv run mypy
 
 
 ## Running unit tests

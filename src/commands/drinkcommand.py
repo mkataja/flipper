@@ -1,6 +1,8 @@
 import json
 import logging
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from commands.command import Command
 

@@ -135,7 +135,7 @@ class FlipperBot(bot.SingleServerIRCBot):
             logging.exception("Fatal error while handling a message:")
             with contextlib.suppress(BaseException):
                 # TODO: get proper message length limit
-                self.privmsg(config.SUPERUSER_NICK, f'Fatal on {event.target}: "{e[0:200]}"')
+                self.privmsg(config.SUPERUSER_NICK, f'Fatal on {event.target}: "{str(e)[:200]}"')
 
     def _handle_message(self, connection, event, is_private_message):
         message = Message(self, connection, event, is_private_message)

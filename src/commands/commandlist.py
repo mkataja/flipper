@@ -1,4 +1,3 @@
-
 from commands import (
     colorscommand,
     commentcommand,

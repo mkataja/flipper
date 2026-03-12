@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import re
+from typing import Any
 
 from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
@@ -15,6 +16,8 @@ from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.sqltypes import DateTime, Integer
 
 import config
+
+Session: Any = None
 
 
 def initialize():
@@ -76,7 +79,7 @@ def pg_utcnow(_element, _compiler, **_kw):
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-Base = declarative_base()
+Base: Any = declarative_base()
 
 
 class FlipperBase(Base):

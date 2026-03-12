@@ -14,6 +14,7 @@ urllib3 = "*"
 [dev-packages]
 ruff = "*"
 autopep8 = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.10"
