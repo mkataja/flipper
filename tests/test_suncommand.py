@@ -81,11 +81,12 @@ class SunCommandTimezoneTest(unittest.TestCase):
         ), patch(
             "commands.suncommand.sun.format_sun_times_sentence",
             return_value="Aurinko nousee joskus.",
-        ):
+        ) as mock_format:
             command.handle(message)
 
         self.assertEqual(len(message.replies), 1)
         self.assertEqual(message.replies[0], "Aurinko nousee joskus.")
+        self.assertTrue(mock_format.call_args.kwargs["include_civil_twilight"])
 
     def test_replies_when_location_is_not_found(self):
         command = SunCommand()

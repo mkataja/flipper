@@ -34,5 +34,10 @@ class SunCommand(Command):
         )
         message.reply_to(
             sun.format_sun_times_sentence(
-                date, loc.latitude, loc.longitude, timezone)
+                date,
+                loc.latitude,
+                loc.longitude,
+                timezone,
+                include_civil_twilight=True,
+            )
         )

@@ -25,6 +25,115 @@ from lib import sun  # noqa: E402
 
 
 class SunFormattingTest(unittest.TestCase):
+    def test_civil_twilight_is_not_included_by_default(self):
+        sunrise_utc = datetime(2026, 1, 15, 0, 0, 0)
+        sunset_utc = datetime(2026, 1, 15, 10, 0, 0)
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": sunrise_utc, "sunset": sunset_utc},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+        ) as mock_civil_twilight:
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 1, 15),
+                35.6762,
+                139.6503,
+                pytz.timezone("Asia/Tokyo"),
+            )
+
+        mock_civil_twilight.assert_not_called()
+        self.assertNotIn("hämärä", sentence.lower())
+
+    def test_civil_twilight_can_be_included(self):
+        sunrise_utc = datetime(2026, 1, 15, 0, 0, 0)
+        sunset_utc = datetime(2026, 1, 15, 10, 0, 0)
+        dawn_utc = datetime(2026, 1, 14, 23, 30, 0)
+        dusk_utc = datetime(2026, 1, 15, 10, 30, 0)
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": sunrise_utc, "sunset": sunset_utc},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+            return_value={"dawn": dawn_utc, "dusk": dusk_utc},
+        ):
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 1, 15),
+                35.6762,
+                139.6503,
+                pytz.timezone("Asia/Tokyo"),
+                include_civil_twilight=True,
+            )
+
+        self.assertIn("Aurinko nousee 09:00", sentence)
+        self.assertIn("Hämärä alkaa 08:30 ja päättyy 19:30.", sentence)
+
+    def test_polar_day_does_not_show_twilight(self):
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": None, "sunset": None, "sun_above_horizon": True},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+            return_value={"dawn": None, "dusk": None, "sun_above_civil_twilight": True},
+        ):
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 6, 15),
+                69.9087,
+                27.0284,
+                pytz.timezone("Europe/Helsinki"),
+                include_civil_twilight=True,
+            )
+
+        self.assertEqual(
+            sentence,
+            "Yötön yö eli polaaripäivä - aurinko ei laske kyseisenä päivänä.",
+        )
+
+    def test_whole_night_twilight_message_is_used(self):
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": None, "sunset": None, "sun_above_horizon": False},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+            return_value={"dawn": None, "dusk": None, "sun_above_civil_twilight": True},
+        ):
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 9, 15),
+                66.6,
+                25.0,
+                pytz.timezone("Europe/Helsinki"),
+                include_civil_twilight=True,
+            )
+
+        self.assertEqual(
+            sentence,
+            "Kaamos eli polaariyö - aurinko ei nouse kyseisenä päivänä. "
+            "Hämärä jatkuu koko yön.",
+        )
+
+    def test_polar_night_shows_twilight_when_defined(self):
+        dawn_utc = datetime(2026, 12, 21, 8, 0, 0)
+        dusk_utc = datetime(2026, 12, 21, 14, 0, 0)
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": None, "sunset": None, "sun_above_horizon": False},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+            return_value={"dawn": dawn_utc, "dusk": dusk_utc},
+        ):
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 12, 21),
+                69.9087,
+                27.0284,
+                pytz.timezone("Europe/Helsinki"),
+                include_civil_twilight=True,
+            )
+
+        self.assertEqual(
+            sentence,
+            "Kaamos eli polaariyö - aurinko ei nouse kyseisenä päivänä. "
+            "Hämärä alkaa 10:00 ja päättyy 16:00.",
+        )
+
     def test_sunrise_sunset_and_day_length_use_location_timezone(self):
         sunrise_utc = datetime(2026, 1, 15, 0, 0, 0)
         sunset_utc = datetime(2026, 1, 15, 10, 0, 0)
@@ -56,6 +165,28 @@ class SunFormattingTest(unittest.TestCase):
                 35.6762,
                 139.6503,
                 pytz.timezone("Asia/Tokyo"),
+            )
+
+        self.assertEqual(
+            sentence,
+            "Aurinko nousee 09:00 ja yötön yö alkaa.",
+        )
+
+    def test_sun_only_rises_does_not_show_twilight(self):
+        sunrise_utc = datetime(2026, 1, 15, 0, 0, 0)
+        with patch(
+            "lib.sun.sun_times",
+            return_value={"sunrise": sunrise_utc, "sunset": None},
+        ), patch(
+            "lib.sun.civil_twilight_times",
+            return_value={"dawn": None, "dusk": None, "sun_above_civil_twilight": True},
+        ):
+            sentence = sun.format_sun_times_sentence(
+                datetime(2026, 1, 15),
+                35.6762,
+                139.6503,
+                pytz.timezone("Asia/Tokyo"),
+                include_civil_twilight=True,
             )
 
         self.assertEqual(
