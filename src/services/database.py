@@ -43,8 +43,9 @@ def run_migrations():
     repo_root = Path(__file__).resolve().parents[2]
     script_location = repo_root / "alembic"
     if not script_location.exists():
-        logging.warning("Alembic directory not found, skipping migrations")
-        return
+        raise RuntimeError(
+            f"Alembic directory not found at '{script_location}', cannot run migrations"
+        )
 
     alembic_cfg = AlembicConfig()
     alembic_cfg.set_main_option("script_location", str(script_location))
