@@ -47,12 +47,24 @@ Required by some features, will run fine without setting these:
  * `API_HOST` and `WEBUI_ADDRESS`: related to web UI integration
 
 
-## Running
+## Running the bot
 
 Run the main entrypoint from the `src` directory:
 
     cd src
     pipenv run ./flipper.py
+
+
+## Running single commands
+
+Run the CLI harness from the `src` directory:
+
+    cd src
+    pipenv run ./cli.py <command> [args]
+
+Commands are invoked just like in IRC but without the command prefix. E.g.:
+
+    pipenv run ./cli.py sää helsinki
 
 
 ## Formatting and linting
