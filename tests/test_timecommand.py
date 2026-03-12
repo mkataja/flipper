@@ -40,7 +40,7 @@ sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 sys.modules["services.accesscontrol"] = accesscontrol_module
 
-from commands.timecommand import TimeCommand  # noqa: E402
+from commands.timecommand import TimeCommand
 
 
 class _FixedDatetime(datetime.datetime):

@@ -41,12 +41,12 @@ sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 sys.modules["services.accesscontrol"] = accesscontrol_module
 
-from commands.fmiweathercommand import (  # noqa: E402
+from commands.fmiweathercommand import (
     FmiWeatherCommand,
     MAX_FORECAST_INTERVAL_HOURS,
     MAX_RANGE_FORECAST_ITEMS,
 )
-from lib import fmi  # noqa: E402
+from lib import fmi
 
 
 class _FixedDatetime(datetime.datetime):

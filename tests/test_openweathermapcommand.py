@@ -7,7 +7,7 @@ import pytz
 
 sys.path.insert(0, os.path.abspath("src"))
 
-from commands.openweathermapcommand import OpenWeatherMapCommand  # noqa: E402
+from commands.openweathermapcommand import OpenWeatherMapCommand
 
 
 def _sample_weather_data():

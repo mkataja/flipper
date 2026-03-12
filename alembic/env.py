@@ -22,9 +22,9 @@ SRC_PATH = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-import config as app_config  # noqa: E402
-from services import database  # noqa: E402
-import models  # noqa: E402
+import config as app_config
+from services import database
+import models
 
 
 def _import_model_modules():

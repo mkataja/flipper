@@ -49,7 +49,7 @@ sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 sys.modules["services.accesscontrol"] = accesscontrol_module
 
-from commands.suncommand import SunCommand  # noqa: E402
+from commands.suncommand import SunCommand
 
 
 class _DummyLocation:

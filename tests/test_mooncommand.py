@@ -37,7 +37,7 @@ services_module.database = database_module
 sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 
-from commands.mooncommand import MoonCommand  # noqa: E402
+from commands.mooncommand import MoonCommand
 
 
 class _DummyLocation:

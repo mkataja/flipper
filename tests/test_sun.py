@@ -21,7 +21,7 @@ class _TimezoneFinder:
 timezonefinder_module.TimezoneFinder = _TimezoneFinder
 sys.modules["timezonefinder"] = timezonefinder_module
 
-from lib import sun  # noqa: E402
+from lib import sun
 
 
 class SunFormattingTest(unittest.TestCase):

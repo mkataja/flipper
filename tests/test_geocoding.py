@@ -43,7 +43,7 @@ services_module.database = database_module
 sys.modules["services"] = services_module
 sys.modules["services.database"] = database_module
 
-from lib import geocoding, number_format  # noqa: E402
+from lib import geocoding, number_format
 
 
 class GeocodingNameCleanupTest(unittest.TestCase):
