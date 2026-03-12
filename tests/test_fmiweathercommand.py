@@ -391,17 +391,15 @@ class FmiWeatherTimezoneBehaviorTest(unittest.TestCase):
         forecast_ts = datetime.datetime(2026, 1, 15, 0, 30, 0)
         timezone = pytz.timezone("America/New_York")
         expected_local_date = datetime.date(2026, 1, 14)
-        sunrise_utc = datetime.datetime(2026, 1, 14, 12, 0, 0)
-        sunset_utc = datetime.datetime(2026, 1, 14, 20, 0, 0)
 
         with patch(
-            "commands.fmiweathercommand.sun_times",
-            return_value={"sunrise": sunrise_utc, "sunset": sunset_utc},
-        ) as mock_sun_times:
+            "commands.fmiweathercommand.sun.format_sun_times_sentence",
+            return_value="Aurinko nousee 07:00 ja laskee 15:00 (päivän pituus 8 h 00 min).",
+        ) as mock_format_sun_times:
             result = self.command._format_sun_times(parsed, forecast_ts, timezone)
 
         self.assertIn("Aurinko nousee 07:00 ja laskee 15:00", result)
-        self.assertEqual(mock_sun_times.call_args[0][0], expected_local_date)
+        self.assertEqual(mock_format_sun_times.call_args[0][0], expected_local_date)
 
 
 if __name__ == "__main__":

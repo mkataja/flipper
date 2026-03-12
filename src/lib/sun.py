@@ -9,6 +9,7 @@ and hour angle calculations for the Sun.
 from datetime import datetime, timedelta
 from math import acos, asin, atan2
 
+from lib import time_util
 from lib.astro import (
     OBLIQUITY,
     dcos,
@@ -66,8 +67,10 @@ def sun_times(dt, lat, lon):
     cos_omega = ((dsin(SUN_RISE_SET_ALTITUDE) - dsin(lat) * dsin(decl))
                  / (dcos(lat) * dcos(decl)))
 
-    if cos_omega > 1.0 or cos_omega < -1.0:
-        return {'sunrise': None, 'sunset': None}
+    if cos_omega > 1.0:
+        return {'sunrise': None, 'sunset': None, 'sun_above_horizon': False}
+    if cos_omega < -1.0:
+        return {'sunrise': None, 'sunset': None, 'sun_above_horizon': True}
 
     omega_hours = todeg(acos(cos_omega)) / 15.0
 
@@ -76,3 +79,31 @@ def sun_times(dt, lat, lon):
     sunset = midnight + timedelta(hours=transit_ut_hours + omega_hours)
 
     return {'sunrise': sunrise, 'sunset': sunset}
+
+
+def format_sun_times_sentence(dt, lat, lon, timezone):
+    result = sun_times(dt, lat, lon)
+    sunrise = result.get('sunrise')
+    sunset = result.get('sunset')
+
+    if sunrise and sunset:
+        sr = time_util.utc_to_local(sunrise, timezone).strftime('%H:%M')
+        ss = time_util.utc_to_local(sunset, timezone).strftime('%H:%M')
+        day_seconds = int((sunset - sunrise).total_seconds())
+        day_h = day_seconds // 3600
+        day_m = (day_seconds % 3600) // 60
+        return (f"Aurinko nousee {sr} ja laskee {ss} "
+                f"(päivän pituus {day_h} h {day_m:02d} min).")
+
+    if sunrise and not sunset:
+        sr = time_util.utc_to_local(sunrise, timezone).strftime('%H:%M')
+        return f"Aurinko nousee {sr}, eikä laske kyseisenä päivänä."
+
+    if sunset and not sunrise:
+        ss = time_util.utc_to_local(sunset, timezone).strftime('%H:%M')
+        return f"Aurinko laskee {ss}, eikä nouse kyseisenä päivänä."
+
+    if result.get('sun_above_horizon'):
+        return "Aurinko ei laske kyseisenä päivänä."
+
+    return "Aurinko ei nouse kyseisenä päivänä."

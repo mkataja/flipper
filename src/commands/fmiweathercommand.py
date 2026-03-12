@@ -5,9 +5,8 @@ import logging
 import re
 
 from commands.command import Command
-from lib import fmi, geocoding, time_util
+from lib import fmi, geocoding, sun, time_util
 from lib.irc_colors import Color, bold, color
-from lib.sun import sun_times
 from models.user import User
 
 FORECAST_COMMAND = "sää"
@@ -656,19 +655,10 @@ class FmiWeatherCommand(Command):
             return ""
 
         local_ts = time_util.utc_to_local(forecast_ts, timezone)
-        result = sun_times(local_ts.date(), lat, lon)
-        sunrise = result.get('sunrise')
-        sunset = result.get('sunset')
-
-        if sunrise and sunset:
-            sr = time_util.utc_to_local(sunrise, timezone).strftime('%H:%M')
-            ss = time_util.utc_to_local(sunset, timezone).strftime('%H:%M')
-            day_seconds = int((sunset - sunrise).total_seconds())
-            day_h = day_seconds // 3600
-            day_m = (day_seconds % 3600) // 60
-            return (f" Aurinko nousee {sr} ja laskee {ss}"
-                    f" (päivän pituus {day_h} h {day_m:02d} min).")
-        return ""
+        return (
+            " "
+            + sun.format_sun_times_sentence(local_ts.date(), lat, lon, timezone)
+        )
 
     # ---- Main handler ----
 
