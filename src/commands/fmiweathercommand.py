@@ -405,11 +405,16 @@ class FmiWeatherCommand(Command):
         name = parsed.get('location_name') or "?"
         country = parsed.get('country')
         region = parsed.get('region')
+
+        if region and region != country and region != name:
+            location = f"{region}, {name}"
+        else:
+            location = name
+
         if country and country != 'Finland':
-            return f"{name} ({country})"
-        if region and region != 'Finland' and region != name:
-            return f"{region} {name}"
-        return name
+            return f"{location} ({country})"
+        else:
+            return location
 
     def _format_forecast(self, parsed, forecast_idx):
         row = parsed['data'][forecast_idx]
