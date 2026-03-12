@@ -21,6 +21,8 @@ RUN pip install pipenv && \
     apt-get remove -y gcc && \
     apt-get autoremove -y
 
+COPY alembic.ini ./
+COPY ./alembic/ ./alembic/
 COPY ./src/ ./src/
 
 
