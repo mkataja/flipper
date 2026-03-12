@@ -174,13 +174,8 @@ def fetch_observations(latlon):
     return parse_multipointcoverage(xml_text)
 
 
-def fetch_forecast(latlon, starttime=None, endtime=None):
-    """Fetch hourly forecast. Try Edited Scandinavia first (PoP), fall back to ECMWF.
-
-    starttime/endtime are optional naive UTC datetimes for time range queries.
-    """
+def _fetch_scandinavia_forecast(latlon, starttime=None, endtime=None):
     loc = latlon_params(latlon)
-
     extra = {'timestep': '60'}
     if starttime is not None:
         extra['starttime'] = starttime.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -194,17 +189,25 @@ def fetch_forecast(latlon, starttime=None, endtime=None):
         extra
     )
     xml_text = try_text_request(url, retries=RETRIES)
-    if xml_text is not None:
-        result = parse_multipointcoverage(xml_text)
-        if result is not None:
-            result['model'] = 'scandinavia'
-            return result
+    if xml_text is None:
+        return None
+    result = parse_multipointcoverage(xml_text)
+    if result is not None:
+        result['model'] = 'scandinavia'
+    return result
 
-    logging.info("Scandinavia forecast unavailable, trying ECMWF")
+
+def _fetch_ecmwf_forecast(latlon, starttime=None, endtime=None):
+    loc = latlon_params(latlon)
+    extra = {'timestep': '360'}
+    if starttime is not None:
+        extra['starttime'] = starttime.strftime('%Y-%m-%dT%H:%M:%SZ')
+    if endtime is not None:
+        extra['endtime'] = endtime.strftime('%Y-%m-%dT%H:%M:%SZ')
     url = build_wfs_url(
         'ecmwf::forecast::surface::point::multipointcoverage',
         ECMWF_FORECAST_PARAMS, loc,
-        {'timestep': '360'}
+        extra
     )
     xml_text = try_text_request(url, retries=RETRIES)
     if xml_text is None:
@@ -224,3 +227,26 @@ def fetch_forecast(latlon, starttime=None, endtime=None):
                 row['WindSpeedMS'] = None
                 row['WindDirection'] = None
     return result
+
+
+def fetch_forecast_for_model(latlon, model, starttime=None, endtime=None):
+    if model == 'scandinavia':
+        return _fetch_scandinavia_forecast(latlon, starttime=starttime, endtime=endtime)
+    if model == 'ecmwf':
+        return _fetch_ecmwf_forecast(latlon, starttime=starttime, endtime=endtime)
+    return None
+
+
+def fetch_forecast(latlon, starttime=None, endtime=None):
+    """Fetch hourly forecast. Try Edited Scandinavia first (PoP), fall back to ECMWF.
+
+    starttime/endtime are optional naive UTC datetimes for time range queries.
+    """
+    result = _fetch_scandinavia_forecast(
+        latlon, starttime=starttime, endtime=endtime)
+    if result is not None:
+        return result
+
+    logging.info("Scandinavia forecast unavailable, trying ECMWF")
+    return _fetch_ecmwf_forecast(
+        latlon, starttime=starttime, endtime=endtime)

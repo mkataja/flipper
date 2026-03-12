@@ -15,12 +15,16 @@ FORECAST_COMMAND = "sää"
 RANGE_FORECAST_COMMAND = "ennuste"
 OBSERVATION_COMMAND = "havainto"
 
-FORECAST_RANGE_MAX_HOURS = 12
-DEFAULT_RANGE_FORECAST_HOURS = 6
+DEFAULT_FORECAST_INTERVAL_HOURS = 1
+MAX_FORECAST_INTERVAL_HOURS = 72
+MAX_RANGE_FORECAST_ITEMS = 8
+FORECAST_RANGE_BUFFER_HOURS = 6
+MAX_FORECAST_RANGE_HOURS = 24 * 15
 
 
 class FmiWeatherCommand(Command):
-    helpstr = ("Ennuste: !sää [aika] [paikka] | !sää <N>h [paikka] (esim. !sää 6h) "
+    helpstr = ("Ennuste: !sää [aika] [paikka] | !sää <N>h|<N>d [paikka] "
+               "(esim. !sää 3h, !sää 1d) | !ennuste = !sää 1h "
                "| Havainto: !havainto [paikka] "
                "| Aseta oletuspaikka !koti-komennolla")
 
@@ -28,7 +32,8 @@ class FmiWeatherCommand(Command):
         r"^(?:(?P<hours>\d\d)(?::(?P<minutes>\d\d))?)? ?(?P<location>.+?)?$"
     )
     forecast_range_pattern = re.compile(
-        r"^(?P<range_hours>\d+)h ?(?P<location>.+?)?$"
+        r"^(?P<interval_value>\d+)(?P<interval_unit>[hd]) ?(?P<location>.+?)?$",
+        re.IGNORECASE,
     )
 
     synop_ww_strings = {
@@ -462,11 +467,15 @@ class FmiWeatherCommand(Command):
 
     # ---- Range forecast formatting ----
 
-    def _format_forecast_hour(self, row, ts):
+    def _format_forecast_hour(self, row, ts, include_date=False):
         """Format a single forecast hour as a compact IRC fragment."""
         local_time = self._utc_to_local(ts)
         hour_str = local_time.strftime('%H')
         hour_label = bold(color(f"{hour_str}:", Color.white))
+        date_prefix = ""
+        if include_date:
+            date_label = bold(color(f"{local_time.day}.{local_time.month}.", Color.white))
+            date_prefix = f"[{date_label}] "
 
         parts = []
 
@@ -494,20 +503,96 @@ class FmiWeatherCommand(Command):
             if ww:
                 parts.append(ww)
 
-        return f"{hour_label} {' '.join(parts)}"
+        if not parts:
+            return None
+        return f"{date_prefix}{hour_label} {' '.join(parts)}"
 
-    def _format_forecast_range(self, parsed, range_hours, resolved_name=None):
-        """Assemble up to range_hours of hourly forecast into one compact IRC line."""
+    @staticmethod
+    def _parse_interval_hours(interval_match):
+        interval_value = int(interval_match.group('interval_value'))
+        interval_unit = interval_match.group('interval_unit').lower()
+        if interval_unit == 'd':
+            return interval_value * 24
+        return interval_value
+
+    @staticmethod
+    def _has_forecast_content(row):
+        return any(
+            row.get(key) is not None
+            for key in ('Temperature', 'WindSpeedMS', 'Precipitation1h', 'PoP')
+        )
+
+    def _select_range_points(self, parsed, interval_hours, now_utc):
+        selected = []
+        next_index = 0
+        timestamps = parsed['timestamps']
+        rows = parsed['data']
+
+        for item_idx in range(MAX_RANGE_FORECAST_ITEMS):
+            target_time = now_utc + datetime.timedelta(
+                hours=item_idx * interval_hours)
+            while (
+                next_index < len(timestamps)
+                and (
+                    timestamps[next_index] < target_time
+                    or not self._has_forecast_content(rows[next_index])
+                )
+            ):
+                next_index += 1
+            if next_index >= len(timestamps):
+                break
+            selected.append((timestamps[next_index], rows[next_index]))
+            next_index += 1
+
+        return selected
+
+    @staticmethod
+    def _other_forecast_model(model):
+        if model == 'scandinavia':
+            return 'ecmwf'
+        if model == 'ecmwf':
+            return 'scandinavia'
+        return None
+
+    @staticmethod
+    def _merge_forecast_data(primary, secondary):
+        if secondary is None:
+            return primary
+
+        merged = dict(primary)
+        combined = {
+            ts: row for ts, row in zip(primary['timestamps'], primary['data'],
+                                       strict=False)
+        }
+        for ts, row in zip(secondary['timestamps'], secondary['data'], strict=False):
+            combined.setdefault(ts, row)
+
+        sorted_points = sorted(combined.items(), key=lambda item: item[0])
+        merged['timestamps'] = [ts for ts, _ in sorted_points]
+        merged['data'] = [row for _, row in sorted_points]
+        merged['models'] = [primary.get('model'), secondary.get('model')]
+        return merged
+
+    def _format_forecast_range(self, parsed, interval_hours, resolved_name=None,
+                               now_utc=None):
+        """Assemble up to MAX_RANGE_FORECAST_ITEMS sampled forecast points."""
         location = self._format_location_name(parsed, resolved_name)
-        now_utc = datetime.datetime.utcnow()
+        if now_utc is None:
+            now_utc = datetime.datetime.utcnow().replace(
+                minute=0, second=0, microsecond=0)
 
         hour_strings = []
-        for ts, row in zip(parsed['timestamps'], parsed['data'], strict=False):
-            if ts < now_utc:
-                continue
-            if len(hour_strings) >= range_hours:
-                break
-            hour_strings.append(self._format_forecast_hour(row, ts))
+        last_date_marker = None
+        selected_points = self._select_range_points(parsed, interval_hours, now_utc)
+        for ts, row in selected_points:
+            point_local_date = self._utc_to_local(ts).date()
+            include_date = point_local_date != last_date_marker
+            if include_date:
+                last_date_marker = point_local_date
+            hour_string = self._format_forecast_hour(
+                row, ts, include_date=include_date)
+            if hour_string:
+                hour_strings.append(hour_string)
 
         if not hour_strings:
             return None
@@ -553,9 +638,14 @@ class FmiWeatherCommand(Command):
             )
         return 0
 
-    def _handle_forecast_range(self, message, range_hours, location_param):
-        range_hours = min(range_hours, FORECAST_RANGE_MAX_HOURS)
-
+    def _handle_forecast_range(self, message, interval_hours, location_param):
+        if interval_hours <= 0:
+            message.reply_to("Ennustevälin täytyy olla vähintään 1h")
+            return
+        if interval_hours > MAX_FORECAST_INTERVAL_HOURS:
+            message.reply_to(
+                f"Ennusteväli voi olla enintään {MAX_FORECAST_INTERVAL_HOURS}h")
+            return
         loc = geocoding.resolve_location(location_param, message.sender)
         if loc is None:
             message.reply_to(
@@ -565,20 +655,49 @@ class FmiWeatherCommand(Command):
         lat = loc.latitude
         lon = loc.longitude
         resolved_name = loc.resolved_name if loc.source == 'geocode' else None
-        logging.info(f"Getting {range_hours}h range forecast for ({lat}, {lon})")
+        logging.info(
+            f"Getting interval forecast every {interval_hours}h for ({lat}, {lon})")
 
         now_utc = datetime.datetime.utcnow().replace(
             minute=0, second=0, microsecond=0)
-        end_utc = now_utc + datetime.timedelta(hours=range_hours)
-
-        parsed = fmi.fetch_forecast((lat, lon), starttime=now_utc, endtime=end_utc)
+        # Keep the original default endpoint behavior first.
+        parsed = fmi.fetch_forecast((lat, lon))
         if parsed is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
                     location_param or "?"))
             return
 
-        result = self._format_forecast_range(parsed, range_hours, resolved_name)
+        selected_points = self._select_range_points(parsed, interval_hours, now_utc)
+        if len(selected_points) < MAX_RANGE_FORECAST_ITEMS:
+            range_hours = min(
+                (MAX_RANGE_FORECAST_ITEMS - 1) * interval_hours
+                + FORECAST_RANGE_BUFFER_HOURS,
+                MAX_FORECAST_RANGE_HOURS,
+            )
+            end_utc = now_utc + datetime.timedelta(hours=range_hours)
+            primary_model = parsed.get('model')
+
+            # First try to extend the same model horizon.
+            if primary_model is not None:
+                extended_primary = fmi.fetch_forecast_for_model(
+                    (lat, lon), primary_model, starttime=now_utc, endtime=end_utc)
+                parsed = self._merge_forecast_data(parsed, extended_primary)
+                selected_points = self._select_range_points(
+                    parsed, interval_hours, now_utc)
+
+        if len(selected_points) < MAX_RANGE_FORECAST_ITEMS:
+            other_model = self._other_forecast_model(parsed.get('model'))
+            if other_model is not None:
+                logging.info(
+                    f"Primary model returned only {len(selected_points)} points; "
+                    f"trying {other_model} as supplementary forecast")
+                other_parsed = fmi.fetch_forecast_for_model(
+                    (lat, lon), other_model, starttime=now_utc, endtime=end_utc)
+                parsed = self._merge_forecast_data(parsed, other_parsed)
+
+        result = self._format_forecast_range(
+            parsed, interval_hours, resolved_name, now_utc=now_utc)
         if result is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
@@ -589,32 +708,25 @@ class FmiWeatherCommand(Command):
 
     def handle(self, message):
         params_str = message.params.strip()
+        range_match = FmiWeatherCommand.forecast_range_pattern.match(params_str)
 
-        if message.commandword == RANGE_FORECAST_COMMAND:
-            range_match = FmiWeatherCommand.forecast_range_pattern.match(
-                params_str)
-            if range_match:
-                self._handle_forecast_range(
-                    message,
-                    int(range_match.group('range_hours')),
-                    range_match.group('location')
-                )
-            else:
-                self._handle_forecast_range(
-                    message,
-                    DEFAULT_RANGE_FORECAST_HOURS,
-                    params_str or None
-                )
+        if message.commandword in (FORECAST_COMMAND, RANGE_FORECAST_COMMAND) and range_match:
+            interval_hours = self._parse_interval_hours(range_match)
+            self._handle_forecast_range(
+                message,
+                interval_hours,
+                range_match.group('location')
+            )
             return
 
-        if message.commandword == FORECAST_COMMAND:
-            range_match = FmiWeatherCommand.forecast_range_pattern.match(
-                params_str)
-            if range_match:
+        if message.commandword == RANGE_FORECAST_COMMAND:
+            # !ennuste defaults to !sää 1h [location], but explicit HH[:MM] still works.
+            default_match = FmiWeatherCommand.cmd_pattern.match(params_str)
+            if default_match is not None and not default_match.group('hours'):
                 self._handle_forecast_range(
                     message,
-                    int(range_match.group('range_hours')),
-                    range_match.group('location')
+                    DEFAULT_FORECAST_INTERVAL_HOURS,
+                    params_str or None
                 )
                 return
 
