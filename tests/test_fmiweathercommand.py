@@ -3,6 +3,7 @@ import os
 import sys
 import types
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath("src"))
@@ -312,6 +313,48 @@ class FmiLibraryForecastFallbackTest(unittest.TestCase):
             starttime=starttime,
             endtime=endtime,
         )
+
+
+class FmiWeatherEmojiPreferenceTest(unittest.TestCase):
+    def test_format_forecast_hour_uses_emojis_when_enabled(self):
+        command = FmiWeatherCommand()
+        ts = datetime.datetime(2026, 1, 15, 12, 0, 0)
+        row = {"WeatherSymbol3": 21, "Temperature": 2}
+
+        with patch.object(
+            command,
+            "_utc_to_local",
+            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        ):
+            output = command._format_forecast_hour(
+                row, ts, emoji_enabled=True)
+
+        self.assertIsNotNone(output)
+        self.assertIn("🌦️", output)
+
+    def test_format_forecast_hour_uses_text_when_emojis_disabled(self):
+        command = FmiWeatherCommand()
+        ts = datetime.datetime(2026, 1, 15, 12, 0, 0)
+        row = {"WeatherSymbol3": 21, "Temperature": 2}
+
+        with patch.object(
+            command,
+            "_utc_to_local",
+            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        ):
+            output = command._format_forecast_hour(
+                row, ts, emoji_enabled=False)
+
+        self.assertIsNotNone(output)
+        self.assertIn("sadekuuroja", output)
+        self.assertNotIn("🌦️", output)
+
+    def test_emoji_preference_reads_message_user_first(self):
+        message = SimpleNamespace(
+            user=SimpleNamespace(emoji_enabled=False),
+            sender="tester",
+        )
+        self.assertFalse(FmiWeatherCommand._is_emoji_enabled(message))
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import locale
 import logging
@@ -10,6 +11,7 @@ from commands.command import Command
 from lib import fmi, geocoding, time_util
 from lib.irc_colors import Color, bold, color
 from lib.sun import sun_times
+from models.user import User
 
 FORECAST_COMMAND = "sää"
 RANGE_FORECAST_COMMAND = "ennuste"
@@ -121,8 +123,7 @@ class FmiWeatherCommand(Command):
         92: "sumua",
     }
 
-    # Compact WW annotations for range forecast. None = omit (unremarkable or
-    # already communicated by the precipitation amount shown).
+    # Compact WW annotations for range forecast:
     fmi_weather_code_compact = {
         1: None,
         2: None,
@@ -151,6 +152,37 @@ class FmiWeatherCommand(Command):
         83: "kovaa räntäsadetta",
         91: "utua",
         92: "sumua",
+    }
+
+    # Compact emojis for range forecast:
+    fmi_weather_code_compact_emojis = {
+        1: "🌞",
+        2: "🌤 ",
+        3: "☁️",
+        21: "🌦️",
+        22: "🌦️🌦️",
+        23: "🌦️🌦️🌦️",
+        31: "🌧️",
+        32: "🌧️🌧️",
+        33: "🌧️🌧️🌧️",
+        41: "🌦️❄️",
+        42: "🌦️❄️❄️",
+        43: "🌦️❄️❄️❄️",
+        51: "🌨️❄️",
+        52: "🌨️❄️❄️",
+        53: "🌨️❄️❄️❄️",
+        61: "⛈️⛅️⚡️",
+        62: "⛈️⛅️⚡️⚡️⚡️",
+        63: "⛈️⚡️",
+        64: "⛈️⚡️⚡️⚡️",
+        71: "🌦️❄️💧",
+        72: "🌦️❄️❄️💧",
+        73: "🌦️❄️❄️💧💧",
+        81: "🌧️❄️💧",
+        82: "🌧️❄️❄️💧",
+        83: "🌧️❄️❄️💧💧",
+        91: "🌫️ utua",
+        92: "🌫️ sumua",
     }
 
     wind_directions = {
@@ -468,7 +500,7 @@ class FmiWeatherCommand(Command):
 
     # ---- Range forecast formatting ----
 
-    def _format_forecast_hour(self, row, ts, include_date=False):
+    def _format_forecast_hour(self, row, ts, include_date=False, emoji_enabled=True):
         """Format a single forecast hour as a compact IRC fragment."""
         local_time = self._utc_to_local(ts)
         hour_str = local_time.strftime('%H')
@@ -479,6 +511,17 @@ class FmiWeatherCommand(Command):
             date_prefix = f"[{date_label}] "
 
         parts = []
+
+        ws3 = row.get('WeatherSymbol3')
+        if ws3 is not None:
+            weather_compact = (
+                self.fmi_weather_code_compact_emojis
+                if emoji_enabled
+                else self.fmi_weather_code_compact
+            )
+            ww = weather_compact.get(int(ws3))
+            if ww:
+                parts.append(ww)
 
         temp = row.get('Temperature')
         temp_str = self._format_temp_compact(temp)
@@ -497,12 +540,6 @@ class FmiWeatherCommand(Command):
         precip_str = self._format_precip_compact(precip, pop)
         if precip_str is not None:
             parts.append(precip_str)
-
-        ws3 = row.get('WeatherSymbol3')
-        if ws3 is not None:
-            ww = self.fmi_weather_code_compact.get(int(ws3))
-            if ww:
-                parts.append(ww)
 
         if not parts:
             return None
@@ -575,7 +612,7 @@ class FmiWeatherCommand(Command):
         return merged
 
     def _format_forecast_range(self, parsed, interval_hours, resolved_name=None,
-                               now_utc=None):
+                               now_utc=None, emoji_enabled=True):
         """Assemble up to MAX_RANGE_FORECAST_ITEMS sampled forecast points."""
         location = self._format_location_name(parsed, resolved_name)
         if now_utc is None:
@@ -591,7 +628,7 @@ class FmiWeatherCommand(Command):
             if include_date:
                 last_date_marker = point_local_date
             hour_string = self._format_forecast_hour(
-                row, ts, include_date=include_date)
+                row, ts, include_date=include_date, emoji_enabled=emoji_enabled)
             if hour_string:
                 hour_strings.append(hour_string)
 
@@ -600,6 +637,22 @@ class FmiWeatherCommand(Command):
 
         hours_joined = '  '.join(hour_strings)
         return f"Ennuste {location} {hours_joined}"
+
+    @staticmethod
+    def _is_emoji_enabled(message):
+        user = getattr(message, "user", None)
+        if user is not None and getattr(user, "emoji_enabled", None) is not None:
+            return bool(user.emoji_enabled)
+
+        sender = getattr(message, "sender", None)
+        if sender is None:
+            return True
+
+        with contextlib.suppress(BaseException):
+            db_user = User.get_or_create(sender)
+            if getattr(db_user, "emoji_enabled", None) is not None:
+                return bool(db_user.emoji_enabled)
+        return True
 
     # ---- Sunrise/sunset ----
 
@@ -698,7 +751,12 @@ class FmiWeatherCommand(Command):
                 parsed = self._merge_forecast_data(parsed, other_parsed)
 
         result = self._format_forecast_range(
-            parsed, interval_hours, resolved_name, now_utc=now_utc)
+            parsed,
+            interval_hours,
+            resolved_name,
+            now_utc=now_utc,
+            emoji_enabled=self._is_emoji_enabled(message),
+        )
         if result is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
