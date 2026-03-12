@@ -25,6 +25,16 @@ included docker compose config for a low effort development database setup:
 
    docker-compose up -d --force-recreate --renew-anon-volumes postgres
 
+Schema migrations are managed with Alembic:
+
+    pipenv run alembic upgrade head
+
+Migrations are applied automatically on application startup.
+
+Create a new migration after model changes:
+
+    pipenv run alembic revision --autogenerate -m "describe change"
+
 
 ## Configuring
 

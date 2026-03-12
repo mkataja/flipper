@@ -1,8 +1,11 @@
 import contextlib
 import logging
 import re
+from pathlib import Path
 from typing import Any
 
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
 from sqlalchemy import exc
 from sqlalchemy.engine import create_engine
 from sqlalchemy.event.api import listen
@@ -29,9 +32,26 @@ def initialize():
         return
     logging.info("Initializing database connection to " + config.DATABASE_URI)
     engine = create_engine(config.DATABASE_URI, pool_size=10)
+    # Transitional safety net for environments not yet fully migrated.
     FlipperBase.metadata.create_all(engine)
+    run_migrations()
     Session = scoped_session(sessionmaker(bind=engine))
     listen(engine, "engine_connect", ping_engine)
+
+
+def run_migrations():
+    repo_root = Path(__file__).resolve().parents[2]
+    script_location = repo_root / "alembic"
+    if not script_location.exists():
+        logging.warning("Alembic directory not found, skipping migrations")
+        return
+
+    alembic_cfg = AlembicConfig()
+    alembic_cfg.set_main_option("script_location", str(script_location))
+    alembic_cfg.set_main_option("sqlalchemy.url", config.DATABASE_URI)
+
+    logging.info("Running database migrations to head")
+    alembic_command.upgrade(alembic_cfg, "head")
 
 
 def ping_engine(connection, branch):
