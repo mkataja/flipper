@@ -1,46 +1,20 @@
 import datetime
 import locale
 import logging
-import math
 import re
-import urllib.parse
-import xml.etree.ElementTree as ET
 
 import pytz
 
 import config
 from commands.command import Command
-from lib import geocoding, time_util
-from lib.http import try_text_request
+from lib import fmi, geocoding, time_util
 from lib.irc_colors import Color, color
 from lib.sun import sun_times
 from models.user import User
 
-RETRIES = 5
-
 FORECAST_COMMAND = "sää"
 ALT_FORECAST_COMMAND = "ennuste"
 OBSERVATION_COMMAND = "havainto"
-
-FMI_WFS_BASE = "http://opendata.fmi.fi/wfs"
-
-OBSERVATION_PARAMS = (
-    "t2m,ws_10min,wd_10min,wg_10min,rh,r_1h,snow_aws,p_sea,n_man,wawa"
-)
-SCANDINAVIA_FORECAST_PARAMS = (
-    "Temperature,DewPoint,Humidity,WindSpeedMS,WindDirection,"
-    "HourlyMaximumGust,Precipitation1h,PoP,WeatherSymbol3,"
-    "TotalCloudCover,Pressure"
-)
-ECMWF_FORECAST_PARAMS = (
-    "Temperature,Humidity,Pressure,WindUMS,WindVMS,Precipitation1h"
-)
-
-GML_NS = "{http://www.opengis.net/gml/3.2}"
-GMLCOV_NS = "{http://www.opengis.net/gmlcov/1.0}"
-SWE_NS = "{http://www.opengis.net/swe/2.0}"
-WFS_NS = "{http://www.opengis.net/wfs/2.0}"
-TARGET_NS = "{http://xml.fmi.fi/namespace/om/atmosphericfeatures/1.1}"
 
 
 class FmiWeatherCommand(Command):
@@ -147,201 +121,6 @@ class FmiWeatherCommand(Command):
         "W": "Länsi",
         "NW": "Luoteis",
     }
-
-    # ---- API helpers ----
-
-    def _build_wfs_url(self, stored_query, params, location_params,
-                       extra=None):
-        url_params = {
-            'service': 'WFS',
-            'version': '2.0.0',
-            'request': 'getFeature',
-            'storedquery_id': stored_query,
-            'parameters': params,
-        }
-        url_params.update(location_params)
-        if extra:
-            url_params.update(extra)
-        return f"{FMI_WFS_BASE}?{urllib.parse.urlencode(url_params)}"
-
-    @staticmethod
-    def _latlon_params(latlon):
-        return {'latlon': f'{latlon[0]},{latlon[1]}'}
-
-    @staticmethod
-    def _bbox_params(latlon, margin=0.3):
-        """Bounding box around coordinates (for APIs that don't support latlon)."""
-        lat, lon = latlon
-        return {'bbox': f'{lon - margin},{lat - margin},{lon + margin},{lat + margin}'}
-
-    def _parse_multipointcoverage(self, xml_text):
-        """Parse a WFS multipointcoverage XML response.
-
-        Returns dict with location_name, region, country, lat, lon,
-        timestamps (UTC datetimes), params (list), data (list of dicts).
-        Returns None on error or empty response.
-        """
-        try:
-            root = ET.fromstring(xml_text)
-        except ET.ParseError:
-            logging.exception("Failed to parse WFS XML")
-            return None
-
-        if 'ExceptionReport' in root.tag:
-            return None
-
-        member = root.find(f'{WFS_NS}member')
-        if member is None:
-            return None
-
-        location_name = None
-        region = None
-        country = None
-
-        for name_elem in root.iter(f'{GML_NS}name'):
-            cs = name_elem.get('codeSpace', '')
-            if 'locationcode/name' in cs:
-                location_name = name_elem.text
-                break
-
-        for elem in root.iter(f'{TARGET_NS}region'):
-            region = elem.text.strip() if elem.text else None
-        for elem in root.iter(f'{TARGET_NS}country'):
-            country = elem.text.strip() if elem.text else None
-
-        lat, lon = None, None
-        pos_elem = root.find(f'.//{GML_NS}pos')
-        if pos_elem is not None and pos_elem.text:
-            parts = pos_elem.text.strip().split()
-            if len(parts) >= 2:
-                lat, lon = float(parts[0]), float(parts[1])
-
-        timestamps = []
-        position_coords = []
-        positions_elem = root.find(f'.//{GMLCOV_NS}positions')
-        if positions_elem is not None and positions_elem.text:
-            for line in positions_elem.text.strip().split('\n'):
-                parts = line.strip().split()
-                if len(parts) >= 3:
-                    ts = (datetime.datetime(1970, 1, 1)
-                          + datetime.timedelta(seconds=int(parts[2])))
-                    timestamps.append(ts)
-                    position_coords.append(
-                        (float(parts[0]), float(parts[1])))
-
-        param_names = []
-        for field in root.iter(f'{SWE_NS}field'):
-            name = field.get('name')
-            if name:
-                param_names.append(name)
-
-        all_values = []
-        tuple_list = root.find(
-            f'.//{GML_NS}doubleOrNilReasonTupleList')
-        if tuple_list is not None and tuple_list.text:
-            for line in tuple_list.text.strip().split('\n'):
-                values = line.strip().split()
-                row = {}
-                for i, param in enumerate(param_names):
-                    if i < len(values):
-                        val = values[i]
-                        if val == 'NaN':
-                            row[param] = None
-                        else:
-                            try:
-                                row[param] = float(val)
-                            except ValueError:
-                                row[param] = None
-                    else:
-                        row[param] = None
-                all_values.append(row)
-
-        if not timestamps or not all_values:
-            return None
-
-        # With bbox queries, multiple stations may be returned.
-        # Filter to only the first station's data (stations are grouped).
-        first_coord = position_coords[0] if position_coords else None
-        data = []
-        filtered_timestamps = []
-        for i, row in enumerate(all_values):
-            if i < len(position_coords) \
-                    and position_coords[i] == first_coord:
-                data.append(row)
-                filtered_timestamps.append(timestamps[i])
-        timestamps = filtered_timestamps or timestamps
-
-        return {
-            'location_name': location_name,
-            'region': region,
-            'country': country,
-            'lat': lat,
-            'lon': lon,
-            'timestamps': timestamps,
-            'params': param_names,
-            'data': data,
-        }
-
-    # ---- Data fetching ----
-
-    def _fetch_observations(self, latlon, place_name=None):
-        if place_name:
-            loc = {'place': place_name}
-        else:
-            loc = self._bbox_params(latlon)
-        url = self._build_wfs_url(
-            'fmi::observations::weather::multipointcoverage',
-            OBSERVATION_PARAMS, loc,
-            {'timestep': '60', 'maxlocations': '1'}
-        )
-        xml_text = try_text_request(url, retries=RETRIES)
-        if xml_text is None:
-            return None
-        return self._parse_multipointcoverage(xml_text)
-
-    def _fetch_forecast(self, latlon, place_name=None):
-        """Try Edited Scandinavia first (PoP), fall back to ECMWF (global)."""
-        if place_name:
-            loc = {'place': place_name}
-        else:
-            loc = self._latlon_params(latlon)
-        url = self._build_wfs_url(
-            'fmi::forecast::edited::weather::scandinavia::point'
-            '::multipointcoverage',
-            SCANDINAVIA_FORECAST_PARAMS, loc,
-            {'timestep': '60'}
-        )
-        xml_text = try_text_request(url, retries=RETRIES)
-        if xml_text is not None:
-            result = self._parse_multipointcoverage(xml_text)
-            if result is not None:
-                result['model'] = 'scandinavia'
-                return result
-
-        logging.info("Scandinavia forecast unavailable, trying ECMWF")
-        url = self._build_wfs_url(
-            'ecmwf::forecast::surface::point::multipointcoverage',
-            ECMWF_FORECAST_PARAMS, loc,
-            {'timestep': '360'}
-        )
-        xml_text = try_text_request(url, retries=RETRIES)
-        if xml_text is None:
-            return None
-
-        result = self._parse_multipointcoverage(xml_text)
-        if result is not None:
-            result['model'] = 'ecmwf'
-            for row in result['data']:
-                u = row.get('WindUMS')
-                v = row.get('WindVMS')
-                if u is not None and v is not None:
-                    row['WindSpeedMS'] = math.sqrt(u ** 2 + v ** 2)
-                    row['WindDirection'] = math.degrees(
-                        math.atan2(-u, -v)) % 360
-                else:
-                    row['WindSpeedMS'] = None
-                    row['WindDirection'] = None
-        return result
 
     # ---- Computation helpers ----
 
@@ -656,7 +435,7 @@ class FmiWeatherCommand(Command):
         logging.info(f"Getting weather data for ({lat}, {lon})")
 
         if message.commandword == OBSERVATION_COMMAND:
-            parsed = self._fetch_observations(latlon, place_name)
+            parsed = fmi.fetch_observations(latlon, place_name)
             if parsed is None:
                 message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
                     params['location'] or "?"))
@@ -677,7 +456,7 @@ class FmiWeatherCommand(Command):
             message.reply_to(f"{weather_string}{sun_string}")
 
         elif message.commandword in (FORECAST_COMMAND, ALT_FORECAST_COMMAND):
-            parsed = self._fetch_forecast(latlon, place_name)
+            parsed = fmi.fetch_forecast(latlon, place_name)
             if parsed is None:
                 message.reply_to(
                     "Ei ennustetietoja paikkakunnalle {}".format(
