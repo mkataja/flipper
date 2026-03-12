@@ -161,11 +161,8 @@ def parse_multipointcoverage(xml_text):
     }
 
 
-def fetch_observations(latlon, place_name=None):
-    if place_name:
-        loc = {'place': place_name}
-    else:
-        loc = bbox_params(latlon)
+def fetch_observations(latlon):
+    loc = bbox_params(latlon)
     url = build_wfs_url(
         'fmi::observations::weather::multipointcoverage',
         OBSERVATION_PARAMS, loc,
@@ -177,15 +174,12 @@ def fetch_observations(latlon, place_name=None):
     return parse_multipointcoverage(xml_text)
 
 
-def fetch_forecast(latlon, place_name=None, starttime=None, endtime=None):
+def fetch_forecast(latlon, starttime=None, endtime=None):
     """Fetch hourly forecast. Try Edited Scandinavia first (PoP), fall back to ECMWF.
 
     starttime/endtime are optional naive UTC datetimes for time range queries.
     """
-    if place_name:
-        loc = {'place': place_name}
-    else:
-        loc = latlon_params(latlon)
+    loc = latlon_params(latlon)
 
     extra = {'timestep': '60'}
     if starttime is not None:

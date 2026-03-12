@@ -571,7 +571,7 @@ class FmiWeatherCommand(Command):
                 f"Sijaintia {location_param} ei ole olemassa")
             return
 
-        lat, lon, place_name = loc
+        lat, lon = loc
         latlon = (lat, lon)
         logging.info(f"Getting {range_hours}h range forecast for ({lat}, {lon})")
 
@@ -637,12 +637,12 @@ class FmiWeatherCommand(Command):
                 "Sijaintia {} ei ole olemassa".format(params['location']))
             return
 
-        lat, lon, place_name = loc
+        lat, lon = loc
         latlon = (lat, lon)
         logging.info(f"Getting weather data for ({lat}, {lon})")
 
         if message.commandword == OBSERVATION_COMMAND:
-            parsed = fmi.fetch_observations(latlon, place_name)
+            parsed = fmi.fetch_observations(latlon)
             if parsed is None:
                 message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
                     params['location'] or "?"))
@@ -663,7 +663,7 @@ class FmiWeatherCommand(Command):
             message.reply_to(f"{weather_string}{sun_string}")
 
         elif message.commandword in (FORECAST_COMMAND, RANGE_FORECAST_COMMAND):
-            parsed = fmi.fetch_forecast(latlon, place_name)
+            parsed = fmi.fetch_forecast(latlon)
             if parsed is None:
                 message.reply_to(
                     "Ei ennustetietoja paikkakunnalle {}".format(
