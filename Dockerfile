@@ -14,13 +14,14 @@ WORKDIR /app
 
 COPY Pipfile ./
 COPY Pipfile.lock ./
-COPY ./src/ ./src/
 
 RUN pip install pipenv && \
     pipenv install --deploy --system && \
     pip uninstall pipenv -y && \
     apt-get remove -y gcc && \
     apt-get autoremove -y
+
+COPY ./src/ ./src/
 
 
 FROM build AS runtime
