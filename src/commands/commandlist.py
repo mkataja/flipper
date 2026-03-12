@@ -15,7 +15,7 @@ from commands import (
     realweathercommand,
     remindercommand,
     rollcommand,
-    sethomecommand,
+    setcommand,
     systemcommands,
     talkcommand,
     topcommand,
@@ -48,7 +48,9 @@ PUBLIC_CMDS = {
     'kommentoi': commentcommand.CommentCommand,
     'teach': markovteachcommand.MarkovTeachCommand,
     'muistuta': remindercommand.ReminderCommand,
-    'koti': sethomecommand.SetHomeCommand,
+    'koti': setcommand.SetCommand,
+    'set': setcommand.SetCommand,
+    'aseta': setcommand.SetCommand,
     'colors': colorscommand.ColorsCommand,
 }
 
