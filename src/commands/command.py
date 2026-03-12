@@ -23,8 +23,7 @@ def admin_required(fn):
 
 
 class Command:
-    USAGE_ERROR = "Virheelliset parametrit."
-
+    # Fallbacks:
     description = "Tälle komennolle ei ole kuvausta."
     helpstr = "Tämän komennon käyttöön ei ole ohjeita."
 
@@ -33,7 +32,6 @@ class Command:
 
     def replytoinvalidparams(self, message, elaboration=None):
         if elaboration:
-            usage_error = f"{self.USAGE_ERROR} {elaboration}."
+            message.reply_to(f"{elaboration}. {self.helpstr}")
         else:
-            usage_error = self.USAGE_ERROR
-        message.reply_to(f"{usage_error} {self.helpstr}")
+            message.reply_to(self.helpstr)
