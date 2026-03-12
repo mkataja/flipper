@@ -60,7 +60,7 @@ class SunFormattingTest(unittest.TestCase):
 
         self.assertEqual(
             sentence,
-            "Aurinko nousee 09:00, eikä laske kyseisenä päivänä.",
+            "Aurinko nousee 09:00 ja yötön yö alkaa.",
         )
 
     def test_formats_when_sun_only_sets(self):
@@ -79,10 +79,10 @@ class SunFormattingTest(unittest.TestCase):
 
         self.assertEqual(
             sentence,
-            "Aurinko laskee 19:00, eikä nouse kyseisenä päivänä.",
+            "Yötön yö loppuu - aurinko laskee 19:00.",
         )
 
-    def test_utsjoki_2026_05_16_has_both_sunrise_and_sunset(self):
+    def test_utsjoki_2026_05_16_midnight_sun_begins(self):
         sentence = sun.format_sun_times_sentence(
             datetime(2026, 5, 16),
             69.9087,
@@ -92,7 +92,7 @@ class SunFormattingTest(unittest.TestCase):
 
         self.assertEqual(
             sentence,
-            "Aurinko nousee 01:30 ja laskee 00:45 (päivän pituus 23 h 14 min).",
+            "Aurinko nousee 01:43 ja yötön yö alkaa.",
         )
 
     def test_utsjoki_2026_05_17_midnight_sun(self):
@@ -105,7 +105,7 @@ class SunFormattingTest(unittest.TestCase):
 
         self.assertEqual(
             sentence,
-            "Aurinko ei laske kyseisenä päivänä.",
+            "Yötön yö eli polaaripäivä - aurinko ei laske kyseisenä päivänä.",
         )
 
     def test_utsjoki_2026_12_21_polar_night(self):
@@ -118,7 +118,7 @@ class SunFormattingTest(unittest.TestCase):
 
         self.assertEqual(
             sentence,
-            "Aurinko ei nouse kyseisenä päivänä.",
+            "Kaamos eli polaariyö - aurinko ei nouse kyseisenä päivänä.",
         )
 
 

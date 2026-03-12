@@ -25,8 +25,22 @@ from lib.astro import (
 SUN_RISE_SET_ALTITUDE = -0.833
 
 
+def _cos_omega_at_jd(jd, lat):
+    """Compute cos(hour-angle) at rise/set altitude for a given JD."""
+    sun_data = sun_ecliptic_longitude(jd)
+    decl = todeg(asin(dsin(OBLIQUITY) * dsin(sun_data['lambda_sun'])))
+    return ((dsin(SUN_RISE_SET_ALTITUDE) - dsin(lat) * dsin(decl))
+            / (dcos(lat) * dcos(decl)))
+
+
 def sun_times(dt, lat, lon):
     """Calculate sunrise and sunset times (UTC) for a given date and location.
+
+    Uses one iteration of refinement: initial estimates are computed from
+    solar parameters at noon UT, then the hour-angle is recalculated using
+    the declination at each estimated event time.  This matters near the
+    polar circle where declination changes enough between noon and midnight
+    to flip the sunrise/sunset existence.
 
     Args:
         dt: date or datetime for which to calculate
@@ -36,25 +50,26 @@ def sun_times(dt, lat, lon):
     Returns:
         dict with 'sunrise' and 'sunset' as datetime objects in UTC,
         or None values if the sun doesn't rise or set (polar regions).
+        When both are None, 'sun_above_horizon' indicates midnight sun
+        (True) vs polar night (False).
     """
     if isinstance(dt, datetime):
         d = dt.date()
     else:
         d = dt
 
-    jd = julian_day(d)
+    jd_noon = julian_day(d)
 
-    sun = sun_ecliptic_longitude(jd)
-    lambda_sun = sun['lambda_sun']
+    sun_data = sun_ecliptic_longitude(jd_noon)
+    lambda_sun = sun_data['lambda_sun']
 
     decl = todeg(asin(dsin(OBLIQUITY) * dsin(lambda_sun)))
 
     ra = todeg(atan2(dcos(OBLIQUITY) * dsin(lambda_sun), dcos(lambda_sun)))
     ra = fixangle(ra)
 
-    gmst = greenwich_mean_sidereal_time(jd)
+    gmst = greenwich_mean_sidereal_time(jd_noon)
 
-    # Hour angle of the sun at the moment corresponding to this JD (noon UT)
     lst = fixangle(gmst + lon)
     ha = lst - ra
     if ha > 180:
@@ -62,22 +77,38 @@ def sun_times(dt, lat, lon):
     elif ha < -180:
         ha += 360
 
-    transit_ut_hours = 12.0 - ha / 15.0
+    transit_h = 12.0 - ha / 15.0
 
-    cos_omega = ((dsin(SUN_RISE_SET_ALTITUDE) - dsin(lat) * dsin(decl))
-                 / (dcos(lat) * dcos(decl)))
+    cos_om = ((dsin(SUN_RISE_SET_ALTITUDE) - dsin(lat) * dsin(decl))
+              / (dcos(lat) * dcos(decl)))
 
-    if cos_omega > 1.0:
+    if cos_om > 1.0:
         return {'sunrise': None, 'sunset': None, 'sun_above_horizon': False}
-    if cos_omega < -1.0:
+    if cos_om < -1.0:
         return {'sunrise': None, 'sunset': None, 'sun_above_horizon': True}
 
-    omega_hours = todeg(acos(cos_omega)) / 15.0
+    omega_h = todeg(acos(cos_om)) / 15.0
+    rise_h_est = transit_h - omega_h
+    set_h_est = transit_h + omega_h
 
     midnight = datetime(d.year, d.month, d.day)
-    sunrise = midnight + timedelta(hours=transit_ut_hours - omega_hours)
-    sunset = midnight + timedelta(hours=transit_ut_hours + omega_hours)
 
+    # Refine sunrise: recompute hour-angle using declination at estimated time
+    sunrise = None
+    cos_om_rise = _cos_omega_at_jd(jd_noon + (rise_h_est - 12.0) / 24.0, lat)
+    if -1.0 <= cos_om_rise <= 1.0:
+        omega_rise = todeg(acos(cos_om_rise)) / 15.0
+        sunrise = midnight + timedelta(hours=transit_h - omega_rise)
+
+    # Refine sunset: recompute hour-angle using declination at estimated time
+    sunset = None
+    cos_om_set = _cos_omega_at_jd(jd_noon + (set_h_est - 12.0) / 24.0, lat)
+    if -1.0 <= cos_om_set <= 1.0:
+        omega_set = todeg(acos(cos_om_set)) / 15.0
+        sunset = midnight + timedelta(hours=transit_h + omega_set)
+
+    if sunrise is None and sunset is None:
+        return {'sunrise': None, 'sunset': None, 'sun_above_horizon': True}
     return {'sunrise': sunrise, 'sunset': sunset}
 
 
@@ -97,13 +128,13 @@ def format_sun_times_sentence(dt, lat, lon, timezone):
 
     if sunrise and not sunset:
         sr = time_util.utc_to_local(sunrise, timezone).strftime('%H:%M')
-        return f"Aurinko nousee {sr}, eikä laske kyseisenä päivänä."
+        return f"Aurinko nousee {sr} ja yötön yö alkaa."
 
     if sunset and not sunrise:
         ss = time_util.utc_to_local(sunset, timezone).strftime('%H:%M')
-        return f"Aurinko laskee {ss}, eikä nouse kyseisenä päivänä."
+        return f"Yötön yö loppuu - aurinko laskee {ss}."
 
     if result.get('sun_above_horizon'):
-        return "Aurinko ei laske kyseisenä päivänä."
+        return "Yötön yö eli polaaripäivä - aurinko ei laske kyseisenä päivänä."
 
-    return "Aurinko ei nouse kyseisenä päivänä."
+    return "Kaamos eli polaariyö - aurinko ei nouse kyseisenä päivänä."
