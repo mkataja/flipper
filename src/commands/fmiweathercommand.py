@@ -10,7 +10,6 @@ from commands.command import Command
 from lib import fmi, geocoding, time_util
 from lib.irc_colors import Color, bold, color
 from lib.sun import sun_times
-from models.user import User
 
 FORECAST_COMMAND = "sää"
 RANGE_FORECAST_COMMAND = "ennuste"
@@ -529,24 +528,6 @@ class FmiWeatherCommand(Command):
                     f" (päivän pituus {day_h} h {day_m:02d} min).")
         return ""
 
-    # ---- Location resolution ----
-
-    def _get_location(self, location_param, sender):
-        """Resolve location to (lat, lon, place_name_or_none) or None."""
-        if not location_param:
-            user = User.get_or_create(sender)
-            if user and user.location:
-                loc_str = user.location
-            else:
-                loc_str = config.LOCATION
-            parts = loc_str.split(',')
-            return float(parts[0]), float(parts[1]), None
-
-        coordinates = geocoding.geocode(location_param)
-        if coordinates is None:
-            return None
-        return coordinates[0], coordinates[1], location_param
-
     # ---- Main handler ----
 
     def _find_forecast_index(self, timestamps, params):
@@ -565,7 +546,7 @@ class FmiWeatherCommand(Command):
     def _handle_forecast_range(self, message, range_hours, location_param):
         range_hours = min(range_hours, FORECAST_RANGE_MAX_HOURS)
 
-        loc = self._get_location(location_param, message.sender)
+        loc = geocoding.resolve_location(location_param, message.sender)
         if loc is None:
             message.reply_to(
                 f"Sijaintia {location_param} ei ole olemassa")
@@ -579,8 +560,7 @@ class FmiWeatherCommand(Command):
             minute=0, second=0, microsecond=0)
         end_utc = now_utc + datetime.timedelta(hours=range_hours)
 
-        parsed = fmi.fetch_forecast(latlon, place_name,
-                                    starttime=now_utc, endtime=end_utc)
+        parsed = fmi.fetch_forecast(latlon, starttime=now_utc, endtime=end_utc)
         if parsed is None:
             message.reply_to(
                 "Ei ennustetietoja paikkakunnalle {}".format(
@@ -631,7 +611,7 @@ class FmiWeatherCommand(Command):
             params_str)
         params = [g.groupdict() for g in matches][0]
 
-        loc = self._get_location(params['location'], message.sender)
+        loc = geocoding.resolve_location(params['location'], message.sender)
         if loc is None:
             message.reply_to(
                 "Sijaintia {} ei ole olemassa".format(params['location']))

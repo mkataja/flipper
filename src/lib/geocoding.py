@@ -4,6 +4,7 @@ import urllib.parse
 import config
 from lib.http import try_json_request
 from models.address_cache_entry import AddressCacheEntry
+from models.user import User
 from services import database
 
 
@@ -62,6 +63,36 @@ def geocode(address):
     else:
         logging.info(f"Geocoded address '{address}': {latitude}, {longitude}")
         return latitude, longitude
+
+
+def resolve_location(location_str, sending_user=None):
+    """Return coordinates for an explicit place or configured default.
+
+    Resolution order:
+    1) Geocode `location_str` when provided.
+    2) Otherwise use sending user's saved home location (if available).
+    3) Fall back to `config.LOCATION`.
+
+    Returns a `(lat, lon)` tuple, or `None` only when explicit geocoding
+    was requested and no match was found.
+    """
+    if location_str:
+        coordinates = geocode(location_str)
+        if coordinates is None:
+            return None
+        return coordinates[0], coordinates[1]
+
+    if sending_user:
+        try:
+            user = User.get_or_create(sending_user)
+            if user and user.location:
+                parts = user.location.split(',')
+                return float(parts[0]), float(parts[1])
+        except Exception:
+            pass
+
+    parts = config.LOCATION.split(',')
+    return float(parts[0]), float(parts[1])
 
 
 def decdeg_to_dms(dd):

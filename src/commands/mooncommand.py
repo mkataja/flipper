@@ -7,7 +7,6 @@ import pytz
 import config
 from commands.command import Command
 from lib import geocoding, moon
-from models.user import User
 
 
 class MoonCommand(Command):
@@ -26,7 +25,7 @@ class MoonCommand(Command):
             except ValueError:
                 location_str = params
 
-        loc = _get_location(location_str, message.sender)
+        loc = geocoding.resolve_location(location_str, message.sender)
         if loc is None:
             message.reply_to(f"Sijaintia {location_str} ei löydy")
             return
@@ -58,25 +57,6 @@ class MoonCommand(Command):
         message.reply_to(
             f"Kuun vaihe: {phase_str} ({illuminated:.1%}).{time_str}"
         )
-
-
-def _get_location(location_str, sender):
-    """Resolve location to (lat, lon) tuple, or None if geocoding fails."""
-    if not location_str:
-        try:
-            user = User.get_or_create(sender)
-            if user and user.location:
-                parts = user.location.split(',')
-                return float(parts[0]), float(parts[1])
-        except Exception:
-            pass
-        parts = config.LOCATION.split(',')
-        return float(parts[0]), float(parts[1])
-
-    coordinates = geocoding.geocode(location_str)
-    if coordinates is None:
-        return None
-    return coordinates[0], coordinates[1]
 
 
 def phase_string(p):
