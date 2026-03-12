@@ -6,6 +6,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytz
+
 sys.path.insert(0, os.path.abspath("src"))
 
 # Keep tests lightweight by stubbing runtime-only dependencies.
@@ -56,7 +58,7 @@ class _FixedDatetime(datetime.datetime):
 
 
 class _DummyLocation:
-    def __init__(self, latitude, longitude, source="geocode", resolved_name="Testila"):
+    def __init__(self, latitude, longitude, source="geocode", resolved_name="Testilä"):
         self.latitude = latitude
         self.longitude = longitude
         self.source = source
@@ -76,7 +78,7 @@ class _DummyMessage:
 
 def _forecast(model, timestamps, base_temp=0):
     return {
-        "location_name": "Testila",
+        "location_name": "Testilä",
         "country": "Finland",
         "region": "Testialue",
         "timestamps": timestamps,
@@ -223,13 +225,17 @@ class FmiWeatherCommandFallbackFillTest(unittest.TestCase):
             base_temp=1,
         )
 
-        with patch.object(
-            self.command,
-            "_utc_to_local",
-            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        with patch(
+            "commands.fmiweathercommand.time_util.utc_to_local",
+            side_effect=lambda dt, *_args: dt.replace(tzinfo=datetime.timezone.utc),
         ):
             result = self.command._format_forecast_range(
-                parsed, interval_hours=12, resolved_name="Testilä", now_utc=now_utc)
+                parsed,
+                interval_hours=12,
+                timezone=datetime.timezone.utc,
+                resolved_name="Testilä",
+                now_utc=now_utc,
+            )
 
         self.assertIsNotNone(result)
         self.assertIn("Ennuste", result)
@@ -264,7 +270,7 @@ class FmiWeatherCommandFallbackFillTest(unittest.TestCase):
     def test_empty_rows_are_skipped_in_range_output(self):
         t0 = self.now_utc
         parsed = {
-            "location_name": "Testila",
+            "location_name": "Testilä",
             "country": "Finland",
             "region": "Testialue",
             "timestamps": [
@@ -279,13 +285,17 @@ class FmiWeatherCommandFallbackFillTest(unittest.TestCase):
             ],
             "model": "scandinavia",
         }
-        with patch.object(
-            self.command,
-            "_utc_to_local",
-            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        with patch(
+            "commands.fmiweathercommand.time_util.utc_to_local",
+            side_effect=lambda dt, *_args: dt.replace(tzinfo=datetime.timezone.utc),
         ):
             result = self.command._format_forecast_range(
-                parsed, interval_hours=72, resolved_name="Testilä", now_utc=t0)
+                parsed,
+                interval_hours=72,
+                timezone=datetime.timezone.utc,
+                resolved_name="Testilä",
+                now_utc=t0,
+            )
         self.assertIsNotNone(result)
         self.assertNotIn("14:   ", result)
         self.assertEqual(result.count("°C"), 2)
@@ -321,13 +331,12 @@ class FmiWeatherEmojiPreferenceTest(unittest.TestCase):
         ts = datetime.datetime(2026, 1, 15, 12, 0, 0)
         row = {"WeatherSymbol3": 21, "Temperature": 2}
 
-        with patch.object(
-            command,
-            "_utc_to_local",
-            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        with patch(
+            "commands.fmiweathercommand.time_util.utc_to_local",
+            side_effect=lambda dt, *_args: dt.replace(tzinfo=datetime.timezone.utc),
         ):
             output = command._format_forecast_hour(
-                row, ts, emoji_enabled=True)
+                row, ts, timezone=datetime.timezone.utc, emoji_enabled=True)
 
         self.assertIsNotNone(output)
         self.assertIn("🌦️", output)
@@ -337,13 +346,12 @@ class FmiWeatherEmojiPreferenceTest(unittest.TestCase):
         ts = datetime.datetime(2026, 1, 15, 12, 0, 0)
         row = {"WeatherSymbol3": 21, "Temperature": 2}
 
-        with patch.object(
-            command,
-            "_utc_to_local",
-            side_effect=lambda dt: dt.replace(tzinfo=datetime.timezone.utc),
+        with patch(
+            "commands.fmiweathercommand.time_util.utc_to_local",
+            side_effect=lambda dt, *_args: dt.replace(tzinfo=datetime.timezone.utc),
         ):
             output = command._format_forecast_hour(
-                row, ts, emoji_enabled=False)
+                row, ts, timezone=datetime.timezone.utc, emoji_enabled=False)
 
         self.assertIsNotNone(output)
         self.assertIn("sadekuuroja", output)
@@ -355,6 +363,45 @@ class FmiWeatherEmojiPreferenceTest(unittest.TestCase):
             sender="tester",
         )
         self.assertFalse(FmiWeatherCommand._is_emoji_enabled(message))
+
+
+class FmiWeatherTimezoneBehaviorTest(unittest.TestCase):
+    def setUp(self):
+        self.command = FmiWeatherCommand()
+
+    def test_forecast_uses_location_timezone_for_timestamp(self):
+        parsed = _forecast("scandinavia", [datetime.datetime(2026, 1, 15, 0, 0, 0)], base_temp=2)
+        parsed.update(
+            {
+                "country": "Japan",
+                "region": "Tokyo",
+                "location_name": "Tokyo",
+                "data": [{"Temperature": 2, "WeatherSymbol3": 1}],
+            }
+        )
+        tokyo_tz = pytz.timezone("Asia/Tokyo")
+
+        result = self.command._format_forecast(
+            parsed, 0, timezone=tokyo_tz, resolved_name="Tokyo, Japan")
+
+        self.assertIn("15.01.2026 09:00", result)
+
+    def test_sun_times_use_forecast_location_local_date(self):
+        parsed = {"lat": 60.1699, "lon": 24.9384}
+        forecast_ts = datetime.datetime(2026, 1, 15, 0, 30, 0)
+        timezone = pytz.timezone("America/New_York")
+        expected_local_date = datetime.date(2026, 1, 14)
+        sunrise_utc = datetime.datetime(2026, 1, 14, 12, 0, 0)
+        sunset_utc = datetime.datetime(2026, 1, 14, 20, 0, 0)
+
+        with patch(
+            "commands.fmiweathercommand.sun_times",
+            return_value={"sunrise": sunrise_utc, "sunset": sunset_utc},
+        ) as mock_sun_times:
+            result = self.command._format_sun_times(parsed, forecast_ts, timezone)
+
+        self.assertIn("Aurinko nousee 07:00 ja laskee 15:00", result)
+        self.assertEqual(mock_sun_times.call_args[0][0], expected_local_date)
 
 
 if __name__ == "__main__":

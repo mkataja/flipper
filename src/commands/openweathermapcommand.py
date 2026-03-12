@@ -152,6 +152,13 @@ class OpenWeatherMapCommand(Command):
         return try_json_request(url, retries=RETRIES)
 
     def _get_weather_string(self, data):
+        latitude = data.get('coord', {}).get('lat')
+        longitude = data.get('coord', {}).get('lon')
+        timezone = time_util.resolve_location_timezone(latitude, longitude)
+
+        weather_time = datetime.datetime.fromtimestamp(data['dt'], tz=pytz.utc).astimezone(
+            timezone
+        )
         sunrise = None
         sunset = None
         if data.get('sys').get('sunrise') and data.get('sys').get('sunset'):
@@ -159,11 +166,8 @@ class OpenWeatherMapCommand(Command):
                                                       tz=pytz.utc)
             sunset = datetime.datetime.fromtimestamp(data['sys']['sunset'],
                                                      tz=pytz.utc)
-            latitude = data.get('coord').get('lat')
-            longitude = data.get('coord').get('lon')
-            timezone_id = time_util.get_geographic_timezone(latitude, longitude)
-            sunrise = time_util.get_time_in_timezone(sunrise, timezone_id)
-            sunset = time_util.get_time_in_timezone(sunset, timezone_id)
+            sunrise = sunrise.astimezone(timezone)
+            sunset = sunset.astimezone(timezone)
 
         weather_conditions = []
         for w in data.get('weather'):
@@ -176,7 +180,7 @@ class OpenWeatherMapCommand(Command):
                 "{} ({})".format(data['name'], data['sys']['country'])
                 if data['name']
                 else data['sys']['country'],
-                datetime.datetime.fromtimestamp(data['dt']).strftime('%d.%m.%Y %H:%M'),
+                weather_time.strftime('%d.%m.%Y %H:%M'),
                 self._get_weather_conditions(weather_conditions),
                 locale.format_string("%.1f", data.get('main').get('temp') + KELVINTOCELSIUS),
                 self._get_temp_diff(data),

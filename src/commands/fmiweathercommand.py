@@ -4,9 +4,6 @@ import locale
 import logging
 import re
 
-import pytz
-
-import config
 from commands.command import Command
 from lib import fmi, geocoding, time_util
 from lib.irc_colors import Color, bold, color
@@ -236,10 +233,6 @@ class FmiWeatherCommand(Command):
                     - 0.000003582 * temp ** 2 * humidity ** 2)
         return temp
 
-    def _utc_to_local(self, utc_dt):
-        tz = pytz.timezone(config.TIMEZONE)
-        return utc_dt.replace(tzinfo=pytz.utc).astimezone(tz)
-
     # ---- Formatting helpers ----
 
     def _color_temp_value(self, temp):
@@ -391,7 +384,7 @@ class FmiWeatherCommand(Command):
 
     # ---- Observation formatting ----
 
-    def _format_observation(self, parsed, resolved_name=None):
+    def _format_observation(self, parsed, timezone, resolved_name=None):
         data_rows = parsed['data']
         timestamps = parsed['timestamps']
 
@@ -406,7 +399,7 @@ class FmiWeatherCommand(Command):
         if obs is None:
             return None
 
-        local_time = self._utc_to_local(obs_time)
+        local_time = time_util.utc_to_local(obs_time, timezone)
         time_str = local_time.strftime('%d.%m.%Y %H:%M')
 
         wawa = obs.get('wawa')
@@ -459,11 +452,11 @@ class FmiWeatherCommand(Command):
         else:
             return location
 
-    def _format_forecast(self, parsed, forecast_idx, resolved_name=None):
+    def _format_forecast(self, parsed, forecast_idx, timezone, resolved_name=None):
         row = parsed['data'][forecast_idx]
         ts = parsed['timestamps'][forecast_idx]
 
-        local_time = self._utc_to_local(ts)
+        local_time = time_util.utc_to_local(ts, timezone)
         time_str = local_time.strftime('%d.%m.%Y %H:%M')
         location = self._format_location_name(parsed, resolved_name)
 
@@ -500,9 +493,9 @@ class FmiWeatherCommand(Command):
 
     # ---- Range forecast formatting ----
 
-    def _format_forecast_hour(self, row, ts, include_date=False, emoji_enabled=True):
+    def _format_forecast_hour(self, row, ts, timezone, include_date=False, emoji_enabled=True):
         """Format a single forecast hour as a compact IRC fragment."""
-        local_time = self._utc_to_local(ts)
+        local_time = time_util.utc_to_local(ts, timezone)
         hour_str = local_time.strftime('%H')
         hour_label = bold(color(f"{hour_str}:", Color.white))
         date_prefix = ""
@@ -611,7 +604,7 @@ class FmiWeatherCommand(Command):
         merged['models'] = [primary.get('model'), secondary.get('model')]
         return merged
 
-    def _format_forecast_range(self, parsed, interval_hours, resolved_name=None,
+    def _format_forecast_range(self, parsed, interval_hours, timezone, resolved_name=None,
                                now_utc=None, emoji_enabled=True):
         """Assemble up to MAX_RANGE_FORECAST_ITEMS sampled forecast points."""
         location = self._format_location_name(parsed, resolved_name)
@@ -623,12 +616,12 @@ class FmiWeatherCommand(Command):
         last_date_marker = None
         selected_points = self._select_range_points(parsed, interval_hours, now_utc)
         for ts, row in selected_points:
-            point_local_date = self._utc_to_local(ts).date()
+            point_local_date = time_util.utc_to_local(ts, timezone).date()
             include_date = point_local_date != last_date_marker
             if include_date:
                 last_date_marker = point_local_date
             hour_string = self._format_forecast_hour(
-                row, ts, include_date=include_date, emoji_enabled=emoji_enabled)
+                row, ts, timezone, include_date=include_date, emoji_enabled=emoji_enabled)
             if hour_string:
                 hour_strings.append(hour_string)
 
@@ -656,20 +649,20 @@ class FmiWeatherCommand(Command):
 
     # ---- Sunrise/sunset ----
 
-    def _format_sun_times(self, parsed, forecast_ts):
+    def _format_sun_times(self, parsed, forecast_ts, timezone):
         lat = parsed.get('lat')
         lon = parsed.get('lon')
         if lat is None or lon is None:
             return ""
 
-        local_ts = self._utc_to_local(forecast_ts)
+        local_ts = time_util.utc_to_local(forecast_ts, timezone)
         result = sun_times(local_ts.date(), lat, lon)
         sunrise = result.get('sunrise')
         sunset = result.get('sunset')
 
         if sunrise and sunset:
-            sr = self._utc_to_local(sunrise).strftime('%H:%M')
-            ss = self._utc_to_local(sunset).strftime('%H:%M')
+            sr = time_util.utc_to_local(sunrise, timezone).strftime('%H:%M')
+            ss = time_util.utc_to_local(sunset, timezone).strftime('%H:%M')
             day_seconds = int((sunset - sunrise).total_seconds())
             day_h = day_seconds // 3600
             day_m = (day_seconds % 3600) // 60
@@ -709,6 +702,7 @@ class FmiWeatherCommand(Command):
         lat = loc.latitude
         lon = loc.longitude
         resolved_name = loc.resolved_name if loc.source == 'geocode' else None
+        timezone = time_util.resolve_location_timezone(lat, lon)
         logging.info(
             f"Getting interval forecast every {interval_hours}h for ({lat}, {lon})")
 
@@ -753,6 +747,7 @@ class FmiWeatherCommand(Command):
         result = self._format_forecast_range(
             parsed,
             interval_hours,
+            timezone,
             resolved_name,
             now_utc=now_utc,
             emoji_enabled=self._is_emoji_enabled(message),
@@ -802,11 +797,12 @@ class FmiWeatherCommand(Command):
         lat = loc.latitude
         lon = loc.longitude
         resolved_name = loc.resolved_name if loc.source == 'geocode' else None
+        timezone = time_util.resolve_location_timezone(lat, lon)
         logging.info(f"Getting weather data for ({lat}, {lon})")
 
         if message.commandword == OBSERVATION_COMMAND:
             parsed = fmi.fetch_observations((lat, lon))
-            weather_string = self._format_observation(parsed, resolved_name) if parsed else None
+            weather_string = self._format_observation(parsed, timezone, resolved_name) if parsed else None
 
             if weather_string is None:
                 message.reply_to("Ei havaintotietoja paikkakunnalle {}".format(
@@ -817,7 +813,7 @@ class FmiWeatherCommand(Command):
             if parsed.get('lat') and parsed.get('lon') \
                     and parsed['timestamps']:
                 sun_string = self._format_sun_times(
-                    parsed, parsed['timestamps'][-1])
+                    parsed, parsed['timestamps'][-1], timezone)
 
             message.reply_to(f"{weather_string}{sun_string}")
 
@@ -831,8 +827,8 @@ class FmiWeatherCommand(Command):
 
             idx = self._find_forecast_index(
                 parsed['timestamps'], params)
-            weather_string = self._format_forecast(parsed, idx, resolved_name)
+            weather_string = self._format_forecast(parsed, idx, timezone, resolved_name)
             sun_string = self._format_sun_times(
-                parsed, parsed['timestamps'][idx])
+                parsed, parsed['timestamps'][idx], timezone)
 
             message.reply_to(f"{weather_string}{sun_string}")

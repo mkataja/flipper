@@ -23,8 +23,49 @@ def get_time_in_timezone(time, timezone_id):
     """
     Converts the given timezone aware time into another timezone's local time.
     """
-    timezone = pytz.timezone(timezone_id)
+    timezone = get_timezone_or_default(timezone_id)
     return time.astimezone(timezone)
+
+
+def as_utc_aware(utc_dt):
+    if utc_dt.tzinfo is None:
+        return utc_dt.replace(tzinfo=pytz.utc)
+    return utc_dt.astimezone(pytz.utc)
+
+
+def utc_to_local(utc_dt, timezone=None):
+    tz = timezone or pytz.timezone(config.TIMEZONE)
+    return as_utc_aware(utc_dt).astimezone(tz)
+
+
+def get_timezone_or_default(timezone_id, default_timezone_id=None):
+    """
+    Resolve timezone_id to a timezone object, with fallback to configured default.
+    """
+    fallback_id = default_timezone_id or config.TIMEZONE
+    try:
+        if timezone_id:
+            return pytz.timezone(timezone_id)
+    except (pytz.UnknownTimeZoneError, AttributeError):
+        logging.warning(f"Unknown timezone '{timezone_id}', falling back to '{fallback_id}'")
+    return pytz.timezone(fallback_id)
+
+
+def resolve_location_timezone(latitude, longitude, reference_utc=None):
+    timestamp = None
+    if reference_utc is not None:
+        timestamp = int(as_utc_aware(reference_utc).timestamp())
+    timezone_id = get_geographic_timezone(latitude, longitude, timestamp)
+    if not timezone_id:
+        raise ValueError(
+            f"Timezone lookup failed for coordinates lat={latitude}, lon={longitude}"
+        )
+    try:
+        return pytz.timezone(timezone_id)
+    except pytz.UnknownTimeZoneError as exc:
+        raise ValueError(
+            f"Resolved unknown timezone '{timezone_id}' for lat={latitude}, lon={longitude}"
+        ) from exc
 
 
 def get_geographic_timezone(latitude, longitude, timestamp=None):

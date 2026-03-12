@@ -4,9 +4,8 @@ from datetime import datetime
 
 import pytz
 
-import config
 from commands.command import Command
-from lib import geocoding, moon
+from lib import geocoding, moon, time_util
 
 
 class MoonCommand(Command):
@@ -42,7 +41,11 @@ class MoonCommand(Command):
         moonrise = times.get('moonrise')
         moonset = times.get('moonset')
 
-        tz = pytz.timezone(config.TIMEZONE)
+        tz = time_util.resolve_location_timezone(
+            lat,
+            lon,
+            reference_utc=date.replace(tzinfo=pytz.utc),
+        )
         time_parts = []
         if moonrise:
             rise_local = moonrise.replace(tzinfo=pytz.utc).astimezone(tz)
