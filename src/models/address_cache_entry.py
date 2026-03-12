@@ -6,5 +6,6 @@ from services import database
 
 class AddressCacheEntry(database.FlipperBase):
     address = Column(Text, unique=True, nullable=False)
-    latitude = Column(Float)
-    longitude = Column(Float)
+    # Nullable to support failed geocoding results:
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
