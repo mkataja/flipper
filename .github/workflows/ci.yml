@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install pipenv
+        run: python -m pip install --upgrade pip pipenv
+
+      - name: Install dependencies
+        run: pipenv install --dev
+
+      - name: Prepare config_local for CI
+        run: cp src/config_local.py.example src/config_local.py
+
+      - name: Format
+        id: format
+        if: ${{ always() }}
+        run: pipenv run autopep8 --in-place --recursive src/ scripts/
+
+      - name: Lint
+        id: lint
+        if: ${{ always() }}
+        run: pipenv run ruff check --fix src/ scripts/
+
+      - name: Type check
+        id: typecheck
+        if: ${{ always() }}
+        run: pipenv run mypy
+
+      - name: Test
+        if: ${{ always() }}
+        run: pipenv run python -m unittest discover -s tests -q
