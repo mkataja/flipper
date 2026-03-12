@@ -8,22 +8,28 @@ import pytz
 import config
 from commands.command import Command
 from lib import fmi, geocoding, time_util
-from lib.irc_colors import Color, color
+from lib.irc_colors import Color, bold, color
 from lib.sun import sun_times
 from models.user import User
 
 FORECAST_COMMAND = "sää"
-ALT_FORECAST_COMMAND = "ennuste"
+RANGE_FORECAST_COMMAND = "ennuste"
 OBSERVATION_COMMAND = "havainto"
+
+FORECAST_RANGE_MAX_HOURS = 12
+DEFAULT_RANGE_FORECAST_HOURS = 6
 
 
 class FmiWeatherCommand(Command):
-    helpstr = ("Ennuste: !sää [aika] [paikka] (oletuksena lähin ennuste) "
+    helpstr = ("Ennuste: !sää [aika] [paikka] | !sää <N>h [paikka] (esim. !sää 6h) "
                "| Havainto: !havainto [paikka] "
                "| Aseta oletuspaikka !koti-komennolla")
 
     cmd_pattern = re.compile(
         r"^(?:(?P<hours>\d\d)(?::(?P<minutes>\d\d))?)? ?(?P<location>.+?)?$"
+    )
+    forecast_range_pattern = re.compile(
+        r"^(?P<range_hours>\d+)h ?(?P<location>.+?)?$"
     )
 
     synop_ww_strings = {
@@ -81,13 +87,13 @@ class FmiWeatherCommand(Command):
         89: "raekuuroja mahdollisesti yhdessä vesi- tai räntäsateen kanssa",
     }
 
-    weather_symbol_3_strings = {
+    fmi_weather_code = {
         1: "selkeää",
         2: "puolipilvistä",
+        3: "pilvistä",
         21: "heikkoja sadekuuroja",
         22: "sadekuuroja",
         23: "voimakkaita sadekuuroja",
-        3: "pilvistä",
         31: "heikkoa vesisadetta",
         32: "vesisadetta",
         33: "voimakasta vesisadetta",
@@ -111,6 +117,38 @@ class FmiWeatherCommand(Command):
         92: "sumua",
     }
 
+    # Compact WW annotations for range forecast. None = omit (unremarkable or
+    # already communicated by the precipitation amount shown).
+    fmi_weather_code_compact = {
+        1: None,
+        2: None,
+        3: None,
+        21: "sadekuuroja",
+        22: "sadekuuroja",
+        23: "kovia sadekuuroja",
+        31: None,
+        32: None,
+        33: "kovaa sadetta",
+        41: "lumikuuroja",
+        42: "lumikuuroja",
+        43: "kovia lumikuuroja",
+        51: "lumisadetta",
+        52: "lumisadetta",
+        53: "kovaa lumisadetta",
+        61: "ukkosta",
+        62: "voimakasta ukkosta",
+        63: "ukkosta",
+        64: "voimakasta ukkosta",
+        71: "räntäkuuroja",
+        72: "räntäkuuroja",
+        73: "kovia räntäkuuroja",
+        81: "räntää",
+        82: "räntää",
+        83: "kovaa räntäsadetta",
+        91: "utua",
+        92: "sumua",
+    }
+
     wind_directions = {
         "N": "Pohjois",
         "NE": "Koillis",
@@ -120,6 +158,19 @@ class FmiWeatherCommand(Command):
         "SW": "Lounais",
         "W": "Länsi",
         "NW": "Luoteis",
+    }
+
+    # Meteorological wind direction is where the wind comes from, but arrows points to where the
+    # wind is blowing to:
+    wind_direction_arrows = {
+        "N": "↓",
+        "NE": "↙",
+        "E": "←",
+        "SE": "↖",
+        "S": "↑",
+        "SW": "↗",
+        "W": "→",
+        "NW": "↘",
     }
 
     # ---- Computation helpers ----
@@ -166,13 +217,71 @@ class FmiWeatherCommand(Command):
             temp_color = Color.blue
         return color(f"{temp:.0f}", temp_color)
 
-    def _format_temperature(self, temp, feels_like):
+    def _color_wind_value(self, speed):
+        if speed is None:
+            return None
+        if speed >= 14:
+            speed_color = Color.red
+        elif speed >= 8:
+            speed_color = Color.yellow
+        elif speed >= 5:
+            speed_color = Color.white
+        else:
+            speed_color = None
+        return color(f"{speed:.0f}", speed_color)
+
+    def _color_precip_value(self, amount):
+        if amount is None:
+            return None
+        if amount >= 6:
+            amount_color = Color.red
+        elif amount >= 3:
+            amount_color = Color.yellow
+        elif amount >= 1.5:
+            amount_color = Color.dblue
+        elif amount >= 0.8:
+            amount_color = Color.blue
+        elif amount >= 0.2:
+            amount_color = Color.dcyan
+        else:
+            amount_color = None
+        return color(f"{amount:.1f}", amount_color)
+
+    def _format_temp_compact(self, temp):
         colored_temp = self._color_temp_value(temp)
         if colored_temp is None:
             return None
-        parts = f"Lämpötila {colored_temp} °C"
+        return f"{colored_temp}°C"
+
+    def _format_wind_compact(self, direction_deg, speed, gust=None):
+        if speed is None:
+            return None
+        compass = self._degrees_to_compass(direction_deg)
+        direction = color(self.wind_direction_arrows.get(compass, ""), Color.white)
+        wind_str = f"{direction}{self._color_wind_value(speed)}"
+        if gust is not None and gust > speed + 2:
+            wind_str += color(f"-{gust:.0f}", Color.dgrey)
+        wind_str += "m/s"
+        return wind_str
+
+    def _format_precip_compact(self, amount, pop=None):
+        if amount is None or amount < 0.1 or (pop is not None and pop <= 10):
+            return None
+        unit = color("mm", Color.blue)
+        precip_str = f"{self._color_precip_value(amount)}{unit}"
+        if pop is not None and 10 < int(pop) < 90:
+            precip_str += f" ({int(pop)}%)"
+        return precip_str
+
+    def _format_temperature(self, temp, feels_like):
+        temp_str = self._format_temp_compact(temp)
+        if temp_str is None:
+            return None
+        parts = f"Lämpötila {temp_str}"
         if feels_like is not None and abs(feels_like - temp) >= 1.0:
-            parts += f" (tuntuu {self._color_temp_value(feels_like)} °C)"
+            feels_like_str = self._format_temp_compact(feels_like)
+            if feels_like_str is not None:
+                parts += f" (tuntuu {feels_like_str})"
         return parts
 
     def _format_humidity(self, rh):
@@ -191,16 +300,7 @@ class FmiWeatherCommand(Command):
             return None
         compass = self._degrees_to_compass(direction_deg)
         direction_str = self.wind_directions.get(compass, '')
-
-        if speed >= 14:
-            speed_color = Color.red
-        elif speed >= 8:
-            speed_color = Color.yellow
-        elif speed >= 5:
-            speed_color = Color.white
-        else:
-            speed_color = None
-        speed_str = color(f"{speed:.0f}", speed_color)
+        speed_str = self._color_wind_value(speed)
 
         result = f"{direction_str}tuulta {speed_str} m/s"
         if gust is not None and gust > speed + 2:
@@ -210,19 +310,7 @@ class FmiWeatherCommand(Command):
     def _format_precipitation(self, amount, pop=None):
         if amount is None:
             return None
-        if amount >= 6:
-            amount_color = Color.red
-        elif amount >= 3:
-            amount_color = Color.yellow
-        elif amount >= 1.5:
-            amount_color = Color.dblue
-        elif amount >= 0.8:
-            amount_color = Color.blue
-        elif amount >= 0.2:
-            amount_color = Color.dcyan
-        else:
-            amount_color = None
-        amount_str = color(f"{amount:.1f}", amount_color)
+        amount_str = self._color_precip_value(amount)
 
         pop_str = ""
         if pop is not None:
@@ -336,7 +424,7 @@ class FmiWeatherCommand(Command):
         ws3 = row.get('WeatherSymbol3')
         if ws3 is not None:
             ws3_int = int(ws3)
-            conditions = self.weather_symbol_3_strings.get(ws3_int)
+            conditions = self.fmi_weather_code.get(ws3_int)
             if conditions:
                 conditions = self._capitalize(conditions)
             else:
@@ -362,6 +450,61 @@ class FmiWeatherCommand(Command):
             " {}.".format(', '.join(weather_data)) if weather_data else ""
         )
         return weather_string
+
+    # ---- Range forecast formatting ----
+
+    def _format_forecast_hour(self, row, ts):
+        """Format a single forecast hour as a compact IRC fragment."""
+        local_time = self._utc_to_local(ts)
+        hour_str = local_time.strftime('%H')
+        hour_label = bold(color(f"{hour_str}:", Color.white))
+
+        parts = []
+
+        temp = row.get('Temperature')
+        temp_str = self._format_temp_compact(temp)
+        if temp_str is not None:
+            parts.append(temp_str)
+
+        wind_speed = row.get('WindSpeedMS')
+        wind_dir = row.get('WindDirection')
+        wind_str = self._format_wind_compact(
+            wind_dir, wind_speed, row.get('HourlyMaximumGust'))
+        if wind_str is not None:
+            parts.append(wind_str)
+
+        precip = row.get('Precipitation1h')
+        pop = row.get('PoP')
+        precip_str = self._format_precip_compact(precip, pop)
+        if precip_str is not None:
+            parts.append(precip_str)
+
+        ws3 = row.get('WeatherSymbol3')
+        if ws3 is not None:
+            ww = self.fmi_weather_code_compact.get(int(ws3))
+            if ww:
+                parts.append(ww)
+
+        return f"{hour_label} {' '.join(parts)}"
+
+    def _format_forecast_range(self, parsed, range_hours):
+        """Assemble up to range_hours of hourly forecast into one compact IRC line."""
+        location = self._format_location_name(parsed)
+        now_utc = datetime.datetime.utcnow()
+
+        hour_strings = []
+        for ts, row in zip(parsed['timestamps'], parsed['data'], strict=False):
+            if ts < now_utc:
+                continue
+            if len(hour_strings) >= range_hours:
+                break
+            hour_strings.append(self._format_forecast_hour(row, ts))
+
+        if not hour_strings:
+            return None
+
+        hours_joined = '  '.join(hour_strings)
+        return f"Ennuste {location} {hours_joined}"
 
     # ---- Sunrise/sunset ----
 
@@ -419,9 +562,73 @@ class FmiWeatherCommand(Command):
             )
         return 0
 
+    def _handle_forecast_range(self, message, range_hours, location_param):
+        range_hours = min(range_hours, FORECAST_RANGE_MAX_HOURS)
+
+        loc = self._get_location(location_param, message.sender)
+        if loc is None:
+            message.reply_to(
+                f"Sijaintia {location_param} ei ole olemassa")
+            return
+
+        lat, lon, place_name = loc
+        latlon = (lat, lon)
+        logging.info(f"Getting {range_hours}h range forecast for ({lat}, {lon})")
+
+        now_utc = datetime.datetime.utcnow().replace(
+            minute=0, second=0, microsecond=0)
+        end_utc = now_utc + datetime.timedelta(hours=range_hours)
+
+        parsed = fmi.fetch_forecast(latlon, place_name,
+                                    starttime=now_utc, endtime=end_utc)
+        if parsed is None:
+            message.reply_to(
+                "Ei ennustetietoja paikkakunnalle {}".format(
+                    location_param or "?"))
+            return
+
+        result = self._format_forecast_range(parsed, range_hours)
+        if result is None:
+            message.reply_to(
+                "Ei ennustetietoja paikkakunnalle {}".format(
+                    location_param or "?"))
+            return
+
+        message.reply_to(result)
+
     def handle(self, message):
+        params_str = message.params.strip()
+
+        if message.commandword == RANGE_FORECAST_COMMAND:
+            range_match = FmiWeatherCommand.forecast_range_pattern.match(
+                params_str)
+            if range_match:
+                self._handle_forecast_range(
+                    message,
+                    int(range_match.group('range_hours')),
+                    range_match.group('location')
+                )
+            else:
+                self._handle_forecast_range(
+                    message,
+                    DEFAULT_RANGE_FORECAST_HOURS,
+                    params_str or None
+                )
+            return
+
+        if message.commandword == FORECAST_COMMAND:
+            range_match = FmiWeatherCommand.forecast_range_pattern.match(
+                params_str)
+            if range_match:
+                self._handle_forecast_range(
+                    message,
+                    int(range_match.group('range_hours')),
+                    range_match.group('location')
+                )
+                return
+
         matches = FmiWeatherCommand.cmd_pattern.finditer(
-            message.params.strip())
+            params_str)
         params = [g.groupdict() for g in matches][0]
 
         loc = self._get_location(params['location'], message.sender)
@@ -455,7 +662,7 @@ class FmiWeatherCommand(Command):
 
             message.reply_to(f"{weather_string}{sun_string}")
 
-        elif message.commandword in (FORECAST_COMMAND, ALT_FORECAST_COMMAND):
+        elif message.commandword in (FORECAST_COMMAND, RANGE_FORECAST_COMMAND):
             parsed = fmi.fetch_forecast(latlon, place_name)
             if parsed is None:
                 message.reply_to(

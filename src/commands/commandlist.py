@@ -29,7 +29,7 @@ PUBLIC_CMDS = {
     'flippaa': flipcommand.FlipCommand,
     'quit': irccommands.QuitCommand,
     fmiweathercommand.FORECAST_COMMAND: fmiweathercommand.FmiWeatherCommand,
-    fmiweathercommand.ALT_FORECAST_COMMAND: fmiweathercommand.FmiWeatherCommand,
+    fmiweathercommand.RANGE_FORECAST_COMMAND: fmiweathercommand.FmiWeatherCommand,
     fmiweathercommand.OBSERVATION_COMMAND: fmiweathercommand.FmiWeatherCommand,
     'openweathermap': openweathermapcommand.OpenWeatherMapCommand,
     'todellinensää': realweathercommand.RealWeatherCommand,
