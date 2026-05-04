@@ -30,7 +30,8 @@ class User(database.FlipperBase):
 
     def set_location(self, lat, long):
         with database.get_session() as session:
-            self.location = (
+            user = session.query(User).get(self.id)
+            user.location = (
                 f"{format_decimal_degrees(lat)},"
                 f"{format_decimal_degrees(long)}"
             )
@@ -38,5 +39,6 @@ class User(database.FlipperBase):
 
     def set_emoji_enabled(self, enabled):
         with database.get_session() as session:
-            self.emoji_enabled = enabled
+            user = session.query(User).get(self.id)
+            user.emoji_enabled = enabled
             session.commit()

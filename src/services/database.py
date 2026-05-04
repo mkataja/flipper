@@ -76,6 +76,13 @@ def ping_engine(connection, branch):
         connection.should_close_with_result = save_should_close_with_result
 
 
+def with_session_cleanup(fn, *args, **kwargs):
+    try:
+        fn(*args, **kwargs)
+    finally:
+        Session.remove()
+
+
 @contextlib.contextmanager
 def get_session():
     if not Session:

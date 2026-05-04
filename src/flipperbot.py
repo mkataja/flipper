@@ -62,8 +62,8 @@ class FlipperBot(bot.SingleServerIRCBot):
         for module in self._registered_modules.values():
             method = getattr(module, "on_" + event.type, None)
             if method is not None:
-                threading.Thread(target=method,
-                                 args=(connection, event),
+                threading.Thread(target=database.with_session_cleanup,
+                                 args=(method, connection, event),
                                  name=module.__class__.__name__).start()
 
     def _keep_alive(self):
@@ -144,7 +144,9 @@ class FlipperBot(bot.SingleServerIRCBot):
         if message.command_name in message.channel.disabled_features:
             logging.info(f"Command {message.command_name} is disabled on {message.channel.name}")
         else:
-            threading.Thread(target=message.try_run_command, name=message.command_name).start()
+            threading.Thread(target=database.with_session_cleanup,
+                             args=(message.try_run_command,),
+                             name=message.command_name).start()
 
         if not message.commandword:
             for handler in self._registered_message_handlers.values():
@@ -152,7 +154,9 @@ class FlipperBot(bot.SingleServerIRCBot):
                 if name in message.channel.disabled_features:
                     logging.info(f"Module {name} is disabled on {message.channel.name}")
                 else:
-                    threading.Thread(target=handler.handle, args=(message,), name=name).start()
+                    threading.Thread(target=database.with_session_cleanup,
+                                     args=(handler.handle, message),
+                                     name=name).start()
 
     def privmsg(self, target, message):
         if not self.connection.is_connected():
