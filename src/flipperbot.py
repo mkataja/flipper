@@ -1,12 +1,13 @@
 import contextlib
 import logging
 import signal
+import socket
 import sys
 import threading
 import time
 
 import irc.client
-from irc import bot
+from irc import bot, connection
 from irc.bot import ExponentialBackoff
 from jaraco.stream.buffer import LenientDecodingLineBuffer
 
@@ -16,6 +17,28 @@ from lib import irc_helpers, string_helpers
 from message import Message
 from services import database
 from services.accesscontrol import has_admin_access
+
+
+CONNECT_TIMEOUT_SECONDS = 30
+
+
+class TimeoutFactory(connection.Factory):
+    """Connection factory that bounds the blocking socket.connect()."""
+
+    def __init__(self, timeout, **kwargs):
+        super().__init__(**kwargs)
+        self.timeout = timeout
+
+    def connect(self, server_address):
+        sock = self.wrapper(socket.socket(self.family, socket.SOCK_STREAM))
+        if self.bind_address:
+            sock.bind(self.bind_address)
+        sock.settimeout(self.timeout)
+        sock.connect(server_address)
+        sock.settimeout(None)
+        return sock
+
+    __call__ = connect
 
 
 class FlipperBot(bot.SingleServerIRCBot):
@@ -37,7 +60,8 @@ class FlipperBot(bot.SingleServerIRCBot):
                                         [(config.SERVER, config.PORT)],
                                         self.requested_nick,
                                         config.REALNAME,
-                                        recon=recon_strategy)
+                                        recon=recon_strategy,
+                                        connect_factory=TimeoutFactory(CONNECT_TIMEOUT_SECONDS))
 
         irc.client.ServerConnection.buffer_class = LenientDecodingLineBuffer
 
