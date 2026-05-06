@@ -25,8 +25,8 @@ def setup_logging():
     log_formatter = logging.Formatter(
         "%(asctime)s [%(threadName)-12.12s] "
         "[%(levelname)-5.5s]  %(message)s")
-    logging.basicConfig(level=config.LOG_LEVEL)
     root_logger = logging.getLogger()
+    root_logger.setLevel(config.LOG_LEVEL)
 
     file_handler = TimedRotatingFileHandler(config.LOG_FILE, when='d', interval=30, backupCount=120)
     file_handler.rotator = log_rotator
