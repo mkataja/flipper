@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import os
 import signal
 import socket
 import sys
@@ -72,6 +73,11 @@ class FlipperBot(bot.SingleServerIRCBot):
             m.__name__: m() for m in modules.modulelist.MESSAGE_HANDLERS
         }
 
+        self._last_seen_connected = time.time()
+        threading.Thread(target=self._reconnect_watchdog,
+                         daemon=True,
+                         name="ReconnectWatchdog").start()
+
     def get_module_instance(self, module):
         return self._registered_modules[module.__name__]
 
@@ -89,6 +95,20 @@ class FlipperBot(bot.SingleServerIRCBot):
                 threading.Thread(target=database.with_session_cleanup,
                                  args=(method, connection, event),
                                  name=module.__class__.__name__).start()
+
+    def _reconnect_watchdog(self):
+        while True:
+            time.sleep(60)
+            if self.connection.is_connected():
+                self._last_seen_connected = time.time()
+                continue
+            stuck_for = time.time() - self._last_seen_connected
+            if stuck_for > config.RECONNECT_WATCHDOG_TIMEOUT:
+                logging.error(
+                    "Disconnected for %.0fs (>%ds threshold); exiting for "
+                    "restart", stuck_for, config.RECONNECT_WATCHDOG_TIMEOUT)
+                logging.shutdown()
+                os._exit(1)
 
     def _keep_alive(self):
         if not self.connection.is_connected():
