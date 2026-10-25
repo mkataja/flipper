@@ -5,7 +5,7 @@ import re
 from bs4 import BeautifulSoup
 
 import config
-from lib.http import try_request
+from lib.http import try_get_response
 
 url_regex = re.compile(
     r'(?:https?://)?'
@@ -18,8 +18,13 @@ url_regex = re.compile(
 
 def get_title_text(url):
     try:
-        markup = try_request(url, headers={'User-Agent': config.USER_AGENT}, log_exception=False)
-        webpage = BeautifulSoup(markup, features="html.parser")
+        response = try_get_response(url, headers={'User-Agent': config.USER_AGENT}, log_exception=False)
+        if response is None:
+            return None
+        if response.status >= 400:
+            logging.info(f"Not posting title for {url}, got status {response.status}")
+            return None
+        webpage = BeautifulSoup(response.data, features="html.parser")
     except Exception as e:
         # Doesn't really matter what went wrong, abort in any case
         logging.warning(f"Getting url title failed for {url} ({str(e)})")
@@ -30,4 +35,9 @@ def get_title_text(url):
     title = webpage.title.string.strip()
     if re.search(r'\\\\u\d*', title):
         title = codecs.decode(title, 'unicode_escape')
-    return re.sub(r"\s{2,}", " ", title)
+    title = re.sub(r"\s{2,}", " ", title)
+    # Some sites serve their 404 page with a 200 status
+    if "404" in title and "not found" in title.lower():
+        logging.info(f"Not posting title for {url}, it looks like an error page: {title}")
+        return None
+    return title
